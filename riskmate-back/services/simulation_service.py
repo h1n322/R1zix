@@ -66,8 +66,13 @@ def get_simulation_data(req: SimulationRequest):
     # --- ДИНАМІЧНИЙ ПЕРІОД ---
     period_str = f"{req.lookback_years}y"
 
+    # --- ДОДАНО ДЛЯ СВІЧОК: Зберігаємо повний датафрейм ---
+    full_df = None 
+
     if len(tickers) == 1:
-        data = download_yf_data(tickers[0], period=period_str)['Close'].squeeze()
+        # Беремо всі дані, а не тільки Close
+        full_df = download_yf_data(tickers[0], period=period_str) 
+        data = full_df['Close'].squeeze()
         returns = data.pct_change().dropna()
         mu = float(returns.mean())
         sigma = float(returns.std())
@@ -112,11 +117,61 @@ def get_simulation_data(req: SimulationRequest):
     bb_upper = sma20 + (std20 * 2)
     bb_lower = sma20 - (std20 * 2)
     
-    for d, p in display_hist.items():
+    # --- НАУКОВІ ІНДИКАТОРИ (БРОНЬОВАНИЙ PANDAS) ---
+    rsi_vals, atr_vals = [], []
+    open_vals, high_vals, low_vals, close_vals = [], [], [], []
+    
+    if len(tickers) == 1 and full_df is not None:
+        try:
+            # .squeeze() гарантує, що ми працюємо з одновимірним масивом (Series), а не з DataFrame
+            close_s = full_df['Close'].squeeze()
+            high_s = full_df['High'].squeeze()
+            low_s = full_df['Low'].squeeze()
+            open_s = full_df['Open'].squeeze()
+
+            delta = close_s.diff()
+            gain = delta.clip(lower=0).ewm(alpha=1/14, adjust=False).mean()
+            loss = (-delta.clip(upper=0)).ewm(alpha=1/14, adjust=False).mean()
+            rs = gain / loss
+            rsi_vals = (100 - (100 / (1 + rs))).fillna(0).tolist()
+
+            high_low = high_s - low_s
+            high_close = (high_s - close_s.shift()).abs()
+            low_close = (low_s - close_s.shift()).abs()
+            tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+            atr_vals = tr.ewm(alpha=1/14, adjust=False).mean().fillna(0).tolist()
+            
+            open_vals = open_s.tolist()
+            high_vals = high_s.tolist()
+            low_vals = low_s.tolist()
+            close_vals = close_s.tolist()
+        except Exception as e:
+            print(f"🚨 Помилка індикаторів: {e}")
+    # -------------------------------------------------------------
+
+    # Зверни увагу: ми використовуємо enumerate для 100% точного мапінгу даних
+    for i, (d, p) in enumerate(display_hist.items()):
         point = {
             "name": pd.to_datetime(d).strftime("%Y-%m-%d"), 
             "history": round(float(p), 2)
         }
+        
+        # --- ПАКУВАННЯ БЕЗ ПОМИЛОК ІНДЕКСІВ ---
+        if len(tickers) == 1 and full_df is not None and len(rsi_vals) > i:
+            try:
+                point["open"] = round(float(open_vals[i]), 2)
+                point["high"] = round(float(high_vals[i]), 2)
+                point["low"] = round(float(low_vals[i]), 2)
+                point["close"] = round(float(close_vals[i]), 2)
+                
+                if rsi_vals[i] != 0:
+                    point["rsi"] = round(float(rsi_vals[i]), 2)
+                if atr_vals[i] != 0:
+                    point["atr"] = round(float(atr_vals[i]), 2)
+            except Exception:
+                pass 
+        # ---------------------------------------
+
         if not pd.isna(sma50.loc[d]):
             point["sma50"] = round(float(sma50.loc[d]), 2)
         if not pd.isna(bb_upper.loc[d]):
@@ -148,8 +203,7 @@ def get_simulation_data(req: SimulationRequest):
     roll_max = data.cummax()
     historical_dd = ((data - roll_max) / roll_max).min() * 100
     
-    # --- ДИНАМІЧНІ VaR ТА ШАРП ---
-    alpha_percentile = (1.0 - req.var_confidence) * 100 # Наприклад, 0.95 -> 5.0
+    alpha_percentile = (1.0 - req.var_confidence) * 100
     annual_return = mu * 252
     sharpe = (annual_return - req.risk_free_rate) / volatility_val if volatility_val > 0 else 0
 
@@ -161,7 +215,7 @@ def get_simulation_data(req: SimulationRequest):
 
     return {
         "expected_price": round(float(np.mean(f_p)), 2),
-        "var_5": round(float(last_price - np.percentile(f_p, alpha_percentile)), 2), # Рахуємо від динамічного проценту
+        "var_5": round(float(last_price - np.percentile(f_p, alpha_percentile)), 2),
         "cvar_5": round(float(last_price - np.mean(f_p[f_p < np.percentile(f_p, alpha_percentile)])), 2),
         "volatility": round(float(volatility_val * 100), 2),
         "return_pct": round(float(expected_return_pct), 2),

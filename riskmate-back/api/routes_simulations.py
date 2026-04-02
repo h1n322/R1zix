@@ -7,9 +7,23 @@ from utils.pdf_generator import generate_pdf_report
 
 router = APIRouter()
 
+# --- ДОДАЄМО НАШ АВТОКОРЕКТОР ---
+def format_ticker(ticker: str) -> str:
+    """Очищає тикер і додає -USD для популярних криптовалют."""
+    ticker = ticker.upper().strip() # Робимо великими літерами і прибираємо пробіли
+    crypto_shortcuts = ["BTC", "ETH", "SOL", "BNB", "XRP", "DOGE", "ADA", "DOT", "LTC", "AVAX"]
+    
+    if ticker in crypto_shortcuts:
+        return f"{ticker}-USD"
+    return ticker
+# --------------------------------
+
 @router.post("/api/simulate")
 def run_simulation(req: SimulationRequest):
-    print(f"🚀 ОТРИМАНО ЗАПИТ НА СИМУЛЯЦІЮ ДЛЯ: {req.ticker}") # <--- ДОДАЙ ЦЕЙ РЯДОК
+    # Пропускаємо тикер через автокоректор перед аналізом
+    req.ticker = format_ticker(req.ticker) 
+    
+    print(f"🚀 ОТРИМАНО ЗАПИТ НА СИМУЛЯЦІЮ ДЛЯ: {req.ticker}") 
     try:
         return get_simulation_data(req)
     except Exception as e:
@@ -18,6 +32,9 @@ def run_simulation(req: SimulationRequest):
 
 @router.post("/api/report")
 def get_report(req: SimulationRequest):
+    # Тут теж пропускаємо через автокоректор, щоб PDF генерувався правильно
+    req.ticker = format_ticker(req.ticker)
+    
     try:
         sim_data = get_simulation_data(req)
         
