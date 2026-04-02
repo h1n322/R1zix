@@ -12,6 +12,7 @@
   "dependencies": {
     "firebase": "^12.10.0",
     "framer-motion": "^12.35.2",
+    "lightweight-charts": "^5.1.0",
     "react": "^19.2.0",
     "react-countup": "^6.5.3",
     "react-dom": "^19.2.0",
