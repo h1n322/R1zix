@@ -13,5 +13,5 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-, "components/KpiCards.jsx", "app/register.jsx", "components/ProSettings.sx"  ]
+, "components/KpiCards.jsx", "app/register.jsx", "components/ProSettings.sx", "app/methology.jsx", "app/pricing.jsx"  ]
 }

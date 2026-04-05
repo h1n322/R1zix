@@ -1,256 +1,143 @@
-import React, { useState } from 'react';
-import { 
+import React, { useEffect, useState } from 'react';import { 
   StyleSheet, 
   Text, 
   View, 
   SafeAreaView, 
-  TextInput, 
+  ScrollView, 
   TouchableOpacity, 
   StatusBar,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-  LayoutAnimation,
-  Platform,
-  UIManager,
-  Dimensions // Додали імпорт Dimensions
+  Dimensions,
+  
+  
 } from 'react-native';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase';
 import { useRouter } from 'expo-router';
-import ProSettings from '../../components/ProSettings';
-import KpiCards from '../../components/KpiCards';
-import MobileChart from '../../components/MobileChart';
 
-// Вмикаємо анімацію LayoutAnimation для Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
-const API_URL = 'http://127.0.0.1:8000/api/simulate';
-
-// --- ОТРИМУЄМО РОЗМІРИ ЕКРАНА ---
 const { width: screenWidth } = Dimensions.get('window');
-const isSmallScreen = screenWidth < 375; // Перевірка для маленьких екранів (як Mini)
 
-export default function App() {
+// Мокові дані для карток (як на твоєму сайті)
+const MARKET_DATA = [
+  { id: '1', symbol: 'SPY', price: '655.83', change: '+0.09%', isUp: true },
+  { id: '2', symbol: 'QQQ', price: '584.98', change: '+0.11%', isUp: true },
+  { id: '3', symbol: 'GLD', price: '429.41', change: '-1.92%', isUp: false },
+  { id: '4', symbol: 'BTC-USD', price: '66,872.67', change: '-0.02%', isUp: false },
+  { id: '5', symbol: 'AAPL', price: '255.92', change: '+0.11%', isUp: true },
+  { id: '6', symbol: 'MSFT', price: '373.46', change: '+1.11%', isUp: true },
+  { id: '7', symbol: 'NVDA', price: '177.39', change: '+0.93%', isUp: true },
+  { id: '8', symbol: 'GOOGL', price: '295.77', change: '-0.54%', isUp: false },
+];
+
+export default function ExploreScreen() {
   const router = useRouter();
+  const [user, setUser] = useState(null);
 
-  const [ticker, setTicker] = useState('AAPL');
-  const [metrics, setMetrics] = useState<any>(null); 
-  const [isLoading, setIsLoading] = useState(false);
+  // "Слухаємо", чи залогінений користувач
+  useEffect(() => {
+    // Тепер auth береться з нашого конфігу
+    const unsubscribe = onAuthStateChanged(auth, (currentUser: any) => {
+      setUser(currentUser);
+    });
+    return unsubscribe;
+  }, []);
 
-  // --- СТЕЙТИ НАЛАШТУВАНЬ ---
-  const [showSettings, setShowSettings] = useState(false);
-  const [algorithm, setAlgorithm] = useState('gbm');
-  const [lookback, setLookback] = useState('5');
-  const [horizon, setHorizon] = useState('30');
-  const [simulations, setSimulations] = useState('1000');
-
-  const toggleSettings = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setShowSettings(!showSettings);
-  };
-
-  const handleAnalyze = async () => {
-    if (!ticker.trim()) {
-      Alert.alert("Помилка", "Будь ласка, введіть тикер активу");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ticker: ticker,
-          algorithm: algorithm,
-          lookback_years: Number(lookback),
-          horizon: Number(horizon),
-          simulations: Number(simulations),
-          var_confidence: 0.95,
-          risk_free_rate: 4.5
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Помилка сервера: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setMetrics(data);
-
-      if (showSettings) {
-        toggleSettings();
-      }
-
-    } catch (error) {
-      console.error("🚨 Помилка fetch:", error);
-      Alert.alert("Помилка з'єднання", "Не вдалося достукатися до бекенду.");
-    } finally {
-      setIsLoading(false);
+  const handleStartAnalysis = () => {
+    if (user) {
+      // Якщо юзер є — пускаємо в аналіз
+      router.push('/analysis' as any); 
+    } else {
+      // Якщо немає — відправляємо на реєстрацію
+      router.push('/register' as any); 
     }
   };
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0B0F19" />
       
-      {/* --- ОНОВЛЕНИЙ SCROLLCONTENT (ЗМЕНШЕНО ПАДДІНҐ ДЛЯ MINI) --- */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         
-        {/* --- HEADER (КОМПАКТНІШИЙ) --- */}
-        <View style={styles.header}>
-          <Text style={styles.logoText}>RiskMate</Text>
+        {/* --- HERO СЕКЦІЯ (Як на сайті) --- */}
+        <View style={styles.heroSection}>
+          <Text style={styles.heroTitle}>RiskMate</Text>
+          <Text style={styles.heroSubtitle}>
+            Професійний інструмент для прогнозування фінансових ризиків та аналізу портфелів.
+          </Text>
           
-          <TouchableOpacity 
-            style={styles.userBadge} 
-            onPress={() => router.push('/profile' as any)}
-          >
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarText}>М</Text>
-            </View>
-            <Text style={styles.userName} numberOfLines={1}>Максим</Text>
-          </TouchableOpacity>
+<TouchableOpacity 
+      style={styles.heroButton} 
+      onPress={handleStartAnalysis}
+    >
+      <Text style={styles.heroButtonText}>Розпочати Аналіз Ризиків</Text>
+    </TouchableOpacity>
         </View>
 
-        {/* --- ПОШУК ТИКЕРА (КОМПАКТНІШИЙ) --- */}
-        <View style={styles.searchSection}>
-          
-          {/* 👇 ОСЬ ТУТ НАША НОВА ШАПКА З КНОПКОЮ ПОРТФЕЛЯ */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <Text style={[styles.label, { marginBottom: 0 }]}>Актив (Тикер)</Text>
-            <TouchableOpacity onPress={() => router.push('/portfolio' as any)}>
-              <Text style={{ color: '#3B82F6', fontSize: 13, fontWeight: 'bold' }}>💼 Мій портфель</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* 👇 А ОСЬ ЦЕ ТВОЄ ПОЛЕ ВВОДУ ТА КНОПКА (ВОНИ ЗАЛИШИЛИСЬ НА МІСЦІ) */}
-          <View style={styles.inputContainer}>
-            <TextInput 
-              style={styles.input}
-              value={ticker}
-              onChangeText={text => setTicker(text.toUpperCase())}
-              placeholder="AAPL..."
-              placeholderTextColor="#64748B"
-              autoCapitalize="characters"
-            />
-            <TouchableOpacity 
-              style={[
-                styles.runButton, 
-                isLoading && { opacity: 0.7 },
-                isSmallScreen && { minWidth: 70, height: 45 } 
-              ]} 
-              onPress={handleAnalyze}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.runButtonText}>Аналіз</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity style={styles.toggleButton} onPress={toggleSettings}>
-            <Text style={styles.toggleButtonText}>
-              ⚙️ Налаштування {showSettings ? '▲' : '▼'}
-            </Text>
-          </TouchableOpacity>
-
-          {/* 👇 ОСЬ ТУТ ТЕПЕР НАШ НОВИЙ КОМПОНЕНТ */}
-          {showSettings && (
-            <ProSettings />
-          )}
+        {/* --- РОЗДІЛЮВАЧ --- */}
+        <View style={styles.dividerContainer}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>РИНОК У РЕАЛЬНОМУ ЧАСІ</Text>
+          <View style={styles.dividerLine} />
         </View>
 
-        {/* --- KPI КАРТКИ --- */}
-        <KpiCards metrics={metrics} varConf={0.95} />
-
-        {/* --- ГРАФІК --- */}
-        <MobileChart data={metrics?.chart_data} />
+        {/* --- СІТКА КАРТОК --- */}
+        <View style={styles.grid}>
+          {MARKET_DATA.map((item) => (
+            <TouchableOpacity key={item.id} style={styles.card} activeOpacity={0.7}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.symbol}>{item.symbol}</Text>
+                <View style={[styles.badge, item.isUp ? styles.badgeUp : styles.badgeDown]}>
+                  <Text style={[styles.badgeText, item.isUp ? styles.textUp : styles.textDown]}>
+                    {item.isUp ? '↗' : '↘'} {item.change}
+                  </Text>
+                </View>
+              </View>
+              <Text style={styles.price}>${item.price}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// --- СТИЛІ (ПІДКОРЕКТОВАНО ДЛЯ MINI) ---
+// --- СТИЛІ ---
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B0F19' },
-  scrollContent: { 
-    // 👇 Головна зміна: зменшили відступи з 20 до 16
-    padding: 16, 
-  },
-  header: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    // 👇 Зменшили відступи
-    marginBottom: 20, 
-    marginTop: isSmallScreen ? 5 : 10, // Трохи підняли
-  },
-  logoText: { 
-    color: '#FFFFFF', 
-    // 👇 Зменшили шрифт з 28 до 24
-    fontSize: isSmallScreen ? 24 : 28, 
-    fontWeight: 'bold', 
-    letterSpacing: 0.5 
-  },
+  scrollContent: { padding: 16, paddingTop: 30 },
   
-  // Кнопка користувача (КОМПАКТНІША)
-  userBadge: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: 'rgba(30, 41, 59, 0.5)', 
-    // 👇 Зменшили відступи
-    paddingVertical: 4, 
-    paddingHorizontal: 10, 
-    borderRadius: 20, 
+  // Hero секція
+  heroSection: { alignItems: 'center', marginBottom: 40, paddingHorizontal: 10 },
+  heroTitle: { color: '#8B5CF6', fontSize: 36, fontWeight: 'bold', marginBottom: 15, letterSpacing: 1 },
+  heroSubtitle: { color: '#94A3B8', fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 25 },
+  heroButton: { backgroundColor: '#6366F1', paddingVertical: 14, paddingHorizontal: 24, borderRadius: 12, shadowColor: '#6366F1', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
+  heroButtonText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+
+  // Розділювач
+  dividerContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#334155' },
+  dividerText: { color: '#64748B', fontSize: 11, fontWeight: 'bold', letterSpacing: 1.5, paddingHorizontal: 15 },
+
+  // Сітка карток
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  card: { 
+    width: (screenWidth - 32 - 12) / 2, // 2 колонки з відступами
+    backgroundColor: '#1E293B', 
+    padding: 14, 
+    borderRadius: 12, 
     borderWidth: 1, 
-    borderColor: '#334155' 
+    borderColor: '#334155', 
+    marginBottom: 12 
   },
-  avatarCircle: { 
-    // 👇 Зменшили розмір з 24 до 22
-    width: 22, height: 22, borderRadius: 11, 
-    backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center', marginRight: 8 
-  },
-  avatarText: { 
-    color: '#FFF', 
-    // 👇 Зменшили шрифт з 12 до 11
-    fontSize: 11, fontWeight: 'bold' 
-  },
-  userName: { 
-    color: '#E2E8F0', 
-    // 👇 Зменшили шрифт з 14 до 13
-    fontSize: isSmallScreen ? 13 : 14, 
-    fontWeight: '600',
-    maxWidth: isSmallScreen ? 70 : 100 // Запобігаємо розтягуванню
-  },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  symbol: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
   
-  searchSection: { marginBottom: 25 },
-  label: { color: '#94A3B8', fontSize: 13, marginBottom: 8, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  inputContainer: { flexDirection: 'row', gap: 10, marginBottom: 15 },
-  input: { flex: 1, backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#334155', borderRadius: 12, color: '#FFFFFF', paddingHorizontal: 16, height: 50, fontSize: 16 },
+  // Бейджі зміни ціни
+  badge: { paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.1)' },
+  badgeUp: { backgroundColor: 'rgba(16, 185, 129, 0.15)' },
+  badgeDown: { backgroundColor: 'rgba(239, 68, 68, 0.15)' },
+  badgeText: { fontSize: 10, fontWeight: 'bold' },
+  textUp: { color: '#10B981' },
+  textDown: { color: '#EF4444' },
   
-  // Кнопка аналізу (КОМПАКТНІША)
-  runButton: { backgroundColor: '#3B82F6', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20, borderRadius: 12, height: 50, minWidth: 90 },
-  runButtonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
-  
-  toggleButton: { alignItems: 'center', paddingVertical: 10 },
-  toggleButtonText: { color: '#3B82F6', fontSize: 14, fontWeight: '600' },
-  
-  // Налаштування (КОМПАКТНІШІ)
-  settingsPanel: { backgroundColor: 'rgba(30, 41, 59, 0.5)', padding: 12, borderRadius: 16, borderWidth: 1, borderColor: '#334155', marginTop: 10 },
-  row: { flexDirection: 'row', gap: 10, marginTop: 15 },
-  halfWidth: { flex: 1 },
-  inputSmall: { backgroundColor: '#0B0F19', borderWidth: 1, borderColor: '#334155', borderRadius: 8, color: '#FFFFFF', paddingHorizontal: 12, height: 40, fontSize: 14 },
-  
-  // Перемикачі алгоритмів (КОМПАКТНІШІ)
-  segmentGroup: { flexDirection: 'row', backgroundColor: '#0B0F19', borderRadius: 8, padding: 4, borderWidth: 1, borderColor: '#334155' },
-  segmentBtn: { flex: 1, paddingVertical: 6, alignItems: 'center', borderRadius: 6 }, // Зменшили паддінґ з 8 до 6
-  segmentBtnActive: { backgroundColor: '#3B82F6' },
-  segmentText: { color: '#64748B', fontSize: 13, fontWeight: '600' },
-  segmentTextActive: { color: '#FFFFFF' }
+  price: { color: '#F8FAFC', fontSize: 20, fontWeight: 'bold' }
 });
