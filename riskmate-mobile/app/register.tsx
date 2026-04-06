@@ -11,6 +11,11 @@ import {
   StatusBar
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth } from '../firebase'; // Твій конфіг, який ми створили
+import { Alert } from 'react-native';
+
+
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -19,14 +24,34 @@ export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleRegister = () => {
-    // Поки що це просто заглушка. Тут буде логіка відправки на бекенд!
-    console.log("Реєстрація:", { name, email, password });
-    
-    // Після успішної реєстрації перекидаємо користувача на головний дашборд
-    router.replace('/'); 
-  };
+  const handleRegister = async () => {
+    if (!email || !password || !name) {
+      Alert.alert("Помилка", "Будь ласка, заповніть усі поля");
+      return;
+    }
 
+    try {
+      // Створюємо користувача в Firebase
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Додаємо ім'я користувача в його профіль Firebase
+      await updateProfile(userCredential.user, {
+        displayName: name
+      });
+
+      console.log("Користувач зареєстрований:", userCredential.user.email);
+      
+      // Перекидаємо на головну (index тепер наш Explore/Market)
+      router.replace('/' as any); 
+    } catch (error: any) {
+      console.error(error);
+      let message = "Не вдалося зареєструватися";
+      if (error.code === 'auth/email-already-in-use') message = "Ця пошта вже зареєстрована";
+      if (error.code === 'auth/weak-password') message = "Пароль занадто короткий (мін. 6 символів)";
+      
+      Alert.alert("Помилка реєстрації", message);
+    }
+  };
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0B0F19" />
@@ -85,7 +110,7 @@ export default function RegisterScreen() {
 
           <View style={styles.loginPrompt}>
             <Text style={styles.promptText}>Вже маєте акаунт? </Text>
-            <TouchableOpacity onPress={() => router.push('/login')}>
+            <TouchableOpacity onPress={() => router.push('/login' as any)}>
               <Text style={styles.loginLink}>Увійти</Text>
             </TouchableOpacity>
           </View>

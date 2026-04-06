@@ -11,7 +11,7 @@ import React, { useEffect, useState } from 'react';import {
   
 } from 'react-native';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase';
+import { auth } from '../../firebase';
 import { useRouter } from 'expo-router';
 
 const { width: screenWidth } = Dimensions.get('window');
