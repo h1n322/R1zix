@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -10,6 +10,9 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from '../firebase'; // Переконайся, що шлях до firebase правильний
+
 // Тимчасові дані історії
 const MOCK_HISTORY = [
   { id: '1', ticker: 'AAPL', date: '13.03.2026', expected: 261.82, risk: 30.84 },
@@ -20,6 +23,40 @@ const MOCK_HISTORY = [
 
 export default function ProfileScreen() {
   const router = useRouter();
+
+  // Стани для користувача
+  const [userName, setUserName] = useState('Завантаження...');
+  const [userEmail, setUserEmail] = useState('');
+  const [userInitial, setUserInitial] = useState('');
+
+  // Слухаємо стан авторизації
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const name = user.displayName || user.email?.split('@')[0] || 'Користувач';
+        setUserName(name);
+        setUserEmail(user.email || '');
+        setUserInitial(name.charAt(0).toUpperCase());
+      } else {
+        // Якщо не авторизований, можемо показати заглушку або відправити на логін
+        setUserName('Гість');
+        setUserEmail('Немає пошти');
+        setUserInitial('?');
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // Логіка виходу
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.replace('/login' as any);
+    } catch (error) {
+      console.error('Помилка виходу:', error);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -38,53 +75,47 @@ export default function ProfileScreen() {
         <View style={styles.userCard}>
           <View style={styles.userInfoWrapper}>
             <View style={styles.bigAvatar}>
-              <Text style={styles.bigAvatarText}>М</Text>
+              <Text style={styles.bigAvatarText}>{userInitial}</Text>
             </View>
             <View>
-              <Text style={styles.userName}>Максим</Text>
-              <Text style={styles.userEmail}>Інвестор RiskMate</Text>
-              <Text style={styles.userEmailSub}>max@example.com</Text>
+              <Text style={styles.userName}>{userName}</Text>
+              <Text style={styles.userRole}>Інвестор RiskMate</Text>
+              <Text style={styles.userEmailSub}>{userEmail}</Text>
             </View>
           </View>
           
-          <TouchableOpacity style={styles.logoutButton} onPress={() => router.replace('/register' as any)}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutText}>Вийти з акаунту</Text>
           </TouchableOpacity>
         </View>
 
-        {/* 👇 ОСЬ ТУТ НАШЕ НОВЕ МЕНЮ ІНФОРМАЦІЇ (З ІКОНКАМИ) */}
+        {/* --- НОВЕ МЕНЮ ІНФОРМАЦІЇ --- */}
         <Text style={styles.sectionTitle}>Корисна інформація</Text>
         <View style={styles.menuContainer}>
           <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/guide' as any)}>
-            {/* Синя іконка книжки */}
             <Ionicons name="book-outline" size={22} color="#3B82F6" style={styles.menuItemIcon} />
             <Text style={styles.menuItemText}>Довідник інвестора</Text>
             <Ionicons name="chevron-forward" size={20} color="#64748B" />
           </TouchableOpacity>
 
-          
           <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/about' as any)}>
-            <Ionicons name="information-circle-outline" size={22} color="#F59E0B" />
+            <Ionicons name="information-circle-outline" size={22} color="#F59E0B" style={styles.menuItemIcon} />
             <Text style={styles.menuItemText}>Про проєкт</Text>
             <Ionicons name="chevron-forward" size={20} color="#64748B" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/methodology' as any)}>
-            {/* Зелена іконка колби/науки */}
             <Ionicons name="flask-outline" size={22} color="#10B981" style={styles.menuItemIcon} />
             <Text style={styles.menuItemText}>Наукова методологія</Text>
             <Ionicons name="chevron-forward" size={20} color="#64748B" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/pricing' as any)}>
-            {/* Фіолетова іконка діаманта */}
             <Ionicons name="diamond-outline" size={22} color="#8B5CF6" style={styles.menuItemIcon} />
             <Text style={styles.menuItemText}>Тарифи (PRO)</Text>
             <Ionicons name="chevron-forward" size={20} color="#64748B" />
           </TouchableOpacity>
         </View>
-
-
 
         {/* --- ІСТОРІЯ СИМУЛЯЦІЙ --- */}
         <Text style={styles.sectionTitle}>Історія збережених симуляцій</Text>
@@ -103,7 +134,7 @@ export default function ProfileScreen() {
                   <Text style={styles.metricLabel}>Очікувана ціна:</Text>
                   <Text style={styles.metricValue}>${item.expected.toFixed(2)}</Text>
                 </View>
-                <View style={{ alignItems: 'flex-end' }}>
+                <View style={styles.riskColumn}>
                   <Text style={styles.metricLabel}>VaR (Ризик):</Text>
                   <Text style={styles.riskValue}>${item.risk.toFixed(2)}</Text>
                 </View>
@@ -129,19 +160,17 @@ const styles = StyleSheet.create({
   bigAvatar: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
   bigAvatarText: { color: '#FFF', fontSize: 22, fontWeight: 'bold' },
   userName: { color: '#FFF', fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
-  userEmail: { color: '#94A3B8', fontSize: 14 },
+  userRole: { color: '#94A3B8', fontSize: 14 },
   userEmailSub: { color: '#64748B', fontSize: 12, marginTop: 2 },
   logoutButton: { borderColor: '#EF4444', borderWidth: 1, borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
   logoutText: { color: '#EF4444', fontWeight: '600', fontSize: 14 },
 
   sectionTitle: { color: '#FFF', fontSize: 18, fontWeight: 'bold', marginBottom: 15, paddingLeft: 5 },
   
-  // 👇 СТИЛІ ДЛЯ НОВОГО МЕНЮ
   menuContainer: { backgroundColor: '#1E293B', borderRadius: 16, borderWidth: 1, borderColor: '#334155', marginBottom: 35, overflow: 'hidden' },
   menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#334155' },
   menuItemIcon: { marginRight: 15 },
   menuItemText: { color: '#F8FAFC', fontSize: 16, fontWeight: '600', flex: 1 },
-  menuItemArrow: { color: '#64748B', fontSize: 24, fontWeight: '300', marginTop: -4 },
   
   historyGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   historyCard: { width: '48%', backgroundColor: '#1E293B', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#334155', marginBottom: 15 },
@@ -152,5 +181,6 @@ const styles = StyleSheet.create({
   metricsRow: { flexDirection: 'row', justifyContent: 'space-between' },
   metricLabel: { color: '#94A3B8', fontSize: 10, marginBottom: 4 },
   metricValue: { color: '#FFF', fontSize: 14, fontWeight: 'bold' },
+  riskColumn: { alignItems: 'flex-end' },
   riskValue: { color: '#EF4444', fontSize: 14, fontWeight: 'bold' }
 });

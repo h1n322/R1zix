@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -13,15 +13,16 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
-  Dimensions // Додали імпорт Dimensions
+  Dimensions
 } from 'react-native';
 
-
 import { Ionicons } from '@expo/vector-icons';
-
-
-
 import { useRouter } from 'expo-router';
+
+// 👇 ДОДАЄМО FIREBASE
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../../firebase'; // Переконайся, що шлях правильний (якщо файл в app, то '../firebase')
+
 import ProSettings from '../../components/ProSettings';
 import KpiCards from '../../components/KpiCards';
 import MobileChart from '../../components/MobileChart';
@@ -37,8 +38,12 @@ const API_URL = 'http://127.0.0.1:8000/api/simulate';
 const { width: screenWidth } = Dimensions.get('window');
 const isSmallScreen = screenWidth < 375; // Перевірка для маленьких екранів (як Mini)
 
-export default function App() {
+export default function AnalysisScreen() {
   const router = useRouter();
+
+  // --- СТЕЙТИ КОРИСТУВАЧА ---
+  const [userName, setUserName] = useState('Гість');
+  const [userInitial, setUserInitial] = useState('?');
 
   const [ticker, setTicker] = useState('AAPL');
   const [metrics, setMetrics] = useState<any>(null); 
@@ -50,6 +55,21 @@ export default function App() {
   const [lookback, setLookback] = useState('5');
   const [horizon, setHorizon] = useState('30');
   const [simulations, setSimulations] = useState('1000');
+
+  // 👇 СЛУХАЄМО FIREBASE (щоб бейдж оновлювався)
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const name = user.displayName || user.email?.split('@')[0] || 'Користувач';
+        setUserName(name);
+        setUserInitial(name.charAt(0).toUpperCase());
+      } else {
+        setUserName('Гість');
+        setUserInitial('?');
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   const toggleSettings = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -103,10 +123,9 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0B0F19" />
       
-      {/* --- ОНОВЛЕНИЙ SCROLLCONTENT (ЗМЕНШЕНО ПАДДІНҐ ДЛЯ MINI) --- */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
         
-        {/* --- HEADER (КОМПАКТНІШИЙ) --- */}
+        {/* --- HEADER --- */}
         <View style={styles.header}>
           <Text style={styles.logoText}>RiskMate</Text>
           
@@ -115,25 +134,25 @@ export default function App() {
             onPress={() => router.push('/profile' as any)}
           >
             <View style={styles.avatarCircle}>
-              <Text style={styles.avatarText}>М</Text>
+              {/* 👇 ПІДСТАВЛЯЄМО ДИНАМІЧНУ ЛІТЕРУ */}
+              <Text style={styles.avatarText}>{userInitial}</Text>
             </View>
-            <Text style={styles.userName} numberOfLines={1}>Максим</Text>
+            {/* 👇 ПІДСТАВЛЯЄМО ДИНАМІЧНЕ ІМ'Я */}
+            <Text style={styles.userName} numberOfLines={1}>{userName}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* --- ПОШУК ТИКЕРА (КОМПАКТНІШИЙ) --- */}
+        {/* --- ПОШУК ТИКЕРА --- */}
         <View style={styles.searchSection}>
           
-          {/* НОВА КНОПКА ПОРТФЕЛЯ З ІКОНКОЮ */}
           <TouchableOpacity 
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}
             onPress={() => router.push('/portfolio' as any)}
           >
             <Ionicons name="briefcase-outline" size={16} color="#3B82F6" />
             <Text style={{ color: '#3B82F6', fontSize: 13, fontWeight: 'bold' }}>Мій портфель</Text>
           </TouchableOpacity>
 
-          {/* 👇 А ОСЬ ЦЕ ТВОЄ ПОЛЕ ВВОДУ ТА КНОПКА (ВОНИ ЗАЛИШИЛИСЬ НА МІСЦІ) */}
           <View style={styles.inputContainer}>
             <TextInput 
               style={styles.input}
@@ -160,7 +179,6 @@ export default function App() {
             </TouchableOpacity>
           </View>
 
-          { /* НОВА КНОПКА НАЛАШТУВАНЬ З ІКОНКАМИ */}
           <TouchableOpacity style={styles.toggleButton} onPress={toggleSettings}>
             <Ionicons name="settings-outline" size={16} color="#3B82F6" style={{ marginRight: 6 }} />
             <Text style={styles.toggleButtonText}>Налаштування</Text>
@@ -172,7 +190,6 @@ export default function App() {
             />
           </TouchableOpacity>
 
-          {/* 👇 ОСЬ ТУТ ТЕПЕР НАШ НОВИЙ КОМПОНЕНТ */}
           {showSettings && (
             <ProSettings />
           )}
@@ -189,35 +206,28 @@ export default function App() {
   );
 }
 
-// --- СТИЛІ (ПІДКОРЕКТОВАНО ДЛЯ MINI) ---
+// --- СТИЛІ ---
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B0F19' },
-  scrollContent: { 
-    // 👇 Головна зміна: зменшили відступи з 20 до 16
-    padding: 16, 
-  },
+  scrollContent: { padding: 16 },
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
-    // 👇 Зменшили відступи
     marginBottom: 20, 
-    marginTop: isSmallScreen ? 5 : 10, // Трохи підняли
+    marginTop: isSmallScreen ? 5 : 10, 
   },
   logoText: { 
     color: '#FFFFFF', 
-    // 👇 Зменшили шрифт з 28 до 24
     fontSize: isSmallScreen ? 24 : 28, 
     fontWeight: 'bold', 
     letterSpacing: 0.5 
   },
   
-  // Кнопка користувача (КОМПАКТНІША)
   userBadge: { 
     flexDirection: 'row', 
     alignItems: 'center', 
     backgroundColor: 'rgba(30, 41, 59, 0.5)', 
-    // 👇 Зменшили відступи
     paddingVertical: 4, 
     paddingHorizontal: 10, 
     borderRadius: 20, 
@@ -225,49 +235,30 @@ const styles = StyleSheet.create({
     borderColor: '#334155' 
   },
   avatarCircle: { 
-    // 👇 Зменшили розмір з 24 до 22
     width: 22, height: 22, borderRadius: 11, 
     backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center', marginRight: 8 
   },
-  avatarText: { 
-    color: '#FFF', 
-    // 👇 Зменшили шрифт з 12 до 11
-    fontSize: 11, fontWeight: 'bold' 
-  },
-  userName: { 
-    color: '#E2E8F0', 
-    // 👇 Зменшили шрифт з 14 до 13
-    fontSize: isSmallScreen ? 13 : 14, 
-    fontWeight: '600',
-    maxWidth: isSmallScreen ? 70 : 100 // Запобігаємо розтягуванню
-  },
+  avatarText: { color: '#FFF', fontSize: 11, fontWeight: 'bold' },
+  userName: { color: '#E2E8F0', fontSize: isSmallScreen ? 13 : 14, fontWeight: '600', maxWidth: isSmallScreen ? 70 : 100 },
   
   searchSection: { marginBottom: 25 },
   label: { color: '#94A3B8', fontSize: 13, marginBottom: 8, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   inputContainer: { flexDirection: 'row', gap: 10, marginBottom: 15 },
   input: { flex: 1, backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#334155', borderRadius: 12, color: '#FFFFFF', paddingHorizontal: 16, height: 50, fontSize: 16 },
   
-  // Кнопка аналізу (КОМПАКТНІША)
   runButton: { backgroundColor: '#3B82F6', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20, borderRadius: 12, height: 50, minWidth: 90 },
   runButtonText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
   
-  toggleButton: { 
-    flexDirection: 'row', // Вишиковує іконки і текст в рядок
-    alignItems: 'center', 
-    justifyContent: 'center', // Ставить по центру
-    paddingVertical: 10 
-  },
+  toggleButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10 },
   toggleButtonText: { color: '#3B82F6', fontSize: 14, fontWeight: '600' },
   
-  // Налаштування (КОМПАКТНІШІ)
   settingsPanel: { backgroundColor: 'rgba(30, 41, 59, 0.5)', padding: 12, borderRadius: 16, borderWidth: 1, borderColor: '#334155', marginTop: 10 },
   row: { flexDirection: 'row', gap: 10, marginTop: 15 },
   halfWidth: { flex: 1 },
   inputSmall: { backgroundColor: '#0B0F19', borderWidth: 1, borderColor: '#334155', borderRadius: 8, color: '#FFFFFF', paddingHorizontal: 12, height: 40, fontSize: 14 },
   
-  // Перемикачі алгоритмів (КОМПАКТНІШІ)
   segmentGroup: { flexDirection: 'row', backgroundColor: '#0B0F19', borderRadius: 8, padding: 4, borderWidth: 1, borderColor: '#334155' },
-  segmentBtn: { flex: 1, paddingVertical: 6, alignItems: 'center', borderRadius: 6 }, // Зменшили паддінґ з 8 до 6
+  segmentBtn: { flex: 1, paddingVertical: 6, alignItems: 'center', borderRadius: 6 }, 
   segmentBtnActive: { backgroundColor: '#3B82F6' },
   segmentText: { color: '#64748B', fontSize: 13, fontWeight: '600' },
   segmentTextActive: { color: '#FFFFFF' }
