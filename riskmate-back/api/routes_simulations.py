@@ -25,6 +25,8 @@ def run_simulation(req: SimulationRequest):
     
     print(f"🚀 ОТРИМАНО ЗАПИТ НА СИМУЛЯЦІЮ ДЛЯ: {req.ticker}") 
     try:
+        # Тепер ми просто повертаємо дані з сервісу, 
+        # бо реальна логіка формування гістограми та деталей вже працює там!
         return get_simulation_data(req)
     except Exception as e:
         traceback.print_exc()
@@ -68,10 +70,10 @@ def get_report(req: SimulationRequest):
 @router.get("/api/market-overview")
 def get_market_overview():
     tickers = [
-    "SPY", "QQQ", "GLD", "BTC-USD", 
-    "AAPL", "MSFT", "NVDA", "GOOGL", 
-    "TSLA", "META", "AMD", "ETH-USD"
-]
+        "SPY", "QQQ", "GLD", "BTC-USD", 
+        "AAPL", "MSFT", "NVDA", "GOOGL", 
+        "TSLA", "META", "AMD", "ETH-USD"
+    ]
     result = []
     try:
         data = yf.download(tickers, period="5d")['Close']

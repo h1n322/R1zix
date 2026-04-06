@@ -208,10 +208,41 @@ def get_simulation_data(req: SimulationRequest):
     sharpe = (annual_return - req.risk_free_rate) / volatility_val if volatility_val > 0 else 0
 
     counts, bin_edges = np.histogram(f_p, bins=40)
+    max_count = max(counts) if len(counts) > 0 else 1
+    
     histogram_data = []
     for i in range(len(counts)):
-        mid_price = round(float((bin_edges[i] + bin_edges[i+1]) / 2), 2)
-        histogram_data.append({"price": mid_price, "count": int(counts[i])})
+        mid_price = float((bin_edges[i] + bin_edges[i+1]) / 2)
+        height_pct = (counts[i] / max_count) * 100 
+        bar_type = "red" if mid_price < last_price else "green"
+        
+        histogram_data.append({
+            "h": round(height_pct, 2), 
+            "type": bar_type,
+            "price": round(mid_price, 2)
+        })
+
+    def format_val(val, prefix="", is_large_number=False):
+        if val == "N/A" or val is None:
+            return "N/A"
+        try:
+            num = float(val)
+            if is_large_number:
+                if num >= 1e12: return f"{prefix}{num/1e12:.2f} трлн"
+                if num >= 1e9: return f"{prefix}{num/1e9:.2f} млрд"
+                if num >= 1e6: return f"{prefix}{num/1e6:.2f} млн"
+            return f"{prefix}{num:.2f}"
+        except:
+            return str(val)
+
+    stock_info = [
+        {"label": "Відкриття", "value": format_val(asset_details.get("open"), prefix="$")},
+        {"label": "Обсяг", "value": format_val(asset_details.get("volume"), is_large_number=True)},
+        {"label": "52-тиж. макс.", "value": format_val(asset_details.get("week52High"), prefix="$")},
+        {"label": "Бета-фактор", "value": format_val(asset_details.get("beta"))},
+        {"label": "52-тиж. мін.", "value": format_val(asset_details.get("week52Low"), prefix="$")},
+        {"label": "Р/Е (Ц/П)", "value": format_val(asset_details.get("peRatio"))}
+    ]
 
     return {
         "expected_price": round(float(np.mean(f_p)), 2),
@@ -223,8 +254,8 @@ def get_simulation_data(req: SimulationRequest):
         "max_drawdown": round(float(historical_dd), 2),
         "sharpe_ratio": round(float(sharpe), 2),
         "chart_data": chart_data,
-        "assetDetails": asset_details,
+        "stock_info": stock_info,              
         "news": news_list,                     
         "correlation_matrix": correlation_matrix,
-        "histogram": histogram_data  
+        "histogram": histogram_data            
     }
