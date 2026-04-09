@@ -2,12 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 
-// --- ОТРИМУЄМО РОЗМІРИ ЕКРАНА ---
 const { width: screenWidth } = Dimensions.get('window');
 const isSmallScreen = screenWidth < 375;
 
 const MobileChart = ({ data }) => {
-  // 1. Перевірка: якщо даних немає, показуємо красиву заглушку
   if (!data || data.length === 0) {
     return (
       <View style={styles.emptyContainer}>
@@ -16,57 +14,82 @@ const MobileChart = ({ data }) => {
     );
   }
 
-  // 2. Адаптуємо дані під формат Gifted Charts
-  const formattedData = data.map((item, index) => {
-    // Беремо історію, а якщо її вже немає (почалося майбутнє) - беремо прогноз
-    const val = item.history !== undefined ? item.history : item.forecast;
-    
-    // 👇 ОНОВЛЕНИЙ РОЗУМНИЙ ШАГ (ТІЛЬКИ 6 ДАТ)
-    // Динамічний крок: показуємо максимум 6 підписів на весь графік
-    const step = Math.max(1, Math.floor(data.length / 6)); 
-    
-    return {
-      value: Number(val),
-      // Показуємо підпис дати (ММ-ДД) тільки для кожної n-ї точки
-      label: index % step === 0 ? item.name.substring(5, 10) : '', 
-    };
+  const chartWidth = screenWidth - 32 - 30;
+
+  // --- 1. ГОТУЄМО ДВІ ОКРЕМІ ЛІНІЇ ---
+  const historyData = [];
+  const forecastData = [];
+  
+  let splitIndex = 0; // Точка, де минуле переходить у майбутнє
+
+  // Шукаємо, де закінчується історія
+  data.forEach((item, index) => {
+    if (item.history !== undefined) {
+      splitIndex = index;
+    }
   });
 
-  // 👇 НОВА АДАПТИВНА ШИРИНА ГРАФІКА
-  // Враховуємо main_padding (16*2), padding_wrapper (10*2)
-  const chartWidth = screenWidth - 32 - 20;
+  // Заповнюємо масиви
+  data.forEach((item, index) => {
+    const step = Math.max(1, Math.floor(data.length / 6)); 
+    const label = index % step === 0 ? item.name.substring(5, 10) : '';
+
+    if (index <= splitIndex) {
+      // Зелена лінія (Історія)
+      historyData.push({ value: Number(item.history), label });
+    } 
+    
+    // ВАЖЛИВО: Прогноз має починатися з останньої точки історії, щоб лінії "зшилися"!
+    if (index >= splitIndex) {
+      // Синя лінія (Прогноз)
+      const val = item.history !== undefined ? item.history : item.forecast;
+      forecastData.push({ value: Number(val), label: index === splitIndex ? '' : label });
+    }
+  });
+
+  const exactSpacing = chartWidth / Math.max(1, data.length - 1);
 
   return (
     <View style={styles.chartWrapper}>
       <Text style={styles.chartTitle}>Динаміка ціни & Монте-Карло</Text>
       
       <LineChart
-        areaChart // Вмикає заливку під графіком (градієнт)
-        data={formattedData}
-        // 👇 Передали адаптивну ширину
-        width={chartWidth} 
-        height={isSmallScreen ? 180 : 220} // Адаптивна висота
-        hideDataPoints // Ховаємо кружечки на кожній точці, щоб лінія була плавною
-        // 👇 Адаптивний спайсінг
-        spacing={chartWidth / formattedData.length + 0.3}
-        color="#3b82f6" // Синій колір лінії
+        // --- ПЕРША ЛІНІЯ (ІСТОРІЯ) ---
+        data={historyData}
+        color="#10B981" // Зелений суцільний
         thickness={2.5}
-        startFillColor="rgba(59, 130, 246, 0.4)" // Початок градієнта
-        endFillColor="rgba(59, 130, 246, 0.0)"   // Кінець градієнта (прозорий)
-        initialSpacing={0}
         
-        // Стилізація осей (КОМПАКТНІША)
+        // --- ДРУГА ЛІНІЯ (ПРОГНОЗ) ---
+        data2={forecastData}
+        startIndex2={splitIndex} // Вказуємо, з якої точки почати малювати другу лінію
+        color2="#3B82F6" // Синій
+        thickness2={2.5}
+        strokeDashArray2={[5, 4]} // Пунктир тільки для прогнозу!
+
+        // Загальні налаштування графіка
+        width={chartWidth} 
+        height={isSmallScreen ? 180 : 220} 
+        hideDataPoints 
+        spacing={exactSpacing}
+        initialSpacing={0}
+        endSpacing={0}
+        
+        // Легкі градієнти під графіками
+        areaChart 
+        startFillColor="#10B981" 
+        startFillColor2="#3B82F6"
+        startOpacity={0.15}
+        endOpacity={0}  
+        
+        // Осі та сітка
         yAxisColor="#334155"
         xAxisColor="#334155"
         yAxisTextStyle={{ color: '#94A3B8', fontSize: 9 }}
         xAxisLabelTextStyle={{ color: '#94A3B8', fontSize: 9 }}
-        
-        // Горизонтальні лінії (сітка)
         rulesColor="#1E293B"
         rulesType="dashed"
-        yAxisLabelWidth={40} // Трохи зменшили ширину осей
+        yAxisLabelWidth={40} 
         
-        // Анімація при появі
         isAnimated
         animationDuration={1200}
       />
@@ -83,10 +106,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#334155',
     marginBottom: 40,
+    overflow: 'hidden',
   },
   chartTitle: {
     color: '#F8FAFC',
-    fontSize: isSmallScreen ? 14 : 16, // Адаптивний шрифт
+    fontSize: isSmallScreen ? 14 : 16, 
     fontWeight: 'bold',
     marginBottom: 15,
     marginLeft: 10,
