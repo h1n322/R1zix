@@ -76,8 +76,8 @@ export default function ProSettings() {
     'GARCH Volatility',
     'Stress Testing',
     'Backtesting (Test)',
-    '🧠 AI Forecast (LSTM)',
-    '📊 Portfolio Optimization'
+    'AI Forecast (LSTM)',
+    'Portfolio Optimization'
   ];
 
   return (

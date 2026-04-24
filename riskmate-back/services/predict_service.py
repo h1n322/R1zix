@@ -1,44 +1,57 @@
+"""
+PredictService — LSTM прогноз ціни на завтра.
+
+Обгортає predict_tomorrow_price у клас,
+щоб можна було передати через DI і підмінити у тестах.
+"""
 import numpy as np
-import yfinance as yf
-from tensorflow.keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
 
-def predict_tomorrow_price(ticker="AAPL", look_back=60):
-    print(f"🔮 Запускаю Штучний Інтелект для прогнозу {ticker} на завтра...")
+from infrastructure.data_provider import YFinanceProvider
 
-    # 1. Завантажуємо історичні дані (беремо за рік, щоб правильно налаштувати масштабування)
-    df = yf.Ticker(ticker).history(period="1y")
-    data = df.filter(['Close']).values
 
-    # 2. Масштабуємо дані (ШІ розуміє тільки цифри від 0 до 1)
-    scaler = MinMaxScaler(feature_range=(0, 1))
-    scaled_data = scaler.fit_transform(data)
+class PredictService:
+    def __init__(self, provider: YFinanceProvider, models_dir: str = "models"):
+        self._provider = provider
+        self._models_dir = models_dir
 
-    # 3. Беремо рівно останні 60 днів (це те "вікно", яке ми покажемо нейромережі)
-    last_60_days = scaled_data[-look_back:]
+    def predict_tomorrow(self, ticker: str, look_back: int = 60) :
+        """
+        Завантажує натреновану LSTM модель і робить прогноз ціни на завтра.
+        Повертає float або None якщо модель не знайдена.
+        """
+        # Імпортуємо tensorflow тільки тут, щоб не гальмувати старт сервера
+        try:
+            from tensorflow.keras.models import load_model
+        except ImportError:
+            print("❌ TensorFlow не встановлено")
+            return None
 
-    # 4. Перетворюємо у 3D формат, який очікує LSTM: [1 зразок, 60 днів, 1 ознака]
-    X_test = np.reshape(last_60_days, (1, last_60_days.shape[0], 1))
+        print(f"🔮 Запускаю LSTM прогноз для {ticker}...")
 
-    # 5. Завантажуємо наш натренований "мозок"
-    model_path = f'models/{ticker}_lstm_model.keras'
-    try:
-        model = load_model(model_path)
-    except Exception as e:
-        print(f"❌ Помилка: Не знайдено модель для {ticker}. Спочатку натренуйте її!")
-        return None
+        # 1. Дані за рік для правильного масштабування
+        df = self._provider.fetch_history(ticker, period="1y")
+        data = df["Close"].values.reshape(-1, 1)
 
-    # 6. РОБИМО ПРОГНОЗ! (він буде у масштабі від 0 до 1)
-    predicted_scaled_price = model.predict(X_test)
+        # 2. Масштабуємо в діапазон [0, 1]
+        scaler = MinMaxScaler(feature_range=(0, 1))
+        scaled_data = scaler.fit_transform(data)
 
-    # 7. Розшифровуємо прогноз назад у реальні долари
-    predicted_price = scaler.inverse_transform(predicted_scaled_price)
-    final_price = predicted_price[0][0]
+        # 3. Формуємо вікно з останніх look_back днів
+        last_window = scaled_data[-look_back:]
+        X_test = np.reshape(last_window, (1, last_window.shape[0], 1))
 
-    print(f"✅ Прогноз успішно згенеровано!")
-    print(f"💵 Очікувана ціна {ticker} на завтра: ${final_price:.2f}")
-    
-    return final_price
+        # 4. Завантажуємо модель
+        model_path = f"{self._models_dir}/{ticker}_lstm_model.keras"
+        try:
+            model = load_model(model_path)
+        except Exception:
+            print(f"❌ Модель {model_path} не знайдена. Спочатку натренуйте її.")
+            return None
 
-if __name__ == "__main__":
-    predict_tomorrow_price("AAPL")
+        # 5. Прогноз і зворотне масштабування
+        predicted_scaled = model.predict(X_test)
+        predicted_price = float(scaler.inverse_transform(predicted_scaled)[0][0])
+
+        print(f"✅ Прогноз {ticker}: ${predicted_price:.2f}")
+        return predicted_price

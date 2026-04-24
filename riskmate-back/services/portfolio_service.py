@@ -1,92 +1,100 @@
-import pandas as pd
+"""
+PortfolioService — оптимізація портфеля за теорією Марковіца.
+
+Максимізує коефіцієнт Шарпа через мінімізацію його від'ємного значення
+(scipy.optimize.minimize вміє тільки мінімізувати).
+"""
 import numpy as np
-import yfinance as yf
+import pandas as pd
 from scipy.optimize import minimize
 
-def optimize_markowitz(tickers, risk_free_rate=0.045):
-    """
-    Знаходить ідеальні частки активів у портфелі за теорією Марковіца
-    (Максимізація коефіцієнта Шарпа).
-    """
-    print(f"📊 Запускаю оптимізацію Марковіца для: {tickers}")
-    
-    # 1. Завантажуємо історичні ціни для всіх тикерів
-    price_data = {}
-    for t in tickers:
-        ticker_obj = yf.Ticker(t)
-        df = ticker_obj.history(period="5y")
-        if not df.empty:
-            price_data[t] = df['Close']
-            
-    # Зводимо все в одну таблицю і видаляємо порожні дні
-    data = pd.DataFrame(price_data).dropna()
-    
-    if data.empty or len(data.columns) < 2:
-        return {"error": "Недостатньо даних або введено менше двох активів."}
-        
-    valid_tickers = list(data.columns)
-    num_assets = len(valid_tickers)
-    
-    # 2. Рахуємо щоденні дохідності
-    returns = data.pct_change().dropna()
-    
-    # Рахуємо середню річну дохідність (252 торгових дні у році)
-    mean_returns = returns.mean() * 252
-    
-    # Рахуємо матрицю коваріацій (як активи рухаються один відносно одного)
-    cov_matrix = returns.cov() * 252
-    
-    # 3. Функція для розрахунку метрик портфеля
-    def portfolio_stats(weights):
-        # Очікувана дохідність: сума (добуток ваг на середню дохідність)
-        p_ret = np.sum(mean_returns * weights)
-        # Волатильність (ризик): квадратний корінь з (W^T * Cov * W)
-        p_vol = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
-        return p_ret, p_vol
+from domain.entities import Portfolio
+from infrastructure.data_provider import YFinanceProvider
 
-    # 4. Цільова функція (Те, що ми хочемо МІНІМІЗУВАТИ)
-    # Ми мінімізуємо НЕГАТИВНИЙ коефіцієнт Шарпа, щоб знайти його максимум
-    def neg_sharpe_ratio(weights):
-        p_ret, p_vol = portfolio_stats(weights)
-        return -(p_ret - risk_free_rate) / p_vol
 
-    # 5. Налаштування умов для математичного вирішувача
-    # Умова 1: Сума всіх ваг має дорівнювати 1 (100% капіталу)
-    constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
-    
-    # Умова 2: Межі для кожної акції від 0.0 (0%) до 1.0 (100%). Жодних боргів (шортів).
-    bounds = tuple((0, 1) for _ in range(num_assets))
-    
-    # Початкова здогадка (розподіляємо порівну, наприклад 33%, 33%, 33%)
-    init_guess = num_assets * [1. / num_assets]
-    
-    # 6. МАГІЯ! Запускаємо оптимізатор (метод SLSQP)
-    opt_results = minimize(neg_sharpe_ratio, init_guess, method='SLSQP', bounds=bounds, constraints=constraints)
-    
-    if not opt_results.success:
-        return {"error": "Оптимізатору не вдалося знайти рішення."}
-        
-    # 7. Збираємо результати
-    opt_weights = opt_results.x
-    opt_ret, opt_vol = portfolio_stats(opt_weights)
-    sharpe = (opt_ret - risk_free_rate) / opt_vol
-    
-    # Робимо красивий словник із відсотками
-    allocations = {valid_tickers[i]: round(opt_weights[i] * 100, 2) for i in range(num_assets)}
-    corr_matrix = returns.corr().round(2)
-    correlation_dict = corr_matrix.to_dict() # <--- Повертаємо як було!
-    
-    return {
-        "allocations": allocations,
-        "expected_annual_return": round(opt_ret * 100, 2),
-        "annual_volatility": round(opt_vol * 100, 2),
-        "sharpe_ratio": round(sharpe, 2),
-        "correlation_matrix": correlation_dict # <--- Відправляємо словник
-    }
+class PortfolioService:
+    def __init__(self, provider: YFinanceProvider):
+        self._provider = provider
 
-# Для швидкого тестування:
-if __name__ == "__main__":
-    test_tickers = ["AAPL", "KO", "MSFT"]
-    res = optimize_markowitz(test_tickers)
-    print("Результат оптимізації:")
-    print(res)
+    def optimize(self, portfolio: Portfolio) -> dict:
+        """
+        Знаходить оптимальні частки активів у портфелі.
+        Повертає:
+          - allocations: {TICKER: відсоток}
+          - expected_annual_return
+          - annual_volatility
+          - sharpe_ratio
+          - correlation_matrix
+        """
+        portfolio.validate()
+
+        # 1. Завантажуємо ціни закриття для всіх тикерів
+        price_data = {}
+        for t in portfolio.tickers:
+            try:
+                series = self._provider.fetch_close(t, period="5y")
+                if not series.empty:
+                    price_data[t] = series
+            except Exception as e:
+                print(f"⚠️  Пропускаємо {t}: {e}")
+
+        data = pd.DataFrame(price_data).dropna()
+
+        if data.empty or len(data.columns) < 2:
+            return {"error": "Недостатньо даних або менше двох дійсних активів."}
+
+        valid_tickers = list(data.columns)
+        num_assets = len(valid_tickers)
+
+        # 2. Щоденні дохідності
+        returns = data.pct_change().dropna()
+        mean_returns = returns.mean() * 252          # річна дохідність
+        cov_matrix = returns.cov() * 252             # річна ковариація
+
+        # 3. Функції розрахунку метрик
+        def portfolio_stats(weights):
+            p_ret = float(np.sum(mean_returns * weights))
+            p_vol = float(np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights))))
+            return p_ret, p_vol
+
+        def neg_sharpe_ratio(weights):
+            p_ret, p_vol = portfolio_stats(weights)
+            if p_vol == 0:
+                return 0.0
+            return -(p_ret - portfolio.risk_free_rate) / p_vol
+
+        # 4. Умови оптимізатора
+        constraints = ({"type": "eq", "fun": lambda x: np.sum(x) - 1},)
+        bounds = tuple((0, 1) for _ in range(num_assets))
+        init_guess = [1.0 / num_assets] * num_assets
+
+        # 5. Запускаємо SLSQP оптимізатор
+        result = minimize(
+            neg_sharpe_ratio,
+            init_guess,
+            method="SLSQP",
+            bounds=bounds,
+            constraints=constraints,
+        )
+
+        if not result.success:
+            return {"error": "Оптимізатору не вдалося знайти рішення. Спробуйте інші тикери."}
+
+        # 6. Збираємо результати
+        opt_weights = result.x
+        opt_ret, opt_vol = portfolio_stats(opt_weights)
+        sharpe = (opt_ret - portfolio.risk_free_rate) / opt_vol if opt_vol > 0 else 0
+
+        allocations = {
+            valid_tickers[i]: round(float(opt_weights[i]) * 100, 2)
+            for i in range(num_assets)
+        }
+        correlation_dict = returns.corr().round(2).to_dict()
+
+        return {
+            "allocations": allocations,
+            "expected_annual_return": round(opt_ret * 100, 2),
+            "annual_volatility": round(opt_vol * 100, 2),
+            "sharpe_ratio": round(sharpe, 2),
+            "correlation_matrix": correlation_dict,
+        }
