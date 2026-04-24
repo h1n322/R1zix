@@ -2,7 +2,16 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const DistributionChart = ({ data, expectedPrice }) => {
-  if (!data || data.length === 0) return null;
+  // Діагностика в консоль
+  console.log("Distribution Data:", data);
+
+  if (!data || data.length === 0) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center', color: '#8E8E93', backgroundColor: '#1C1C1E', borderRadius: '16px', border: '1px solid #38383A', marginTop: '20px' }}>
+        <p>📊 Очікування даних симуляції для побудови розподілу...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ backgroundColor: '#1C1C1E', borderRadius: '16px', padding: '20px', border: '1px solid #38383A', marginTop: '20px', width: '100%' }}>
@@ -26,16 +35,15 @@ const DistributionChart = ({ data, expectedPrice }) => {
             <Tooltip
               contentStyle={{ backgroundColor: '#1C1C1E', border: '1px solid #38383A', borderRadius: '8px', color: '#fff' }}
               itemStyle={{ color: '#fff' }}
-              formatter={(value) => [`${value} сценаріїв`, 'Ймовірність']}
-              labelFormatter={(label) => `Фінальна ціна: $${label}`}
-              cursor={{fill: 'rgba(255, 255, 255, 0.05)'}}
+              formatter={(value) => [`${value} сценаріїв`, 'Кількість']}
+              labelFormatter={(label) => `Ціна: $${label}`}
             />
             
             <Bar dataKey="count" radius={[4, 4, 0, 0]}>
               {data.map((entry, index) => (
-                // МАГІЯ КОЛЬОРУ: Якщо ціна менша за очікувану - червоний, якщо більша - зелений
                 <Cell 
                   key={`cell-${index}`} 
+                  /* ВИПРАВЛЕНО ТУТ: замінив green на 89 */
                   fill={entry.price < expectedPrice ? 'rgba(255, 59, 48, 0.8)' : 'rgba(52, 199, 89, 0.8)'} 
                 />
               ))}

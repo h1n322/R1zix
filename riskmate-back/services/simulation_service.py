@@ -105,7 +105,7 @@ class SimulationService:
         max_count = max(counts) if len(counts) > 0 else 1
         histogram_data = [
             {
-                "h": round((counts[i] / max_count) * 100, 2),
+                "count": round((counts[i] / max_count) * 100, 2),
                 "type": "red" if (bin_edges[i] + bin_edges[i + 1]) / 2 < last_price else "green",
                 "price": round(float((bin_edges[i] + bin_edges[i + 1]) / 2), 2),
             }

@@ -176,7 +176,7 @@ def run_stress(
 def run_backtest(
     hist_prices: pd.Series,
     horizon: int,
-    simulations: int,
+    simulations: int,dt: float = 1,
 ) -> tuple[list[float], list[list[float]], pd.Series]:
     """
     Backtest — ділить历史 на train/test і порівнює прогноз з реальністю.

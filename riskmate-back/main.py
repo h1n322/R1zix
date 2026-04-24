@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 import stripe
 import firebase_admin
 from firebase_admin import credentials
@@ -9,10 +11,14 @@ from api.routes_portfolio import router as portfolio_router
 from api.routes_market import router as market_router
 from api.routes_webhook import router as webhook_router
 
+# Завантажуємо змінні середовища
+load_dotenv() 
+
 cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 
-stripe.api_key = "sk_test_51TAbCw6dO1aBEAhU5crvAdxY1bYNxEz1xZTspLnxfpOxYKoNirLCnoR8OEKZf314IcvJLbQBRJBocRQ4M1BG0rlw00MOPtzlPo"
+# Беремо ключ безпечно з .env
+stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 app = FastAPI(title="RiskMate API", version="2.0.0")
 

@@ -114,7 +114,7 @@ const Dashboard = ({ user }) => {
         const simData = await simResp.json();
 
         setChartData(simData.chart_data);
-        setAssetDetails(simData.assetDetails); 
+        setAssetDetails(simData.stock_info);
         setNews(simData.news);                                 
         setCorrelationMatrix(simData.correlation_matrix);      
         setHistogramData(simData.histogram); 
@@ -179,7 +179,7 @@ const Dashboard = ({ user }) => {
         const data = await resp.json();
         setChartData(data.chart_data);
         setMetrics(data);
-        setAssetDetails(data.assetDetails); 
+       setAssetDetails(data.stock_info);
         setNews(data.news);                                 
         setCorrelationMatrix(data.correlation_matrix);      
         setHistogramData(data.histogram); 
@@ -273,7 +273,7 @@ const Dashboard = ({ user }) => {
         }
         if (data.metrics) setMetrics(data.metrics);
         if (data.chartData) setChartData(data.chartData);
-        setAssetDetails(data.assetDetails || null); 
+        setAssetDetails(data.stock_info || null); 
         setNews(data.news || []);                                 
         setCorrelationMatrix(data.correlationMatrix || null);     
         setHistogramData(data.histogramData || []); 
@@ -296,7 +296,7 @@ const Dashboard = ({ user }) => {
     }
     if (data.metrics) setMetrics(data.metrics);
     if (data.chartData) setChartData(data.chartData);
-    setAssetDetails(data.assetDetails || null); 
+    setAssetDetails(data.stock_info|| null); 
     setNews(data.news || []);
     setCorrelationMatrix(data.correlationMatrix || null);
     setHistogramData(data.histogramData || []); 
@@ -335,7 +335,7 @@ const Dashboard = ({ user }) => {
   const removeFromWatchlist = (tickerToRemove) => {
     updateWatchlist(watchlist.filter(t => t !== tickerToRemove));
   };
-
+  console.log("ПОТОЧНИЙ СТАН ASSET DETAILS:", assetDetails); // <--- ДОДАЙ ЦЕЙ РЯДОК
   return (
     <div style={styles.app} className="dashboard-layout">
       <Toaster position="top-right" /> 
@@ -401,9 +401,9 @@ const Dashboard = ({ user }) => {
               <NewsFeed news={news} />
               <CorrelationMatrix matrix={correlationMatrix} />
             </div>
-            {histogramData && histogramData.length > 0 && (
-              <DistributionChart data={histogramData} expectedPrice={metrics.expected_price} />
-            )}
+            {histogramData && (
+  <DistributionChart data={histogramData} expectedPrice={metrics.expected_price} />
+)}
           </div>
         )}
         

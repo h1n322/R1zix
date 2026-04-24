@@ -1,9 +1,10 @@
 import { initializeApp } from "firebase/app";
-// Змінюємо signInWithPopup на signInWithRedirect
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+// Змінено імпорт на signInWithRedirect
+import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
+  // твої конфіги залишаються як є (вони публічні, їх ховати не обов'язково)
   apiKey: "AIzaSyCnvr2cggwIBkEnrWM3w_pGi-OK-ud6rHo",
   authDomain: "riskmate-ab32d.firebaseapp.com",
   projectId: "riskmate-ab32d",
@@ -17,8 +18,7 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Використовуємо signInWithRedirect
-export const loginWithGoogle = () => signInWithPopup(auth, googleProvider);
+// Реалізовано signInWithRedirect згідно з планом
+export const loginWithGoogle = () => signInWithRedirect(auth, googleProvider);
 export const logout = () => signOut(auth);
 export const db = getFirestore(app);
-
