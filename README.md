@@ -7,7 +7,7 @@
 
 ![2026-04-02 11 33 44](https://github.com/user-attachments/assets/ab27adc3-3652-4ada-a0f8-f25168c65c98)
 
-## ✨ Ключовий функціонал
+## Ключовий функціонал
 
 *   **Симуляція Монте-Карло:** Генерація тисяч сценаріїв розвитку цін на основі геометричного броунівського руху (GBM).
 *   **Оцінка ризиків (VaR та CVaR):** Розрахунок Value at Risk та Conditional Value at Risk для визначення максимальних та екстремальних втрат ("товсті хвости" розподілу).
@@ -37,7 +37,7 @@
 *   Stripe (Обробка платежів та вебхуки)
 
 
-## 🚀 Локальний запуск
+## ЛОКАЛЬНИЙ ЗАПУСК
 
 ### 1. Запуск Бекенду
 \`\`\`bash
@@ -48,14 +48,14 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 \`\`\`
 
-### 2. Запуск Фронтенду
+### 2. ЗАПУСК ФРОНТЕНДУ
 \`\`\`bash
 cd riskmate-front
 npm install
 npm run dev
 \`\`\`
 
-### 3. Запуск Stripe Webhook
+### 3. ЗАПУСК Stripe Webhook
 \`\`\`bash
 stripe listen --forward-to localhost:8000/api/webhook
 \`\`\`
