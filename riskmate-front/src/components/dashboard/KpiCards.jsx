@@ -77,7 +77,12 @@ const KpiCards = ({ metrics, varConf }) => {
   const varTitle = `Максимальний ризик (VaR ${confLevel}%)`;
   
   return (
-    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '25px' }}>
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',
+      gap: '20px',
+      marginBottom: '25px'
+    }}>
       <KpiCard 
         title="Очікувана ціна активу" 
         value={metrics?.expected_price} 
@@ -98,11 +103,26 @@ const KpiCards = ({ metrics, varConf }) => {
       />
       <KpiCard 
         title="Історична волатильність" 
-        value={metrics?.volatility || 0} /* <--- ВИНУВАТЕЦЬ ВИДАЛЕНИЙ! */
+        value={metrics?.volatility || 0}
         prefix="" 
         suffix="%" 
         color="#3b82f6"
         tooltip="Показник того, наскільки сильно коливалася ціна активу в минулому. Чим вище %, тим ризикованіший актив."
+      />
+      <KpiCard 
+        title="Коефіцієнт Шарпа" 
+        value={metrics?.sharpe_ratio || 0}
+        prefix="" 
+        color={(metrics?.sharpe_ratio || 0) >= 0 ? "#a855f7" : "#ef4444"}
+        tooltip="Показує дохідність на одиницю ризику. Значення > 1 — добре, > 2 — відмінно, < 0 — актив гірший за безризиковий."
+      />
+      <KpiCard 
+        title="Макс. просадка" 
+        value={Math.abs(metrics?.max_drawdown || 0)}
+        prefix="" 
+        suffix="%" 
+        color="#ec4899"
+        tooltip="Найбільше падіння ціни від пікового значення до мінімуму в історичних даних. Чим менше, тим стабільніший актив."
       />
     </div>
   );
