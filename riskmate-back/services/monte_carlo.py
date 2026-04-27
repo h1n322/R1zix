@@ -207,5 +207,4 @@ def run_backtest(
     return final_prices, simulated_paths, actual_test_data
 
 
-# Локальна змінна для backtest щоб не дублювати dt
 dt = 1
