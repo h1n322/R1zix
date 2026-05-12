@@ -24,7 +24,7 @@ const MarkowitzPieChart = ({ allocations }) => {
       boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
     }}>
       <h3 style={{ color: '#f8fafc', margin: '0 0 10px 0', textAlign: 'center', fontSize: '18px' }}>
-        📊 Ідеальний розподіл портфеля (Теорія Марковіца)
+        Розподіл портфеля за Теорією Марковіца
       </h3>
       <p style={{ color: '#94a3b8', textAlign: 'center', fontSize: '13px', marginBottom: '20px' }}>
         Програма розрахувала ці частки для максимізації дохідності при мінімальному ризику.

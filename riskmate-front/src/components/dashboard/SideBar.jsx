@@ -58,10 +58,10 @@ const Sidebar = ({
           
           {/* ЗАМКИ НА ПРЕМІУМ АЛГОРИТМИ */}
           <option value="lstm">
-            {isPro ? '🧠 AI Forecast (LSTM)' : '🔒 AI Forecast (Pro)'}
+            {isPro ? 'AI Forecast (LSTM)' : '🔒 AI Forecast (Pro)'}
           </option>
           <option value="markowitz">
-            {isPro ? '📊 Portfolio Optimization' : '🔒 Optimization (Pro)'}
+            {isPro ? ' Portfolio Optimization' : '🔒 Optimization (Pro)'}
           </option>
         </select>
       </div>
