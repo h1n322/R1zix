@@ -49,16 +49,16 @@ uvicorn main:app --reload
 \`\`\`
 
 ### 2. ЗАПУСК ФРОНТЕНДУ
-\`\`\`bash
+```bash
 cd riskmate-front
 npm install
 npm run dev
-\`\`\`
+\`
 
 ### 3. ЗАПУСК Stripe Webhook
-\`\`\`bash
+```bash
 stripe listen --forward-to localhost:8000/api/webhook
-\`\`\`
+\```
 
 ---
 *Розроблено як інструмент для поглибленого вивчення фінансової інженерії та ризик-менеджменту.*
