@@ -40,25 +40,28 @@
 ## ЛОКАЛЬНИЙ ЗАПУСК
 
 ### 1. Запуск Бекенду
-\`\`\`bash
+```bash
 cd riskmate-back
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 uvicorn main:app --reload
-\`\`\`
+```
+
+
 
 ### 2. ЗАПУСК ФРОНТЕНДУ
 ```bash
 cd riskmate-front
 npm install
 npm run dev
-\`
+```
 
 ### 3. ЗАПУСК Stripe Webhook
 ```bash
 stripe listen --forward-to localhost:8000/api/webhook
-\```
+\\
+```
 
 ---
 *Розроблено як інструмент для поглибленого вивчення фінансової інженерії та ризик-менеджменту.*
