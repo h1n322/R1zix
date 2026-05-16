@@ -39,10 +39,10 @@ const Sidebar = ({
 
       <div style={{ display: 'flex', gap: '10px', marginBottom: '25px' }}>
         <button style={{ ...styles.button, backgroundColor: '#4f46e5', flex: 1 }} onClick={onSave}>
-          💾 Зберегти
+          Зберегти
         </button>
         <button style={{ ...styles.button, backgroundColor: '#4f46e5', flex: 1 }} onClick={onLoad}>
-          📂 Завантажити
+          Завантажити
         </button>
       </div>
 
@@ -131,15 +131,15 @@ const Sidebar = ({
         onClick={onRun}
         disabled={isLoading}
       >
-        {isLoading ? '⏳ Завантаження...' : isPro ? '🚀 Запустити Pro Аналіз' : 'Запустити симуляцію'}
+        {isLoading ? '⏳ Завантаження...' : isPro ? 'Запустити аналіз' : 'Запустити симуляцію'}
       </button>
 
       <div style={{ display: 'flex', gap: '10px', width: '100%', paddingBottom: '20px' }}>
         <button style={{ ...styles.button, backgroundColor: '#6366f1', flex: 1, padding: '12px 0', fontSize: '14px' }} onClick={onDownload}>
-          📄 PDF
+          PDF
         </button>
         <button style={{ ...styles.button, backgroundColor: '#10b981', flex: 1, padding: '12px 0', fontSize: '14px' }} onClick={onExportCSV}>
-          📊 CSV
+          CSV
         </button>
       </div>
     </aside>
