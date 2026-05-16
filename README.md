@@ -20,24 +20,24 @@
 
 ## Technical stack
 
-**Бекенд (Мозок):**
+**Backend:**
 *   Python 3.12
 *   FastAPI (REST API)
 *   Pandas, NumPy, SciPy (Математичне моделювання)
 *   TensorFlow, Arch (Аналіз часових рядів та GARCH)
 *   yfinance (Отримання ринкових даних)
 
-**Фронтенд (Інтерфейс):**
+**Frontend:**
 *   React + Vite
 *   Recharts / Lightweight Charts (Візуалізація даних)
 *   Tailwind CSS (Стилізація)
 
-**Інфраструктура:**
+**Infrastucture:**
 *   Firebase (Аутентифікація та база даних)
 *   Stripe (Обробка платежів та вебхуки)
 
 
-## ЛОКАЛЬНИЙ ЗАПУСК
+## Local launch
 
 ### 1. Запуск Бекенду
 ```bash
