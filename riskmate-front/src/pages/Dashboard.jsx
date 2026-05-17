@@ -377,7 +377,7 @@ const Dashboard = ({ user }) => {
             padding: '5px 15px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold',
             backgroundColor: user?.tier === 'pro' ? 'rgba(251, 191, 36, 0.1)' : 'rgba(148, 163, 184, 0.1)'
           }}>
-            {user?.tier === 'pro' ? '🚀 PRO ANALYST' : '🏢 BASIC PLAN'}
+            {user?.tier === 'pro' ? 'Pro' : 'Basic'}
           </span>
         </div>
 
