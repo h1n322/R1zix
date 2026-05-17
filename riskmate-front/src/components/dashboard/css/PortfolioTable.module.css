@@ -1,0 +1,117 @@
+/* PortfolioTable.module.css */
+
+.cardContainer {
+  /* 🔥 Наш фірмовий глибокий фон */
+  background-color: #0B0E14;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #1F2937;
+  margin-bottom: 40px;
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  overflow-x: auto;
+}
+
+.title {
+  margin: 0 0 20px 0;
+  font-size: 16px;
+  color: #8E8E93;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.th {
+  padding: 12px 16px;
+  color: #8E8E93;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  border-bottom: 1px solid #1F2937;
+}
+
+.tr {
+  border-bottom: 1px solid #1F2937;
+  transition: background-color 0.2s ease;
+}
+
+/* Ефект живого інтерфейсу при наведенні на рядок */
+.tr:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.tr:last-child {
+  border-bottom: none;
+}
+
+.td {
+  padding: 16px;
+  font-size: 14px;
+  color: #f8fafc;
+  vertical-align: middle;
+}
+
+.tickerCell {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #fff;
+}
+
+/* Красива плашка для назви алгоритму */
+.algoBadge {
+  display: inline-block;
+  background-color: rgba(59, 130, 246, 0.15); 
+  color: #3B82F6;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.priceCell {
+  color: #10B981; /* Фірмовий смарагдовий */
+  font-weight: 600;
+}
+
+.dateCell {
+  color: #8E8E93;
+  font-size: 13px;
+}
+
+/* Сучасна Ghost-кнопка */
+.openBtn {
+  background: transparent;
+  color: #3B82F6;
+  border: 1px solid #3B82F6;
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.openBtn:hover {
+  background: #3B82F6;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+}
+
+/* Порожній стан (Empty State) */
+.emptyState {
+  padding: 40px 20px;
+  text-align: center;
+  color: #8E8E93;
+}
+
+.emptyStateIcon {
+  font-size: 32px;
+  margin-bottom: 10px;
+  opacity: 0.5;
+}

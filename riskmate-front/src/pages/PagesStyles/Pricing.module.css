@@ -1,0 +1,202 @@
+/* Pricing.module.css */
+
+.pageContainer {
+  /* 🔥 Наш преміальний глибокий фон */
+  background-color: #0B0E14; 
+  color: #f8fafc;
+  min-height: 100vh;
+  padding: 60px 20px;
+  font-family: sans-serif;
+}
+
+.contentWrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Кнопка "Назад" */
+.backBtn {
+  background: transparent;
+  border: none;
+  color: #3B82F6;
+  cursor: pointer;
+  margin-bottom: 40px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  font-weight: 500;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.backBtn:hover {
+  color: #60A5FA;
+  transform: translateX(-4px);
+}
+
+/* Заголовки */
+.headerText {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.mainTitle {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  background: linear-gradient(90deg, #3B82F6, #8B5CF6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  color: #8E8E93;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Сітка карток */
+.cardsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px;
+}
+
+/* 🎯 Картки тарифів */
+.card {
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(10px);
+  padding: 40px 30px;
+  border-radius: 24px;
+  border: 1px solid #1F2937;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+  max-width: 350px;
+  /* Плавна CSS-анімація замість JS! */
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  border-color: #38383A;
+}
+
+.cardPopular {
+  background-color: rgba(15, 23, 42, 0.7);
+  border: 2px solid #3B82F6;
+  box-shadow: 0 10px 30px -10px rgba(59, 130, 246, 0.3);
+}
+
+.cardPopular:hover {
+  border-color: #60A5FA;
+  box-shadow: 0 15px 40px -10px rgba(59, 130, 246, 0.5);
+}
+
+/* Бейдж популярного тарифу */
+.popularBadge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #3B82F6;
+  color: white;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4);
+}
+
+/* Типографіка картки */
+.cardTitle {
+  color: #f8fafc;
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  margin-top: 0;
+  font-weight: 600;
+}
+
+.priceWrapper {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 30px;
+}
+
+.price {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.pricePopular {
+  color: #3B82F6;
+}
+
+.pricePeriod {
+  color: #8E8E93;
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+/* Список функцій */
+.featuresList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 40px 0;
+  flex-grow: 1;
+}
+
+.featureItem {
+  color: #cbd5e1;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  line-height: 1.4;
+}
+
+.checkIcon {
+  color: #10B981; /* Смарагдовий акцент */
+  font-weight: bold;
+}
+
+/* 🎯 Кнопки в картках */
+.actionBtn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnBasic {
+  background-color: transparent;
+  border: 1px solid #3B82F6;
+  color: #3B82F6;
+}
+
+.btnBasic:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.btnPro {
+  background: linear-gradient(90deg, #3B82F6, #8B5CF6);
+  border: none;
+  color: white;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+.btnPro:hover {
+  background: linear-gradient(90deg, #2563EB, #7C3AED);
+  transform: translateY(-2px);
+}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import styles from '../dashboard/css/WatchlistDrawer.module.css';
 
 const WatchlistDrawer = ({ isOpen, onClose, watchlist, onAdd, onRemove, onSelect }) => {
   const [newTicker, setNewTicker] = useState('');
@@ -13,55 +14,44 @@ const WatchlistDrawer = ({ isOpen, onClose, watchlist, onAdd, onRemove, onSelect
 
   return (
     <>
-      {/* Затемнення фону (якщо клікнути повз панель — вона закриється) */}
-      {isOpen && (
-        <div 
-          onClick={onClose}
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 999 }}
-        />
-      )}
+      {/* Затемнення фону */}
+      {isOpen && <div className={styles.overlay} onClick={onClose} />}
 
       {/* Сама панель */}
-      <div style={{
-        position: 'fixed', top: 0, right: 0, width: '320px', height: '100vh',
-        backgroundColor: '#1C1C1E', borderLeft: '1px solid #38383A', zIndex: 1000,
-        transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
-        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        display: 'flex', flexDirection: 'column', padding: '20px', boxShadow: '-5px 0 25px rgba(0,0,0,0.5)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2 style={{ color: '#fff', fontSize: '18px', margin: 0 }}>МОЇ ТІКЕРИ</h2>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#8E8E93', fontSize: '24px', cursor: 'pointer' }}>×</button>
+      <div className={`${styles.drawer} ${isOpen ? styles.drawerOpen : styles.drawerClosed}`}>
+        <div className={styles.header}>
+          <h2 className={styles.title}>МОЇ ТІКЕРИ</h2>
+          <button onClick={onClose} className={styles.closeBtn}>&times;</button>
         </div>
 
-        <form onSubmit={handleAdd} style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+        <form onSubmit={handleAdd} className={styles.form}>
           <input 
             type="text" 
             value={newTicker} 
             onChange={(e) => setNewTicker(e.target.value)} 
             placeholder="Напр. TSLA"
-            style={{ flex: 1, backgroundColor: '#2C2C2E', border: '1px solid #38383A', color: '#fff', padding: '8px 12px', borderRadius: '8px', outline: 'none' }}
+            className={styles.input}
           />
-          <button type="submit" style={{ backgroundColor: '#3b82f6', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+          <button type="submit" className={styles.addBtn}>
             +
           </button>
         </form>
 
-        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className={styles.list}>
           {watchlist.length === 0 ? (
-            <p style={{ color: '#8E8E93', fontSize: '14px', textAlign: 'center', marginTop: '20px' }}>Список порожній. Додайте свій перший актив!</p>
+            <p className={styles.emptyState}>Список порожній. Додайте свій перший актив!</p>
           ) : (
             watchlist.map((t, index) => (
-              <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#2C2C2E', padding: '12px 16px', borderRadius: '8px' }}>
+              <div key={index} className={styles.listItem}>
                 <span 
                   onClick={() => { onSelect(t); onClose(); }}
-                  style={{ color: '#fff', fontWeight: 'bold', cursor: 'pointer', flex: 1 }}
+                  className={styles.tickerName}
                 >
                   {t}
                 </span>
                 <button 
                   onClick={() => onRemove(t)}
-                  style={{ background: 'transparent', border: 'none', color: '#FF3B30', cursor: 'pointer', padding: '4px' }}
+                  className={styles.removeBtn}
                 >
                   Видалити
                 </button>

@@ -1,0 +1,63 @@
+/* CorrelationMatrix.module.css */
+
+.cardContainer {
+  /* 🔥 Використовуємо наш новий глибокий фон */
+  background-color: #0B0E14; 
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid #1F2937;
+  flex: 1;
+  min-width: 300px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.title {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  color: #8E8E93;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.matrixTable {
+  width: 100%;
+  border-collapse: collapse;
+  color: #f8fafc;
+  font-size: 13px;
+}
+
+.tableHead th {
+  padding: 10px;
+  text-align: center;
+  border-bottom: 1px solid #1F2937;
+  color: #8E8E93;
+  font-weight: normal;
+}
+
+.tableHead th:first-child {
+  text-align: left;
+}
+
+.rowHeader {
+  padding: 10px;
+  font-weight: bold;
+  border-bottom: 1px solid #1F2937;
+  color: #8E8E93;
+}
+
+.cell {
+  padding: 10px;
+  text-align: center;
+  border-bottom: 1px solid #1F2937;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.cell:hover {
+  opacity: 0.8;
+  cursor: crosshair;
+}

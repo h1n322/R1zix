@@ -1,0 +1,121 @@
+/* Methodology.module.css */
+
+.container {
+  /* 🔥 Фірмовий фон RiskMate */
+  background-color: #0B0E14; 
+  color: #f8fafc;
+  min-height: 100vh;
+  padding: 60px 20px;
+  font-family: sans-serif;
+  line-height: 1.6;
+}
+
+.content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.backBtn {
+  background: transparent;
+  border: none;
+  color: #3B82F6;
+  cursor: pointer;
+  margin-bottom: 30px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  font-weight: 500;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.backBtn:hover {
+  color: #60A5FA;
+  transform: translateX(-4px); /* Легкий ефект повернення */
+}
+
+.title {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  background: linear-gradient(90deg, #3B82F6, #8B5CF6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  color: #8E8E93;
+  margin-bottom: 50px;
+}
+
+/* Картки секцій */
+.section {
+  background-color: rgba(15, 23, 42, 0.4);
+  padding: 32px;
+  border-radius: 16px;
+  border: 1px solid #1F2937;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.3s ease, transform 0.3s ease;
+}
+
+.section:hover {
+  border-color: #38383A;
+  transform: translateY(-2px);
+}
+
+.sectionTitle {
+  color: #f8fafc;
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.text {
+  color: #cbd5e1;
+  margin-bottom: 16px;
+}
+
+.text:last-child {
+  margin-bottom: 0;
+}
+
+.boldText {
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+/* Преміальний блок для формул */
+.formulaBox {
+  background-color: #0B0E14;
+  padding: 20px;
+  border-radius: 8px;
+  font-family: 'Courier New', Courier, monospace;
+  color: #10B981; /* Фірмовий смарагдовий для математики */
+  text-align: center;
+  margin: 24px 0;
+  font-size: 1.15rem;
+  border: 1px solid #1F2937;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+  letter-spacing: 1px;
+}
+
+.list {
+  color: #8E8E93;
+  padding-left: 24px;
+  margin: 0;
+}
+
+.listItem {
+  margin-bottom: 10px;
+}
+
+.listItem b {
+  color: #3B82F6;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1.1rem;
+}

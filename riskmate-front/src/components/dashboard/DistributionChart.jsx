@@ -1,28 +1,29 @@
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+// 🔥 ДОДАНО: ReferenceLine для відображення межі Expected Price
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
+import styles from '../dashboard/css/DistributionChart.module.css';
 
 const DistributionChart = ({ data, expectedPrice }) => {
-  // Діагностика в консоль
-  console.log("Distribution Data:", data);
-
+  // Діагностику прибрано для чистоти продакшену
+  
   if (!data || data.length === 0) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center', color: '#8E8E93', backgroundColor: '#1C1C1E', borderRadius: '16px', border: '1px solid #38383A', marginTop: '20px' }}>
+      <div className={styles.emptyState}>
         <p>📊 Очікування даних симуляції для побудови розподілу...</p>
       </div>
     );
   }
 
   return (
-    <div style={{ backgroundColor: '#1C1C1E', borderRadius: '16px', padding: '20px', border: '1px solid #38383A', marginTop: '20px', width: '100%' }}>
-      <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '1px' }}>
+    <div className={styles.cardContainer}>
+      <h3 className={styles.title}>
         Розподіл ймовірностей (Дзвін Монте-Карло)
       </h3>
       
-      <div style={{ width: '100%', height: '300px' }}>
+      <div className={styles.chartWrapper}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#38383A" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" vertical={false} />
             <XAxis 
               dataKey="price" 
               stroke="#8E8E93" 
@@ -37,14 +38,25 @@ const DistributionChart = ({ data, expectedPrice }) => {
               itemStyle={{ color: '#fff' }}
               formatter={(value) => [`${value} сценаріїв`, 'Кількість']}
               labelFormatter={(label) => `Ціна: $${label}`}
+              cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }} // Легке підсвічування колонки при наведенні
             />
             
+            {/* 🔥 МАГІЯ ТУТ: Візуальна лінія очікуваної ціни */}
+            {expectedPrice && (
+              <ReferenceLine 
+                x={expectedPrice} 
+                stroke="#3B82F6" 
+                strokeDasharray="4 4" 
+                label={{ position: 'top', value: 'Очікувана ціна', fill: '#3B82F6', fontSize: 12 }} 
+              />
+            )}
+
             <Bar dataKey="count" radius={[4, 4, 0, 0]}>
               {data.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
-                  /* ВИПРАВЛЕНО ТУТ: замінив green на 89 */
-                  fill={entry.price < expectedPrice ? 'rgba(255, 59, 48, 0.8)' : 'rgba(52, 199, 89, 0.8)'} 
+                  /* 🔥 Фірмові кольори RiskMate з прозорістю */
+                  fill={entry.price < expectedPrice ? 'rgba(239, 68, 68, 0.85)' : 'rgba(16, 185, 129, 0.85)'} 
                 />
               ))}
             </Bar>
@@ -52,8 +64,9 @@ const DistributionChart = ({ data, expectedPrice }) => {
         </ResponsiveContainer>
       </div>
       
-      <p style={{ color: '#8E8E93', fontSize: '13px', marginTop: '15px', textAlign: 'center' }}>
-        * <span style={{color: '#FF3B30'}}>Червона зона</span> — сценарії нижче очікуваної прибутковості (ризик). <span style={{color: '#34C759'}}>Зелена зона</span> — оптимістичні сценарії.
+      <p className={styles.footerText}>
+        * <span className={styles.redText}>Червона зона</span> — сценарії нижче очікуваної прибутковості (ризик).{' '}
+        <span className={styles.greenText}>Зелена зона</span> — оптимістичні сценарії.
       </p>
     </div>
   );

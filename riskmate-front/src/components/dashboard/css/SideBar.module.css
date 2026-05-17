@@ -1,0 +1,251 @@
+/* Sidebar.module.css */
+
+.wrapper {
+  display: flex;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: #0B0E14;
+}
+
+/* 🎯 DOCK (Вузька панель з іконками) */
+.dock {
+  width: 70px;
+  min-width: 70px;
+  background-color: #0B0E14;
+  border-right: 1px solid #1F2937;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+  z-index: 2;
+}
+
+.brandIcon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #3B82F6, #10B981);
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  font-weight: 900;
+  font-size: 18px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+}
+
+.dockBtn {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: #8E8E93;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 10px;
+}
+
+.dockBtn span {
+  font-size: 10px;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.dockBtn:hover {
+  color: #f8fafc;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dockBtnActive {
+  color: #3B82F6;
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.dockBtnActive:hover {
+  color: #3B82F6;
+  background-color: rgba(59, 130, 246, 0.15);
+}
+
+.dockBottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 🎯 DRAWER (Виїзна панель налаштувань) */
+.drawer {
+  background-color: #0B0E14;
+  border-right: 1px solid #1F2937;
+  height: 100vh;
+  overflow-x: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+}
+
+.drawerOpen {
+  width: 320px;
+}
+
+.drawerClosed {
+  width: 0;
+  border-right: none;
+}
+
+/* Фіксована ширина контенту всередині, щоб він не зжимався при анімації */
+.drawerContent {
+  width: 320px;
+  padding: 24px;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #1F2937 transparent;
+}
+
+.drawerContent::-webkit-scrollbar {
+  width: 6px;
+}
+.drawerContent::-webkit-scrollbar-thumb {
+  background-color: #1F2937;
+  border-radius: 10px;
+}
+
+.drawerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.drawerTitle {
+  color: #f8fafc;
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.closeDrawerBtn {
+  background: transparent;
+  border: none;
+  color: #8E8E93;
+  font-size: 20px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.closeDrawerBtn:hover {
+  color: #EF4444;
+}
+
+/* 🎯 Елементи форм (Стилі з попередньої версії) */
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.label {
+  color: #8E8E93;
+  font-size: 13px;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.input, .select {
+  background-color: rgba(15, 23, 42, 0.4);
+  border: 1px solid #1F2937;
+  color: #f8fafc;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+
+.select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%238E8E93%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px top 50%;
+  background-size: 10px auto;
+}
+
+.select option {
+  background-color: #0B0E14;
+  color: #f8fafc;
+}
+
+.input:focus, .select:focus {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.btnPrimary, .btnPro {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.btnPrimary {
+  background-color: #10B981; /* Смарагдовий для базового запуску */
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background-color: #059669;
+  transform: translateY(-1px);
+}
+
+.btnPro {
+  background: linear-gradient(90deg, #3B82F6, #8B5CF6);
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+.btnPro:hover:not(:disabled) {
+  background: linear-gradient(90deg, #2563EB, #7C3AED);
+}
+
+.btnPrimary:disabled, .btnPro:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+/* Додаємо в кінець файлу Sidebar.module.css */
+
+.dockBtnPdf:hover {
+  color: #6366f1 !important;
+  background-color: rgba(99, 102, 241, 0.1) !important;
+}
+
+.dockBtnCsv:hover {
+  color: #10B981 !important;
+  background-color: rgba(16, 185, 129, 0.1) !important;
+}

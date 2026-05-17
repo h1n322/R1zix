@@ -1,30 +1,42 @@
 import React from 'react';
+import styles from '../dashboard/css/NewsFeed.module.css';
 
 const NewsFeed = ({ news }) => {
-  // Якщо новин немає, показуємо заглушку замість того, щоб повністю ховати блок
+  // Якщо новин немає, показуємо заглушку
   if (!news || news.length === 0) {
     return (
-      <div style={{ backgroundColor: '#1C1C1E', borderRadius: '16px', padding: '20px', border: '1px solid #38383A', flex: 1, minWidth: '300px' }}>
-        <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '1px' }}>Останні новини</h3>
-        <p style={{ color: '#8E8E93', fontSize: '14px', fontStyle: 'italic' }}>Новин для цього активу тимчасово немає...</p>
+      <div className={styles.cardContainer}>
+        <h3 className={styles.title}>Останні новини</h3>
+        <p className={styles.emptyText}>Новин для цього активу тимчасово немає...</p>
       </div>
     );
   }
 
   return (
-    <div style={{ backgroundColor: '#1C1C1E', borderRadius: '16px', padding: '20px', border: '1px solid #38383A', flex: 1, minWidth: '300px' }}>
-      <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '1px' }}>Останні новини</h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div className={styles.cardContainer}>
+      <h3 className={styles.title}>Останні новини</h3>
+      <div className={styles.newsList}>
         {news.map((item, idx) => {
-          const date = new Date(item.timestamp * 1000).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+          const date = new Date(item.timestamp * 1000).toLocaleDateString('uk-UA', { 
+            day: 'numeric', 
+            month: 'short', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          });
           
           return (
-            <div key={idx} style={{ borderBottom: idx === news.length - 1 ? 'none' : '1px solid #334155', paddingBottom: idx === news.length - 1 ? '0' : '10px' }}>
-              <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ color: '#f8fafc', textDecoration: 'none', fontWeight: '500', fontSize: '14px', display: 'block', marginBottom: '4px', transition: 'color 0.2s' }} onMouseOver={(e) => e.target.style.color = '#3b82f6'} onMouseOut={(e) => e.target.style.color = '#f8fafc'}>
+            <div key={idx} className={styles.newsItem}>
+              {/* Ніяких onMouseOver, все працює через CSS! */}
+              <a 
+                href={item.link} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className={styles.newsLink}
+              >
                 {item.title}
               </a>
-              <div style={{ color: '#94a3b8', fontSize: '12px' }}>
-                <span style={{ color: '#3b82f6' }}>{item.publisher}</span> • {date}
+              <div className={styles.newsMeta}>
+                <span className={styles.publisher}>{item.publisher}</span> • {date}
               </div>
             </div>
           );

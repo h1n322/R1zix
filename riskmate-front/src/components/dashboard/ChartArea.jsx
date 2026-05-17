@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import React, { useState, useEffect, useMemo } from 'react';
+// ДОДАНО: ReferenceLine для зон RSI
+import { ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 import CandlestickChart from './CandlestickChart';
+import styles from '../dashboard/css/ChartArea.module.css';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -24,11 +26,10 @@ const ChartArea = ({ chartData, isExpanded, onToggleExpand }) => {
   const [zoomRange, setZoomRange] = useState({ start: 0, end: 100 });
   const [activePeriod, setActivePeriod] = useState('3М'); 
   
-  // Стани індикаторів
   const [showSMA, setShowSMA] = useState(false);
   const [showBB, setShowBB] = useState(false);
-  const [showRSI, setShowRSI] = useState(false); // НОВИЙ ІНДИКАТОР
-  const [showATR, setShowATR] = useState(false); // НОВИЙ ІНДИКАТОР
+  const [showRSI, setShowRSI] = useState(false); 
+  const [showATR, setShowATR] = useState(false); 
   
   const [chartType, setChartType] = useState('line');
 
@@ -56,106 +57,61 @@ const ChartArea = ({ chartData, isExpanded, onToggleExpand }) => {
     if (chartData && chartData.length > 0) {
       handlePeriodClick('3М', 120); 
     }
-    // eslint-disable-next-line
   }, [chartData]);
 
-  const hasData = chartData && chartData.length > 0;
-  const visibleData = hasData ? chartData.slice(zoomRange.start, zoomRange.end) : [];
-  const canShowCandles = hasData && chartData.some(item => item.open !== undefined);
+  // 🔥 МЕГА-ОПТИМІЗАЦІЯ (useMemo): React перераховує це ТІЛЬКИ коли змінюються дані графіка або зум.
+  // Кліки по кнопках індикаторів більше не будуть викликати ці важкі функції!
+  const { visibleData, canShowCandles, hasData } = useMemo(() => {
+    const hasData = chartData && chartData.length > 0;
+    const visibleData = hasData ? chartData.slice(zoomRange.start, zoomRange.end) : [];
+    const canShowCandles = hasData && chartData.some(item => item.open !== undefined);
+    
+    return { visibleData, canShowCandles, hasData };
+  }, [chartData, zoomRange]);
+
+  // Допоміжна функція для динамічних стилів кнопок
+  const getBtnStyle = (isActive, activeColor) => ({
+    background: isActive ? activeColor : 'transparent',
+    color: isActive ? '#fff' : '#8E8E93',
+    fontWeight: isActive ? 'bold' : 'normal',
+  });
 
   return (
     <div 
-      className="card" 
-      style={{ 
-        width: '100%', 
-        height: isExpanded ? 'calc(100vh - 120px)' : 600, 
-        padding: '20px', 
-        position: 'relative', 
-        transition: 'height 0.4s cubic-bezier(0.4, 0, 0.2, 1)', 
-        marginBottom: '20px',
-        overflow: 'hidden',
-        display: 'flex',          
-        flexDirection: 'column'   
-      }}
+      className={styles.cardContainer} 
+      style={{ height: isExpanded ? 'calc(100vh - 120px)' : 600 }}
     >
       {hasData && (
-        <div style={{ position: 'absolute', top: '15px', left: '20px', display: 'flex', gap: '15px', flexWrap: 'wrap', zIndex: 10 }}>
+        <div className={styles.controlsOverlay}>
           
           {canShowCandles && (
-            <div style={{ display: 'flex', backgroundColor: 'rgba(28, 28, 30, 0.8)', padding: '4px', borderRadius: '8px', border: '1px solid #38383A', backdropFilter: 'blur(10px)' }}>
-              <button
-                onClick={() => setChartType('line')}
-                style={{
-                  background: chartType === 'line' ? '#10b981' : 'transparent', color: chartType === 'line' ? '#ffffff' : '#8E8E93',
-                  border: 'none', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: chartType === 'line' ? 'bold' : 'normal', cursor: 'pointer', transition: 'all 0.2s'
-                }}
-              >
-                📈 Лінія
-              </button>
-              <button
-                onClick={() => setChartType('candle')}
-                style={{
-                  background: chartType === 'candle' ? '#10b981' : 'transparent', color: chartType === 'candle' ? '#ffffff' : '#8E8E93',
-                  border: 'none', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: chartType === 'candle' ? 'bold' : 'normal', cursor: 'pointer', transition: 'all 0.2s'
-                }}
-              >
-                🕯 Свічки
-              </button>
+            <div className={styles.controlGroup}>
+              <button className={styles.btn} style={getBtnStyle(chartType === 'line', '#10b981')} onClick={() => setChartType('line')}>Line</button>
+              <button className={styles.btn} style={getBtnStyle(chartType === 'candle', '#10b981')} onClick={() => setChartType('candle')}>Candle</button>
             </div>
           )}
 
-          <div style={{ display: 'flex', backgroundColor: 'rgba(28, 28, 30, 0.8)', padding: '4px', borderRadius: '8px', border: '1px solid #38383A', backdropFilter: 'blur(10px)' }}>
+          <div className={styles.controlGroup}>
             {timePeriods.map((p) => (
-              <button
-                key={p.label} onClick={() => handlePeriodClick(p.label, p.points)}
-                style={{
-                  background: activePeriod === p.label ? '#3b82f6' : 'transparent', color: activePeriod === p.label ? '#ffffff' : '#8E8E93',
-                  border: 'none', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: activePeriod === p.label ? 'bold' : 'normal', cursor: 'pointer', transition: 'all 0.2s'
-                }}
-              >
+              <button key={p.label} className={styles.btn} style={getBtnStyle(activePeriod === p.label, '#3b82f6')} onClick={() => handlePeriodClick(p.label, p.points)}>
                 {p.label}
               </button>
             ))}
           </div>
 
           {chartType === 'line' && (
-            <div style={{ display: 'flex', gap: '8px', backgroundColor: 'rgba(28, 28, 30, 0.8)', padding: '4px', borderRadius: '8px', border: '1px solid #38383A', backdropFilter: 'blur(10px)' }}>
-              <button
-                onClick={() => setShowSMA(!showSMA)}
-                style={{ background: showSMA ? '#f59e0b' : 'transparent', color: showSMA ? '#fff' : '#8E8E93', border: 'none', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s', fontWeight: showSMA ? 'bold' : 'normal' }}
-              >
-                SMA 50
-              </button>
-              <button
-                onClick={() => setShowBB(!showBB)}
-                style={{ background: showBB ? '#a855f7' : 'transparent', color: showBB ? '#fff' : '#8E8E93', border: 'none', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s', fontWeight: showBB ? 'bold' : 'normal' }}
-              >
-                Bollinger
-              </button>
-              
-              {/* НОВІ КНОПКИ ДЛЯ RSI ТА ATR */}
-              <button
-                onClick={() => setShowRSI(!showRSI)}
-                style={{ background: showRSI ? '#ec4899' : 'transparent', color: showRSI ? '#fff' : '#8E8E93', border: 'none', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s', fontWeight: showRSI ? 'bold' : 'normal' }}
-              >
-                RSI 14
-              </button>
-              <button
-                onClick={() => setShowATR(!showATR)}
-                style={{ background: showATR ? '#06b6d4' : 'transparent', color: showATR ? '#fff' : '#8E8E93', border: 'none', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s', fontWeight: showATR ? 'bold' : 'normal' }}
-              >
-                ATR
-              </button>
+            <div className={styles.controlGroup}>
+              <button className={styles.btn} style={getBtnStyle(showSMA, '#f59e0b')} onClick={() => setShowSMA(!showSMA)}>SMA 50</button>
+              <button className={styles.btn} style={getBtnStyle(showBB, '#a855f7')} onClick={() => setShowBB(!showBB)}>Bollinger</button>
+              <button className={styles.btn} style={getBtnStyle(showRSI, '#ec4899')} onClick={() => setShowRSI(!showRSI)}>RSI 14</button>
+              <button className={styles.btn} style={getBtnStyle(showATR, '#06b6d4')} onClick={() => setShowATR(!showATR)}>ATR</button>
             </div>
           )}
         </div>
       )}
 
       {hasData && (
-        <button
-          onClick={onToggleExpand}
-          style={{ position: 'absolute', top: '15px', right: '20px', background: 'rgba(44, 44, 46, 0.8)', border: '1px solid #38383A', color: '#8E8E93', padding: '6px 12px', borderRadius: '16px', fontSize: '12px', cursor: 'pointer', zIndex: 10, backdropFilter: 'blur(10px)' }}
-        >
+        <button className={styles.expandBtn} onClick={onToggleExpand}>
           {isExpanded ? '↙ Згорнути' : '↗ На весь екран'}
         </button>
       )}
@@ -170,29 +126,25 @@ const ChartArea = ({ chartData, isExpanded, onToggleExpand }) => {
                   <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#0A84FF" stopOpacity={0.4}/><stop offset="95%" stopColor="#0A84FF" stopOpacity={0}/></linearGradient>
                   <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#FF3B30" stopOpacity={0.4}/><stop offset="95%" stopColor="#FF3B30" stopOpacity={0}/></linearGradient>
                 </defs>
+                
                 <CartesianGrid strokeDasharray="3 3" stroke="#38383A" vertical={false} />
                 <XAxis dataKey="name" stroke="#8E8E93" tick={{fill: '#8E8E93'}} tickMargin={10} minTickGap={20} />
                 
-                {/* ЛІВА ВІСЬ (Для ціни, SMA, BB) */}
+                {/* Осі */}
                 <YAxis yAxisId="left" domain={['auto', 'auto']} stroke="#8E8E93" tick={{fill: '#8E8E93'}} tickFormatter={(val) => `$${val}`} />
-                
-                {/* ПРАВА ВІСЬ (З'являється тільки якщо включено RSI або ATR) */}
-                {/* ПРАВА ВІСЬ (Жорсткий домен для RSI від 0 до 100) */}
                 {(showRSI || showATR) && (
-                  <YAxis 
-                    yAxisId="right" 
-                    orientation="right" 
-                    domain={showRSI ? [0, 100] : ['auto', 'auto']} 
-                    stroke="#8E8E93" 
-                    tick={{fill: '#8E8E93'}} 
-                  />
+                  <YAxis yAxisId="right" orientation="right" domain={showRSI ? [0, 100] : ['auto', 'auto']} stroke="#8E8E93" tick={{fill: '#8E8E93'}} />
                 )}
 
-                <Tooltip contentStyle={{ backgroundColor: '#1C1C1E', border: '1px solid #38383A', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#fff' }} content={<CustomTooltip />} isAnimationActive={false} />
+                <Tooltip contentStyle={{ backgroundColor: '#1C1C1E', border: '1px solid #38383A', borderRadius: '8px', color: '#fff' }} content={<CustomTooltip />} isAnimationActive={false} />
                 <Legend wrapperStyle={{ paddingTop: '20px' }} />
                 
-                {/* ПРИВ'ЯЗУЄМО ЦІНУ ДО ЛІВОЇ ОСІ (yAxisId="left") */}
-                <Area yAxisId="left" isAnimationActive={false} type="monotone" dataKey="history" stroke="#34C759" fillOpacity={1} fill="url(#colorHistory)" name="Історія" strokeWidth={2} dot={false} />
+                {/* Зони перекупленості/перепроданості для RSI */}
+                {showRSI && <ReferenceLine yAxisId="right" y={70} stroke="#ec4899" strokeDasharray="3 3" opacity={0.5} />}
+                {showRSI && <ReferenceLine yAxisId="right" y={30} stroke="#ec4899" strokeDasharray="3 3" opacity={0.5} />}
+
+                {/* Графіки */}
+                <Area yAxisId="left" isAnimationActive={false} type="monotone" dataKey="history" stroke="#10B981" fillOpacity={1} fill="url(#colorHistory)" name="Історія" strokeWidth={2} dot={false} />
                 <Area yAxisId="left" isAnimationActive={true} type="monotone" dataKey="forecast" stroke="#0A84FF" fillOpacity={1} fill="url(#colorForecast)" name="Прогноз" strokeDasharray="5 5" strokeWidth={2} dot={false} />
                 <Area yAxisId="left" isAnimationActive={false} type="monotone" dataKey="actual" stroke="#FF3B30" fillOpacity={1} fill="url(#colorActual)" name="Реальність" strokeWidth={2} dot={false} />
 
@@ -200,8 +152,6 @@ const ChartArea = ({ chartData, isExpanded, onToggleExpand }) => {
                 {showBB && <Line yAxisId="left" isAnimationActive={true} type="monotone" dataKey="bb_upper" stroke="#a855f7" strokeDasharray="4 4" dot={false} strokeWidth={1.5} name="BB Верхня" />}
                 {showBB && <Line yAxisId="left" isAnimationActive={true} type="monotone" dataKey="bb_lower" stroke="#a855f7" strokeDasharray="4 4" dot={false} strokeWidth={1.5} name="BB Нижня" />}
                 
-                {/* ПРИВ'ЯЗУЄМО ІНДИКАТОРИ ДО ПРАВОЇ ОСІ (yAxisId="right") */}
-                {/* ПРИВ'ЯЗУЄМО ІНДИКАТОРИ ДО ПРАВОЇ ОСІ */}
                 {showRSI && <Line yAxisId="right" connectNulls={true} isAnimationActive={true} type="monotone" dataKey="rsi" stroke="#ec4899" dot={false} strokeWidth={2} name="RSI (Перегрітість)" />}
                 {showATR && <Line yAxisId="right" connectNulls={true} isAnimationActive={true} type="monotone" dataKey="atr" stroke="#06b6d4" dot={false} strokeWidth={2} name="ATR (Волатильність)" />}
               </ComposedChart>
@@ -211,7 +161,7 @@ const ChartArea = ({ chartData, isExpanded, onToggleExpand }) => {
           )}
         </div>
       ) : (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#8E8E93' }}>
+        <div className={styles.emptyState}>
           <div style={{ marginBottom: '16px', opacity: 0.2 }}>
             <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" />

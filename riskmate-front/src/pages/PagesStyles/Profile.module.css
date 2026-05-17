@@ -1,0 +1,251 @@
+/* Profile.module.css */
+
+.pageContainer {
+  /* 🔥 Наш преміальний глибокий фон */
+  background-color: #0B0E14; 
+  color: #f8fafc;
+  min-height: 100vh;
+  padding: 40px 20px;
+  font-family: sans-serif;
+}
+
+.contentWrapper {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* Навігація */
+.headerNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.backBtn {
+  background: transparent;
+  border: none;
+  color: #3B82F6;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  font-weight: 600;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.backBtn:hover {
+  color: #60A5FA;
+  transform: translateX(-4px);
+}
+
+.pageTitle {
+  font-size: 2.5rem;
+  margin-bottom: 30px;
+  color: #f8fafc;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+/* Картка Користувача */
+.userCard {
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #1F2937;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+  gap: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.userAvatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 800;
+  color: white;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.userName {
+  margin: 0 0 5px 0;
+  font-size: 1.5rem;
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.userEmail {
+  margin: 0;
+  color: #8E8E93;
+  font-size: 1rem;
+}
+
+.logoutBtn {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logoutBtn:hover {
+  background-color: #EF4444;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+/* Секція Історії */
+.sectionTitle {
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  color: #e2e8f0;
+  font-weight: 700;
+}
+
+.loadingText {
+  color: #8E8E93;
+  font-size: 1.1rem;
+}
+
+/* Сітка портфелів */
+.portfolioGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.portfolioCard {
+  background-color: rgba(15, 23, 42, 0.4);
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #1F2937;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.portfolioCard:hover {
+  transform: translateY(-5px);
+  border-color: #3B82F6;
+  background-color: rgba(15, 23, 42, 0.7);
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.tickerBadge {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #3B82F6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.dateBadge {
+  color: #8E8E93;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.metricsRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+.metricBlock {
+  display: flex;
+  flex-direction: column;
+}
+
+.metricBlockRight {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.metricLabel {
+  color: #8E8E93;
+  font-size: 13px;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.metricValue {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #10B981; /* Смарагдовий для профіту */
+}
+
+.metricRisk {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #EF4444; /* Червоний для ризику */
+}
+
+/* Порожній стан */
+.emptyState {
+  background-color: rgba(15, 23, 42, 0.2);
+  border-radius: 12px;
+  padding: 50px 20px;
+  text-align: center;
+  border: 1px dashed #1F2937;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  margin-bottom: 15px;
+  opacity: 0.8;
+}
+
+.emptyText {
+  color: #8E8E93;
+  font-size: 1.1rem;
+  margin-bottom: 24px;
+}
+
+.actionBtn {
+  background-color: #3B82F6;
+  color: #fff;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.actionBtn:hover {
+  background-color: #2563EB;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}

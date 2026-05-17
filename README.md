@@ -170,7 +170,10 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 ---
 
 ## Скриншоти
-![Dashboard](downloads/dashboard.png)
+
+![Dashboard](https://github.com/user-attachments/assets/ab27adc3-3652-4ada-a0f8-f25168c65c98)
+![Monte Carlo Simulation](https://github.com/user-attachments/assets/7efd2a3e-4edf-4a68-a197-3e669ed59fdb)
+![Portfolio Optimizer](https://github.com/user-attachments/assets/76301097-d391-4df7-8b09-dbd0dd1db3df)
 
 ---
 

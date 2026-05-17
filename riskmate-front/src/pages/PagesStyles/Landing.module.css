@@ -1,0 +1,348 @@
+/* Landing.module.css */
+
+.landingWrapper {
+  min-height: 100vh;
+  color: white;
+  font-family: sans-serif;
+  position: relative;
+}
+
+/* 🎯 Анімований преміальний фон */
+.animatedBg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  background: linear-gradient(-45deg, #0B0E14, #1e1b4b, #0B0E14, #172554, #0B0E14);
+  background-size: 400% 400%;
+  animation: gradientMove 15s ease infinite;
+  will-change: background-position;
+  transform: translateZ(0);
+}
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.contentWrapper {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+/* 🎯 HEADER */
+.header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 70px;
+  display: flex;
+  justify-content: flex-end; /* ⚡️ ВИПРАВЛЕНО: Було space-between, тепер тягнемо вправо */
+  align-items: center;
+  padding: 0 40px;
+  background-color: rgba(11, 14, 20, 0.7);
+  backdrop-filter: blur(16px);
+  z-index: 1000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  background: linear-gradient(90deg, #3B82F6, #8B5CF6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.nav {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  position: relative;
+}
+
+.navIndicator {
+  position: absolute;
+  top: 0; bottom: 0;
+  background-color: rgba(59, 130, 246, 0.15);
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.navItem {
+  cursor: pointer;
+  color: #cbd5e1;
+  font-size: 1rem;
+  padding: 8px 16px;
+  position: relative;
+  z-index: 1;
+  transition: color 0.2s ease;
+}
+
+.navItem:hover {
+  color: #3B82F6;
+}
+
+.navItemBold {
+  font-weight: 700;
+}
+
+/* 🎯 КНОПКИ */
+.btnDemo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #60a5fa;
+  background-color: rgba(96, 165, 250, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  margin-left: 10px;
+}
+
+.btnDemo:hover {
+  background-color: rgba(96, 165, 250, 0.2);
+  transform: translateY(-2px);
+}
+
+.btnLogin {
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 8px;
+  border: none;
+  background-color: #3B82F6;
+  color: white;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+  transition: all 0.2s ease;
+  margin-left: 10px;
+}
+
+.btnLogin:hover {
+  background-color: #2563EB;
+  transform: translateY(-2px);
+}
+
+.btnMain {
+  padding: 16px 36px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background-color: #3B82F6;
+  color: white;
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.5);
+  transition: all 0.3s ease;
+}
+
+.btnMain:hover {
+  background-color: #2563EB;
+  transform: translateY(-3px);
+  box-shadow: 0 15px 35px rgba(59, 130, 246, 0.6);
+}
+
+/* 🎯 БЛОК КОРИСТУВАЧА */
+.userBlock {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background-color: rgba(15, 23, 42, 0.6);
+  padding: 6px 16px 6px 6px;
+  border-radius: 24px;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  margin-left: 10px;
+  backdrop-filter: blur(5px);
+}
+
+.userProfile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.userAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 15px;
+}
+
+.userName {
+  color: #f8fafc;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.logoutBtn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 0;
+}
+
+.logoutBtn:hover {
+  color: #EF4444;
+}
+
+/* 🎯 СЕКЦІЇ */
+.mainContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 140px 20px 60px;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 80px;
+  max-width: 750px;
+}
+
+.heroTitle {
+  font-size: 4rem;
+  font-weight: 900;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #60a5fa, #d8b4fe, #818cf8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+}
+
+.heroSubtitle {
+  font-size: 1.25rem;
+  color: #e2e8f0;
+  margin-bottom: 40px;
+  line-height: 1.7;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.sectionTitle {
+  text-align: center;
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 50px;
+  color: #f8fafc;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* 🎯 РИНОК (Market Cards) */
+.marketSection {
+  width: 100%;
+  max-width: 1200px;
+  margin-bottom: 120px;
+  padding-top: 40px;
+}
+
+.marketGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 25px;
+  padding: 0 10px;
+}
+
+.marketCard {
+  width: 240px;
+  flex-shrink: 0;
+  background-color: rgba(11, 14, 20, 0.6);
+  backdrop-filter: blur(16px);
+  padding: 25px;
+  border-radius: 20px;
+  border: 1px solid #1F2937;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.marketCard:hover {
+  transform: translateY(-8px);
+  background-color: rgba(15, 23, 42, 0.8);
+}
+
+.marketCardUp:hover {
+  border-color: #10B981;
+  box-shadow: 0 15px 30px -10px rgba(16, 185, 129, 0.4);
+}
+
+.marketCardDown:hover {
+  border-color: #EF4444;
+  box-shadow: 0 15px 30px -10px rgba(239, 68, 68, 0.4);
+}
+
+/* 🎯 ФІЧІ (Feature Cards) */
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+}
+
+.featureCard {
+  background-color: rgba(11, 14, 20, 0.6);
+  backdrop-filter: blur(16px);
+  padding: 40px 30px;
+  border-radius: 20px;
+  border: 1px solid #1F2937;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.featureCard:hover {
+  transform: translateY(-5px);
+  border-color: #38383A;
+}
+
+.featureIcon {
+  margin-bottom: 20px;
+  display: inline-block;
+  padding: 15px;
+  border-radius: 50%;
+}
+
+/* 🎯 ПРО ПРОЄКТ & FOOTER */
+.aboutBox {
+  position: relative;
+  padding: 40px;
+  border-radius: 24px;
+  background-color: rgba(11, 14, 20, 0.5);
+  backdrop-filter: blur(20px);
+  border: 1px solid #1F2937;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+.footer {
+  border-top: 1px solid #1F2937;
+  padding: 40px 20px;
+  text-align: center;
+  background-color: rgba(11, 14, 20, 0.8);
+  backdrop-filter: blur(10px);
+}

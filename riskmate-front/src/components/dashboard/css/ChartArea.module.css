@@ -1,0 +1,78 @@
+/* ChartArea.module.css */
+
+.cardContainer {
+  width: 100%;
+  padding: 20px;
+  position: relative;
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  background-color: #0B0E14; /* Або #121212 / #000000 залежно від точного відтінку твого App */
+  border: 1px solid #1F2937; /* Дуже м'яка, ледь помітна рамка */
+  border-radius: 16px;
+  
+  /* Легка тінь для об'єму */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.controlsOverlay {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  z-index: 10;
+}
+
+.controlGroup {
+  display: flex;
+  background-color: rgba(28, 28, 30, 0.8);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid #38383A;
+  backdrop-filter: blur(10px);
+  gap: 4px;
+}
+
+.btn {
+  background: transparent;
+  color: #8E8E93;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.expandBtn {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: rgba(44, 44, 46, 0.8);
+  border: 1px solid #38383A;
+  color: #8E8E93;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+}
+
+.expandBtn:hover, .btn:hover {
+  color: #fff;
+}
+
+.emptyState {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #8E8E93;
+}

@@ -1,0 +1,40 @@
+/* AssetDetails.module.css */
+
+.container {
+  /* 🔥 Наш фірмовий глибокий темний фон */
+  background-color: #0B0E14; 
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-top: 20px;
+  /* Строга, ледь помітна рамка замість світло-сірої */
+  border: 1px solid #1F2937; 
+  /* Додаємо легку тінь для об'єму, як у графіків */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  column-gap: 40px;
+  row-gap: 16px;
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  /* ⚡️ ВИПРАВЛЕНО: Суцільна тонка лінія замість пунктиру */
+  border-bottom: 1px solid #1F2937;
+  padding-bottom: 8px;
+}
+
+.statLabel {
+  color: #8E8E93;
+  font-size: 13px;
+}
+
+.statValue {
+  color: #f8fafc; /* Білосніжний текст для контрасту */
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.3px; /* Трохи розширюємо цифри для читабельності */
+}

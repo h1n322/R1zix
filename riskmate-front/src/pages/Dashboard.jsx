@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, addDoc, getDocs, query, orderBy, limit, doc, setDoc, getDoc } from 'firebase/firestore'; 
-import WatchlistDrawer from '../components/dashboard/WatchlistDrawer'; 
 import { logout, db } from '../firebase';
 import toast, { Toaster } from 'react-hot-toast'; 
-import AssetDetails from '../components/dashboard/AssetDetails'; 
-import NewsFeed from '../components/dashboard/NewsFeed';
-import CorrelationMatrix from '../components/dashboard/CorrelationMatrix';
-import DistributionChart from '../components/dashboard/DistributionChart'; 
-import Sidebar from '../components/dashboard/SideBar';
-import KpiCards from '../components/dashboard/KpiCards';
-import ChartArea from '../components/dashboard/ChartArea';
-import PortfolioPieChart from '../components/dashboard/PortfolioPieChart';
-import PortfolioTable from '../components/dashboard/PortfolioTable';
+import { 
+  WatchlistDrawer, 
+  AssetDetails, 
+  NewsFeed, 
+  CorrelationMatrix, 
+  DistributionChart, 
+  Sidebar, 
+  KpiCards, 
+  ChartArea, 
+  PortfolioTable, 
+  MarkowitzPieChart 
+} from '../components/dashboard';
 import Header from '../components/shared/Header';
-import MarkowitzPieChart from '../components/dashboard/MarkowitzPieChart';
-
 import { styles } from '../styles';
 
 const Dashboard = ({ user }) => {

@@ -1,46 +1,56 @@
 import React from 'react';
+import styles from '../dashboard/css/CorrelationMatrix.module.css';
 
 const CorrelationMatrix = ({ matrix }) => {
   if (!matrix || Object.keys(matrix).length === 0) return null;
 
   const tickers = Object.keys(matrix);
 
-  // Функція для фарбування комірок (зелений = позитивна кореляція, червоний = негативна)
+  // 🔥 Оновлені фірмові кольори RiskMate (Смарагдовий та Червоний)
   const getCellColor = (val) => {
-    if (val === 1) return 'rgba(255, 255, 255, 0.05)'; // Діагональ (кореляція сама з собою)
-    if (val > 0) return `rgba(52, 199, 89, ${val * 0.6})`; // Зелений (відтінок залежить від сили)
-    return `rgba(255, 59, 48, ${Math.abs(val) * 0.6})`; // Червоний
+    if (val === 1) return 'rgba(255, 255, 255, 0.05)'; 
+    // rgb(16, 185, 129) - це #10B981
+    if (val > 0) return `rgba(16, 185, 129, ${val * 0.7})`; 
+    // rgb(239, 68, 68) - це #EF4444
+    return `rgba(239, 68, 68, ${Math.abs(val) * 0.7})`; 
   };
 
   return (
-    <div style={{ backgroundColor: '#1C1C1E', borderRadius: '16px', padding: '20px', border: '1px solid #38383A', flex: 1, overflowX: 'auto', minWidth: '300px' }}>
-      <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', color: '#8E8E93', textTransform: 'uppercase', letterSpacing: '1px' }}>Матриця кореляцій</h3>
-      <table style={{ width: '100%', borderCollapse: 'collapse', color: '#f8fafc', fontSize: '13px' }}>
-        <thead>
-          <tr>
-            <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #38383A' }}></th>
-            {tickers.map(t => <th key={t} style={{ padding: '10px', textAlign: 'center', borderBottom: '1px solid #38383A', color: '#8E8E93', fontWeight: 'normal' }}>{t}</th>)}
-          </tr>
-        </thead>
-        <tbody>
-          {tickers.map(rowTicker => (
-            <tr key={rowTicker}>
-              <td style={{ padding: '10px', fontWeight: 'bold', borderBottom: '1px solid #38383A', color: '#8E8E93' }}>{rowTicker}</td>
-              {tickers.map(colTicker => {
-                const val = matrix[rowTicker][colTicker];
-                return (
-                  <td key={colTicker} style={{ 
-                    padding: '10px', textAlign: 'center', borderBottom: '1px solid #38383A',
-                    backgroundColor: getCellColor(val), color: val === 1 ? '#8E8E93' : '#fff', fontWeight: '500'
-                  }}>
-                    {val.toFixed(2)}
-                  </td>
-                );
-              })}
+    <div className={styles.cardContainer}>
+      <h3 className={styles.title}>Матриця кореляцій</h3>
+      <div className={styles.tableWrapper}>
+        <table className={styles.matrixTable}>
+          <thead className={styles.tableHead}>
+            <tr>
+              <th></th>
+              {tickers.map(t => <th key={t}>{t}</th>)}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {tickers.map(rowTicker => (
+              <tr key={rowTicker}>
+                <td className={styles.rowHeader}>{rowTicker}</td>
+                {tickers.map(colTicker => {
+                  const val = matrix[rowTicker][colTicker];
+                  return (
+                    <td 
+                      key={colTicker} 
+                      className={styles.cell}
+                      style={{ 
+                        backgroundColor: getCellColor(val), 
+                        color: val === 1 ? '#8E8E93' : '#fff'
+                      }}
+                      title={`Кореляція між ${rowTicker} та ${colTicker}: ${val.toFixed(2)}`}
+                    >
+                      {val.toFixed(2)}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

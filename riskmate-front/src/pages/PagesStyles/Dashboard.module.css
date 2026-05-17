@@ -1,0 +1,71 @@
+/* Dashboard.module.css */
+
+.dashboardLayout {
+  display: flex;
+  min-height: 100vh;
+  /* 🔥 Головний колір всього додатку, який об'єднує всі картки */
+  background-color: #0B0E14; 
+}
+
+.mainContent {
+  flex: 1;
+  padding: 24px 32px;
+  overflow-y: auto;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  /* Кастомний елегантний скроллбар для дашборду */
+  scrollbar-width: thin;
+  scrollbar-color: #1F2937 transparent;
+}
+
+.mainContent::-webkit-scrollbar {
+  width: 8px;
+}
+.mainContent::-webkit-scrollbar-thumb {
+  background-color: #1F2937;
+  border-radius: 10px;
+}
+
+/* Сітка для карток */
+.gridColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin: 24px 0;
+}
+
+.gridRow {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+/* Елегантний бейдж статусу користувача */
+.badgeContainer {
+  margin-bottom: 24px;
+  margin-left: 4px;
+}
+
+.badge {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.badgePro {
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  background-color: rgba(251, 191, 36, 0.1);
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.15);
+}
+
+.badgeBasic {
+  color: #8E8E93;
+  border: 1px solid #1F2937;
+  background-color: rgba(15, 23, 42, 0.4);
+}

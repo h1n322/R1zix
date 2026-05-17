@@ -1,8 +1,8 @@
-import React from 'react';
-import { styles } from '../../styles';
+import React, { useState } from 'react';
+import styles from '../dashboard/css/SideBar.module.css';
 
 const Sidebar = ({ 
-  userTier, // Отримуємо статус з Dashboard
+  userTier, 
   ticker, setTicker, 
   algorithm, setAlgorithm, 
   simulations, setSimulations, 
@@ -13,7 +13,8 @@ const Sidebar = ({
   rfRate, setRfRate,     
   onRun, onDownload, onSave, onLoad, onExportCSV, isLoading 
 }) => {
-
+  // Стейт для керування виїзною панеллю (за замовчуванням відкрита)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(true);
   const isPro = userTier === 'pro';
 
   const handleKeyDown = (e) => {
@@ -23,126 +24,182 @@ const Sidebar = ({
     }
   };
 
+  const toggleDrawer = () => setIsDrawerOpen(!isDrawerOpen);
+
   return (
-    <aside className="sidebar-mobile" style={styles.sidebar} onKeyDown={handleKeyDown}>
-      <h2 style={{ color: '#fff', fontSize: '24px', fontWeight: 'bold', marginBottom: '30px', textAlign: 'center' }}>RiskMate</h2>
+    <div className={styles.wrapper}>
       
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Актив (Тикер)</label>
-        <input 
-          style={styles.input} 
-          value={ticker} 
-          onChange={e => setTicker(e.target.value.toUpperCase())}
-          placeholder="AAPL, MSFT, BTC-USD..."
-        />
-      </div>
+      {/* =======================
+          DOCK (Ліва міні-панель) 
+          ======================= */}
+      <div className={styles.dock}>
+        {/* Логотип (Буква R) */}
+        <div className={styles.brandIcon}>R</div>
 
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '25px' }}>
-        <button style={{ ...styles.button, backgroundColor: '#4f46e5', flex: 1 }} onClick={onSave}>
-          Зберегти
+        {/* Кнопка налаштувань аналізу */}
+        <button 
+          className={`${styles.dockBtn} ${isDrawerOpen ? styles.dockBtnActive : ''}`}
+          onClick={toggleDrawer}
+          title="Налаштування аналізу"
+        >
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 21v-7m0-4V3m8 18v-9m0-4V3m8 18v-5m0-4V3M1 14h6m2-6h6m2 8h6"/>
+          </svg>
+          <span>Аналіз</span>
         </button>
-        <button style={{ ...styles.button, backgroundColor: '#4f46e5', flex: 1 }} onClick={onLoad}>
-          Завантажити
+
+        {/* Кнопка Історії (Завантажити) */}
+        <button className={styles.dockBtn} onClick={onLoad} title="Відкрити збережені портфелі">
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+          </svg>
+          <span>Історія</span>
         </button>
+
+        {/* Кнопка Збереження */}
+        <button className={styles.dockBtn} onClick={onSave} title="Зберегти поточний аналіз">
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/>
+          </svg>
+          <span>Зберегти</span>
+        </button>
+
       </div>
 
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Тип алгоритму</label>
-        <select style={styles.select} value={algorithm} onChange={e => setAlgorithm(e.target.value)}>
-          <option value="gbm">Classic GBM Monte Carlo</option>
-          <option value="historical">Historical Simulation</option>
-          <option value="merton">Merton Jump-Diffusion</option>
-          <option value="garch">GARCH Volatility</option>
-          <option value="stress">Stress Testing</option>
-          <option value="backtest">Backtesting (Test)</option>
-          
-          {/* ЗАМКИ НА ПРЕМІУМ АЛГОРИТМИ */}
-          <option value="lstm">
-            {isPro ? 'AI Forecast (LSTM)' : '🔒 AI Forecast (Pro)'}
-          </option>
-          <option value="markowitz">
-            {isPro ? ' Portfolio Optimization' : '🔒 Optimization (Pro)'}
-          </option>
-        </select>
-      </div>
+      {/* =======================
+          DRAWER (Виїзна панель) 
+          ======================= */}
+      <div className={`${styles.drawer} ${isDrawerOpen ? styles.drawerOpen : styles.drawerClosed}`} onKeyDown={handleKeyDown}>
+        <div className={styles.drawerContent}>
+          <div className={styles.drawerHeader}>
+            <h2 className={styles.drawerTitle}>Параметри</h2>
+            <button onClick={toggleDrawer} className={styles.closeDrawerBtn}>&times;</button>
+          </div>
 
-      {algorithm === 'stress' && (
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Сценарій кризи</label>
-          <select style={styles.select} value={scenario} onChange={e => setScenario(e.target.value)}>
-            <option value="covid">COVID-19 Crash (2020)</option>
-            <option value="2008">Financial Crisis (2008)</option>
-            <option value="dotcom">Dot-com Bubble (2000)</option>
-            <option value="custom">Custom (-20% Drop)</option>
-          </select>
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Актив (Тикер)</label>
+            <input 
+              className={styles.input} 
+              value={ticker} 
+              onChange={e => setTicker(e.target.value.toUpperCase())}
+              placeholder="AAPL, MSFT, BTC-USD..."
+            />
+          </div>
+
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Тип алгоритму</label>
+            <select className={styles.select} value={algorithm} onChange={e => setAlgorithm(e.target.value)}>
+              <option value="gbm">Classic GBM Monte Carlo</option>
+              <option value="historical">Historical Simulation</option>
+              <option value="merton">Merton Jump-Diffusion</option>
+              <option value="garch">GARCH Volatility</option>
+              <option value="stress">Stress Testing</option>
+              <option value="backtest">Backtesting (Test)</option>
+              
+              <option value="lstm" disabled={!isPro}>
+                {isPro ? 'AI Forecast (LSTM)' : '🔒 AI Forecast (Pro)'}
+              </option>
+              <option value="markowitz" disabled={!isPro}>
+                {isPro ? 'Portfolio Optimization' : '🔒 Optimization (Pro)'}
+              </option>
+            </select>
+          </div>
+
+          {algorithm === 'stress' && (
+            <div className={styles.inputGroup}>
+              <label className={styles.label}>Сценарій кризи</label>
+              <select className={styles.select} value={scenario} onChange={e => setScenario(e.target.value)}>
+                <option value="covid">COVID-19 Crash (2020)</option>
+                <option value="2008">Financial Crisis (2008)</option>
+                <option value="dotcom">Dot-com Bubble (2000)</option>
+                <option value="custom">Custom (-20% Drop)</option>
+              </select>
+            </div>
+          )}
+
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Глибина історії</label>
+            <select className={styles.select} value={lookback} onChange={e => setLookback(e.target.value)}>
+              <option value={1}>1 Рік</option>
+              <option value={3}>3 Роки</option>
+              <option value={5} disabled={!isPro}>{isPro ? '5 Років' : '🔒 5 Років (Pro)'}</option>
+              <option value={10} disabled={!isPro}>{isPro ? '10 Років' : '🔒 10 Років (Pro)'}</option>
+            </select>
+          </div>
+
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Рівень довіри (VaR)</label>
+            <select className={styles.select} value={varConf} onChange={e => setVarConf(e.target.value)}>
+              <option value={0.90}>90% (Високий ризик)</option>
+              <option value={0.95}>95% (Стандарт)</option>
+              <option value={0.99}>99% (Базель III)</option>
+            </select>
+          </div>
+
+          <div className={styles.row}>
+            <div style={{ flex: 1 }}>
+              <label className={styles.label}>Симуляцій</label>
+              <input type="number" className={styles.input} value={simulations} onChange={e => setSimulations(e.target.value)} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label className={styles.label}>Горизонт</label>
+              <input type="number" className={styles.input} value={horizon} onChange={e => setHorizon(e.target.value)} />
+            </div>
+          </div>
+
+          <div className={styles.inputGroup}>
+            <label className={styles.label}>Безризикова ставка (%)</label>
+            <input 
+              type="number" 
+              step="0.1"
+              className={styles.input} 
+              value={rfRate} 
+              onChange={e => setRfRate(e.target.value)} 
+            />
+          </div>
+
+          <button 
+            className={isPro ? styles.btnPro : styles.btnPrimary}
+            onClick={onRun}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Рахунок..' : isPro ? 'Запустити аналіз' : 'Запустити симуляцію'}
+          </button>
+
+          <div className={styles.dockBottom}>
+          {/* Кнопка PDF */}
+          <button 
+            className={`${styles.dockBtn} ${styles.dockBtnPdf}`} 
+            onClick={onDownload} 
+            title="Завантажити PDF звіт"
+          >
+            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            <span>PDF</span>
+          </button>
+
+          {/* Кнопка CSV */}
+          <button 
+            className={`${styles.dockBtn} ${styles.dockBtnCsv}`} 
+            onClick={onExportCSV} 
+            title="Експортувати дані в CSV"
+          >
+            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <path d="M8 13h2v4H8z"/>
+              <path d="M14 13h2v4h-2z"/>
+            </svg>
+            <span>CSV</span>
+          </button>
         </div>
-      )}
-
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Глибина історії</label>
-        <select style={styles.select} value={lookback} onChange={e => setLookback(e.target.value)}>
-          <option value={1}>1 Рік</option>
-          <option value={3}>3 Роки</option>
-          {/* ЗАМКИ НА ГЛИБОКУ ІСТОРІЮ */}
-          <option value={5} disabled={!isPro}>{isPro ? '5 Років' : '🔒 5 Років (Pro)'}</option>
-          <option value={10} disabled={!isPro}>{isPro ? '10 Років' : '🔒 10 Років (Pro)'}</option>
-        </select>
-      </div>
-
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Рівень довіри (VaR)</label>
-        <select style={styles.select} value={varConf} onChange={e => setVarConf(e.target.value)}>
-          <option value={0.90}>90% (Високий ризик)</option>
-          <option value={0.95}>95% (Стандарт)</option>
-          <option value={0.99}>99% (Базель III)</option>
-        </select>
-      </div>
-
-      <div style={{ display: 'flex', gap: '15px', marginBottom: '20px' }}>
-        <div style={{ flex: 1 }}>
-          <label style={styles.label}>Симуляцій</label>
-          <input type="number" style={styles.input} value={simulations} onChange={e => setSimulations(e.target.value)} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <label style={styles.label}>Горизонт</label>
-          <input type="number" style={styles.input} value={horizon} onChange={e => setHorizon(e.target.value)} />
         </div>
       </div>
-
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Безризикова ставка (%)</label>
-        <input 
-          type="number" 
-          step="0.1"
-          style={styles.input} 
-          value={rfRate} 
-          onChange={e => setRfRate(e.target.value)} 
-        />
-      </div>
-
-      <button 
-        style={{ 
-          ...styles.button, 
-          width: '100%', 
-          marginBottom: '15px', 
-          opacity: isLoading ? 0.7 : 1,
-          background: isPro ? 'linear-gradient(90deg, #3b82f6, #8b5cf6)' : '#3b82f6'
-        }} 
-        onClick={onRun}
-        disabled={isLoading}
-      >
-        {isLoading ? '⏳ Завантаження...' : isPro ? 'Запустити аналіз' : 'Запустити симуляцію'}
-      </button>
-
-      <div style={{ display: 'flex', gap: '10px', width: '100%', paddingBottom: '20px' }}>
-        <button style={{ ...styles.button, backgroundColor: '#6366f1', flex: 1, padding: '12px 0', fontSize: '14px' }} onClick={onDownload}>
-          PDF
-        </button>
-        <button style={{ ...styles.button, backgroundColor: '#10b981', flex: 1, padding: '12px 0', fontSize: '14px' }} onClick={onExportCSV}>
-          CSV
-        </button>
-      </div>
-    </aside>
+    </div>
   );
 };
 
