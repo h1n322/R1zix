@@ -34,7 +34,6 @@ const Sidebar = ({
           ======================= */}
       <div className={styles.dock}>
         {/* Логотип (Буква R) */}
-        <div className={styles.brandIcon}>R</div>
 
         {/* Кнопка налаштувань аналізу */}
         <button 

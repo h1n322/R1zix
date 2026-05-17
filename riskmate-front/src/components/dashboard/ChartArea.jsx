@@ -86,8 +86,8 @@ const ChartArea = ({ chartData, isExpanded, onToggleExpand }) => {
           
           {canShowCandles && (
             <div className={styles.controlGroup}>
-              <button className={styles.btn} style={getBtnStyle(chartType === 'line', '#10b981')} onClick={() => setChartType('line')}>Line</button>
-              <button className={styles.btn} style={getBtnStyle(chartType === 'candle', '#10b981')} onClick={() => setChartType('candle')}>Candle</button>
+              <button className={styles.btn} style={getBtnStyle(chartType === 'line', '#10b981')} onClick={() => setChartType('line')}>Лінія</button>
+              <button className={styles.btn} style={getBtnStyle(chartType === 'candle', '#10b981')} onClick={() => setChartType('candle')}>Свічки</button>
             </div>
           )}
 
