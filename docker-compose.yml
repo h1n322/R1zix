@@ -18,7 +18,7 @@ services:
     working_dir: /app
     ports:
       - "5173:5173"
-    volumes:
+    volumes: 
       - ./riskmate-front:/app
       # Ізолюємо node_modules, щоб не було конфліктів між Mac та Linux-контейнером
       - /app/node_modules

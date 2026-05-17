@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import styles from '../dashboard/css/WatchlistDrawer.module.css';
+import styles from '../dashboard/css/WatchListDrawer.module.css';
 
 const WatchlistDrawer = ({ isOpen, onClose, watchlist, onAdd, onRemove, onSelect }) => {
   const [newTicker, setNewTicker] = useState('');
