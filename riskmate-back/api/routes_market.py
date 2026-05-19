@@ -10,9 +10,8 @@ from services.predict_service import PredictService
 router = APIRouter(prefix="/api", tags=["market"])
 
 _MARKET_TICKERS = [
-    "SPY", "QQQ", "GLD", "BTC-USD",
-    "AAPL", "MSFT", "NVDA", "GOOGL",
-    "TSLA", "META", "AMD", "ETH-USD",
+    "SPY", "QQQ", "BTC-USD",
+    "AAPL", 
 ]
 
 

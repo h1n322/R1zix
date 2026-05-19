@@ -108,7 +108,7 @@ const Dashboard = ({ user }) => {
             scenario,
             lookback_years: parseInt(lookback),      
             var_confidence: parseFloat(varConf),     
-            risk_free_rate: parseFloat(rfRate) / 100 
+            risk_free_rate: parseFloat(rfRate).replace(',', '.') / 100 
           })
         });
         const simData = await simResp.json();
