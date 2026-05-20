@@ -34,7 +34,7 @@ def get_data_provider() -> YFinanceProvider:
     Створюється один раз і живе весь час роботи сервера.
     lru_cache(maxsize=1) = singleton без додаткового коду.
     """
-    return YFinanceProvider(retries=3, retry_delay=1.0)
+    return YFinanceProvider(retries=3, retry_delay=5.0)
 
 
 # -----------------------------------------------------------------------
