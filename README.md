@@ -11,8 +11,6 @@
 [![Firebase](https://img.shields.io/badge/Firebase-Auth-FFCA28?style=flat-square&logo=firebase&logoColor=black)](https://firebase.google.com)
 [![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?style=flat-square&logo=stripe&logoColor=white)](https://stripe.com)
 
-*Науково-дослідницька робота — Мала академія наук України*
-
 </div>
 
 ---
@@ -171,10 +169,29 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 
 ## Скриншоти
 
-![Dashboard](https://github.com/user-attachments/assets/ab27adc3-3652-4ada-a0f8-f25168c65c98)
-![Monte Carlo Simulation](https://github.com/user-attachments/assets/7efd2a3e-4edf-4a68-a197-3e669ed59fdb)
-![Portfolio Optimizer](https://github.com/user-attachments/assets/76301097-d391-4df7-8b09-dbd0dd1db3df)
+### Головна сторінка (Landing)
+![RiskMate Landing](assets/landing.jpg)
+*Сучасний дизайн, огляд ринку в реальному часі та доступ до основного функціоналу.*
 
+### Дашборд Аналітики
+![Dashboard Empty](assets/dashboard-empty.jpg)
+*Гнучка панель налаштувань для симуляцій Монте-Карло (GBM). Користувач може задавати горизонт, кількість симуляцій та рівень довіри (VaR).*
+
+### Аналіз традиційних активів (AAPL)
+![AAPL Simulation](assets/dashboard-aapl.jpg)
+*Розрахунок майбутньої ціни, VaR (Value at Risk) та CVaR для акцій Apple з візуалізацією історичних даних та прогнозу.*
+
+### Аналіз криптоактивів (BTC)
+![BTC Simulation](assets/dashboard-btc.jpg)
+*Адаптація алгоритмів для високоволатильних активів на прикладі Bitcoin.*
+
+### Розподіл Імовірностей Монте-Карло
+![Distribution Chart](assets/dashboard-distribution.jpg)
+*Візуалізація результатів 10,000 симуляцій у вигляді розподілу ймовірностей (з чітким розділенням зон ризику та прибутку).*
+
+### Особистий Кабінет
+![Profile](assets/profile.jpg)
+*Збереження історії симуляцій у базі даних (Firebase) для подальшого аналізу та швидкого доступу.*
 ---
 
 <div align="center">
