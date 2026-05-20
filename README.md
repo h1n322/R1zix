@@ -170,27 +170,27 @@ VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
 ## Скриншоти
 
 ### Головна сторінка (Landing)
-![RiskMate Landing](assets/landing.jpg)
+![RiskMate Landing](assets/landing.png)
 *Сучасний дизайн, огляд ринку в реальному часі та доступ до основного функціоналу.*
 
 ### Дашборд Аналітики
-![Dashboard Empty](assets/dashboard-empty.jpg)
+![Dashboard Empty](assets/dashboard-empty.png)
 *Гнучка панель налаштувань для симуляцій Монте-Карло (GBM). Користувач може задавати горизонт, кількість симуляцій та рівень довіри (VaR).*
 
 ### Аналіз традиційних активів (AAPL)
-![AAPL Simulation](assets/dashboard-aapl.jpg)
+![AAPL Simulation](assets/dashboard-aapl.png)
 *Розрахунок майбутньої ціни, VaR (Value at Risk) та CVaR для акцій Apple з візуалізацією історичних даних та прогнозу.*
 
 ### Аналіз криптоактивів (BTC)
-![BTC Simulation](assets/dashboard-btc.jpg)
+![BTC Simulation](assets/dashboard-btc.png)
 *Адаптація алгоритмів для високоволатильних активів на прикладі Bitcoin.*
 
 ### Розподіл Імовірностей Монте-Карло
-![Distribution Chart](assets/dashboard-distribution.jpg)
+![Distribution Chart](assets/dashboard-distribution.png)
 *Візуалізація результатів 10,000 симуляцій у вигляді розподілу ймовірностей (з чітким розділенням зон ризику та прибутку).*
 
 ### Особистий Кабінет
-![Profile](assets/profile.jpg)
+![Profile](assets/profile.png)
 *Збереження історії симуляцій у базі даних (Firebase) для подальшого аналізу та швидкого доступу.*
 ---
 
