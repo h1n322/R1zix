@@ -19,7 +19,6 @@ from utils.pdf_generator import generate_pdf_report
 
 router = APIRouter(prefix="/api", tags=["simulation"])
 
-# Популярні крипто-шорткати, які yfinance очікує з суфіксом -USD
 _CRYPTO_SHORTCUTS = {
     "BTC", "ETH", "SOL", "BNB", "XRP",
     "DOGE", "ADA", "DOT", "LTC", "AVAX",

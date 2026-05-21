@@ -4,7 +4,7 @@ api/routes_webhook.py — Stripe webhook для оновлення tier післ
 Firebase тут не імпортується напряму — UserService отримує
 готовий db_client через DI (get_user_service у dependencies.py).
 """
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request 
 
 from dependencies import get_user_service
 from services.user_service import UserService
