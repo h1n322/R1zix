@@ -208,3 +208,40 @@ def run_backtest(
 
 
 dt = 1
+
+
+
+CSHARP_ENGINE_URL = "http://localhost:5276/api/engine/simulate"
+
+def run_fast_simulation(ticker: str, initial_price: float, volatility: float, drift: float, time_horizon: int, simulations_count: int):
+    payload = {
+        "ticker": ticker,
+        "initialPrice": float(initial_price),
+        "volatility": float(volatility),
+        "drift": float(drift),
+        "timeHorizon": int(time_horizon),
+        "simulationsCount": int(simulations_count)
+    }
+    
+    try:
+        print(f"🚀 Відправляю {simulations_count} симуляцій для {ticker} на C# Engine...")
+        response = requests.post(CSHARP_ENGINE_URL, json=payload, timeout=10.0)
+        response.raise_for_status() 
+        result = response.json()
+        print("✅ Розрахунок на C# успішно завершено!")
+        
+        return {
+            "status": "success",
+            "engine": "C# .NET 8 Parallel",
+            "expected_price": result.get("finalExpectedPrice"),
+            "var_95": result.get("vaR_95"),
+            "simulations_run": result.get("simulationsRun")
+        }
+        
+    except requests.exceptions.RequestException as e:
+        logger.error(f"❌ Помилка з'єднання з C# Engine: {e}")
+        return {
+            "status": "error",
+            "message": "Обчислювальне ядро тимчасово недоступне",
+            "details": str(e)
+        }
