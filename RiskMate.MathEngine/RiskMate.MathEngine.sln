@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RiskMate.MathEngine", "RiskMate.MathEngine\RiskMate.MathEngine.csproj", "{2610BC3B-063E-4325-B259-CDE3CA94C94A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RiskMate.Api", "RiskMate.Api\RiskMate.Api.csproj", "{5B2D4D23-9A34-4D46-8473-4666DFAE1E7A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2610BC3B-063E-4325-B259-CDE3CA94C94A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2610BC3B-063E-4325-B259-CDE3CA94C94A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2610BC3B-063E-4325-B259-CDE3CA94C94A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2610BC3B-063E-4325-B259-CDE3CA94C94A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B2D4D23-9A34-4D46-8473-4666DFAE1E7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B2D4D23-9A34-4D46-8473-4666DFAE1E7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B2D4D23-9A34-4D46-8473-4666DFAE1E7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B2D4D23-9A34-4D46-8473-4666DFAE1E7A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
