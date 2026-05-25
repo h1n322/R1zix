@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Builder;
-using MathNet.Numerics.Distributions;
+﻿using MathNet.Numerics.Distributions;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Concurrent;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +9,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
 
 if (app.Environment.IsDevelopment())
 {
@@ -22,7 +23,7 @@ app.MapPost("/api/engine/simulate", ([FromBody] SimulationRequest req) =>
 
         var dt = req.TimeHorizon / 252.0;
 
-        Parallel.For(0, req.SimulationsCount, i =>
+        Parallel.For(0, req.SimulationsCount, _ =>
         {
             double currentPrice = req.InitialPrice;
             var normalDist = new Normal(0.0, 1.0, new Random(Guid.NewGuid().GetHashCode()));

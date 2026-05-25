@@ -20,12 +20,37 @@ function App() {
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        // "Слухаємо" документ користувача
+        
+        // ========================================================
+        // 🚀 НОВИЙ БЛОК: СИНХРОНІЗАЦІЯ З C# ТА POSTGRESQL 🚀
+        // ========================================================
+        try {
+          // Отримуємо свіжий зашифрований JWT токен від Firebase
+          const token = await currentUser.getIdToken();
+          
+          // Відправляємо його на наш ASP.NET Core сервер
+          // Перевір порт (5276), якщо твій C# сервер запустився на іншому — зміни тут
+          fetch("http://localhost:5266/api/auth/sync", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json"
+            }
+          })
+          .then(res => res.json())
+          .then(data => console.log("🔥 Успішна синхронізація з C# PostgreSQL:", data))
+          .catch(err => console.error("❌ Помилка з'єднання з C# API:", err));
+          
+        } catch (tokenError) {
+          console.error("Не вдалося отримати токен авторизації:", tokenError);
+        }
+        // ========================================================
+
+        // Твій старий код для роботи з Firestore (залишився абсолютно без змін)
         const userDocRef = doc(db, "users", currentUser.uid);
         
         unsubscribeDoc = onSnapshot(userDocRef, async (docSnap) => {
           if (docSnap.exists()) {
-            // Якщо запис у базі є — записуємо дані в стейт
             setUser({
               uid: currentUser.uid,
               email: currentUser.email,
@@ -33,15 +58,11 @@ function App() {
             });
             setLoading(false);
           } else {
-            // ЯКЩО ЗАПИСУ НЕМАЄ — СТВОРЮЄМО ЙОГО АВТОМАТИЧНО!
-            // Це критично важливо, щоб бекенду було де змінювати tier на 'pro'
             try {
               await setDoc(userDocRef, {
                 email: currentUser.email,
                 tier: 'basic'
               });
-              // Примітка: після setDoc Firebase автоматично знову викличе onSnapshot,
-              // і цього разу код піде по гілці if (docSnap.exists())
             } catch (error) {
               console.error("Помилка створення документа користувача:", error);
               setLoading(false);
@@ -49,7 +70,6 @@ function App() {
           }
         });
       } else {
-        // Користувач не залогінений
         setUser(null);
         if (unsubscribeDoc) unsubscribeDoc();
         setLoading(false);

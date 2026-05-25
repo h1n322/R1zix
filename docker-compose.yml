@@ -1,27 +1,17 @@
 version: '3.8'
 
 services:
-  backend:
-    build: 
-      context: ./riskmate-back
+  db:
+    image: postgres:15-alpine
+    container_name: riskmate_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: supersecretpassword
+      POSTGRES_DB: riskmate_db
     ports:
-      - "8000:8000"
+      - "5432:5432"
     volumes:
-      # Прокидаємо код всередину контейнера для Hot Reload
-      - ./riskmate-back:/app
-    command: uvicorn main:app --host 0.0.0.0 --port 8000
-    environment:
-      - ENVIRONMENT=development
+      - pgdata:/var/lib/postgresql/data
 
-  frontend:
-    image: node:20-alpine
-    working_dir: /app
-    ports:
-      - "5173:5173"
-    volumes: 
-      - ./riskmate-front:/app
-      # Ізолюємо node_modules, щоб не було конфліктів між Mac та Linux-контейнером
-      - /app/node_modules
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
-    environment:
-      - VITE_API_URL=http://localhost:8000
+volumes:
+  pgdata:
