@@ -219,19 +219,61 @@ const Dashboard = ({ user }) => {
     if (!user) return toast.error("Спочатку увійдіть через Google!");
     if (!metrics.expected_price && chartData.length === 0) return toast.error("Запустіть симуляцію перед збереженням!");
 
-    const loadingToast = toast.loading('Збереження...');
+    const loadingToast = toast.loading('Збереження у PostgreSQL...');
     try {
-      await addDoc(collection(db, "users", user.uid, "portfolios"), { 
+      // 1. Отримуємо токен
+      const token = await user.getIdToken();
+
+      // 2. Формуємо DTO для C#
+      const portfolioDto = {
         tickers: ticker,
-        inputs: { algorithm, simulations: parseInt(simulations), horizon: parseInt(horizon), scenario: scenario || 'covid' },
-        metrics,
-        chartData,
-        assetDetails, 
-        news,                 
-        correlationMatrix,    
-        histogramData, 
-        updatedAt: new Date().toISOString()
+        algorithm: algorithm || 'gbm',
+        simulationsCount: parseInt(simulations) || 1000,
+        horizon: parseInt(horizon) || 30,
+        scenario: scenario || 'covid',
+        
+        expectedPrice: metrics.expected_price || 0,
+        valueAtRisk: metrics.var_5 || 0,
+        conditionalValueAtRisk: metrics.cvar_5 || 0,
+        volatility: metrics.volatility || 0,
+        sharpeRatio: metrics.sharpeRatio || 0, 
+        maxDrawdown: metrics.maxDrawdown || 0,
+
+        // Мапимо масив графіка
+        chartPoints: chartData.map(p => ({
+          dateLabel: p.name?.toString() || '',
+          expectedPrice: p.forecast || p.history || p.actual || 0,
+          lowerBound: p.bb_lower || 0,
+          upperBound: p.bb_upper || 0
+        })),
+
+        // Мапимо деталі компанії (C# очікує масив)
+        assetDetails: assetDetails ? [{
+          ticker: assetDetails.symbol || ticker,
+          companyName: assetDetails.shortName || '',
+          sector: assetDetails.sector || '',
+          currentPrice: assetDetails.currentPrice || 0
+        }] : [],
+
+        // Мапимо гістограму
+        histogramBins: histogramData ? histogramData.map(b => ({
+          binRange: b.range || b.name?.toString() || '',
+          frequency: b.count || b.frequency || 0
+        })) : []
+      };
+
+      // 3. Відправляємо на C#
+      const response = await fetch("http://localhost:5266/api/portfolio", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(portfolioDto)
       });
+
+      if (!response.ok) throw new Error("Помилка сервера C#");
+
       toast.success("Портфель успішно збережено!", { id: loadingToast });
     } catch (e) {
       toast.error("Помилка збереження: " + e.message, { id: loadingToast });
@@ -260,23 +302,20 @@ const Dashboard = ({ user }) => {
     if (!user) return toast.error("Спочатку увійдіть через Google!");
     const loadingToast = toast.loading('Завантаження...');
     try {
-      const q = query(collection(db, "users", user.uid, "portfolios"), orderBy("updatedAt", "desc"), limit(1));
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        const data = querySnapshot.docs[0].data();
-        setTicker(data.tickers || 'AAPL');
-        if (data.inputs) {
-          setAlgorithm(data.inputs.algorithm || 'gbm');
-          setSimulations(data.inputs.simulations || 1000);
-          setHorizon(data.inputs.horizon || 30);
-          setScenario(data.inputs.scenario || 'covid');
-        }
-        if (data.metrics) setMetrics(data.metrics);
-        if (data.chartData) setChartData(data.chartData);
-        setAssetDetails(data.stock_info || null); 
-        setNews(data.news || []);                                 
-        setCorrelationMatrix(data.correlationMatrix || null);     
-        setHistogramData(data.histogramData || []); 
+      const token = await user.getIdToken();
+      
+      const response = await fetch("http://localhost:5266/api/portfolio", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (!response.ok) throw new Error("Помилка сервера");
+      
+      const data = await response.json();
+
+      if (data.length > 0) {
+        // Беремо найперший (найновіший) портфель з БД
+        const latest = data[0]; 
+        loadSelectedPortfolio(latest);
         toast.success("Останній портфель завантажено!", { id: loadingToast });
       } else {
         toast.error("У вас ще немає збережених портфелів.", { id: loadingToast });
@@ -288,18 +327,58 @@ const Dashboard = ({ user }) => {
 
   const loadSelectedPortfolio = (data) => {
     setTicker(data.tickers || 'AAPL');
-    if (data.inputs) {
-      setAlgorithm(data.inputs.algorithm || 'gbm');
-      setSimulations(data.inputs.simulations || 1000);
-      setHorizon(data.inputs.horizon || 30);
-      setScenario(data.inputs.scenario || 'covid');
+    setAlgorithm(data.algorithm || 'gbm');
+    setSimulations(data.simulationsCount || 1000);
+    setHorizon(data.horizon || 30);
+    setScenario(data.scenario || 'covid');
+
+    // Відновлюємо метрики
+    setMetrics({
+      expected_price: data.expectedPrice,
+      var_5: data.valueAtRisk,
+      cvar_5: data.conditionalValueAtRisk,
+      volatility: data.volatility,
+      sharpeRatio: data.sharpeRatio,
+      maxDrawdown: data.maxDrawdown
+    });
+
+    // Відновлюємо графік
+    if (data.chartPoints) {
+      setChartData(data.chartPoints.map(cp => ({
+        name: cp.dateLabel,
+        forecast: cp.expectedPrice,
+        bb_lower: cp.lowerBound,
+        bb_upper: cp.upperBound
+      })));
+    } else {
+      setChartData([]);
     }
-    if (data.metrics) setMetrics(data.metrics);
-    if (data.chartData) setChartData(data.chartData);
-    setAssetDetails(data.stock_info|| null); 
-    setNews(data.news || []);
-    setCorrelationMatrix(data.correlationMatrix || null);
-    setHistogramData(data.histogramData || []); 
+
+    // Відновлюємо деталі активу
+    if (data.assetDetails && data.assetDetails.length > 0) {
+      setAssetDetails({
+        symbol: data.assetDetails[0].ticker,
+        shortName: data.assetDetails[0].companyName,
+        sector: data.assetDetails[0].sector,
+        currentPrice: data.assetDetails[0].currentPrice
+      });
+    } else {
+      setAssetDetails(null);
+    }
+
+    // Відновлюємо гістограму
+    if (data.histogramBins) {
+      setHistogramData(data.histogramBins.map(hb => ({
+        name: hb.binRange,
+        count: hb.frequency
+      })));
+    } else {
+      setHistogramData([]);
+    }
+
+    // Очищаємо дані матриці (бо для збережених ми їх поки не записуємо)
+    setCorrelationMatrix(null);
+    setNews([]);
     setIsChartExpanded(false);
   };
 

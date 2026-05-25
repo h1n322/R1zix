@@ -4,14 +4,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using RiskMate.Api.Models;
+using RiskMate.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. База даних
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 2. Firebase
 var firebaseProjectId = builder.Configuration["Firebase:ProjectId"];
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -27,12 +26,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// 3. CORS (Дозвіл для React) - ОБОВ'ЯЗКОВО ТУТ
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        // ВАЖЛИВО: адреса має бути без слеша (/) в кінці!
         policy.WithOrigins("http://localhost:5173") 
               .AllowAnyHeader()
               .AllowAnyMethod();
@@ -42,21 +39,18 @@ builder.Services.AddCors(options =>
 builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
+builder.Services.AddControllers();
+builder.Services.AddHttpClient<YahooFinanceService>();
 var app = builder.Build();
 
-// ==========================================
-// КРИТИЧНО ВАЖЛИВИЙ ПОРЯДОК MIDDLEWARE:
-// ==========================================
-app.UseCors("AllowReactApp"); // 1. Спочатку CORS (щоб відповісти на OPTIONS запит)
-app.UseAuthentication();      // 2. Потім перевірка токена
-app.UseAuthorization();       // 3. Потім перевірка прав доступу
-// ==========================================
 
-// Тестовий роут
+app.UseCors("AllowReactApp");
+app.UseAuthentication();      
+app.UseAuthorization();       
+app.MapControllers();
+
 app.MapGet("/", () => "RiskMate API is running!");
 
-// Наш захищений роут
 app.MapPost("/api/auth/sync", async (AppDbContext db, HttpContext httpContext) =>
 {
     var firebaseUid = httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;

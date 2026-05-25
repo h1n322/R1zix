@@ -1,10 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "/qBEClSuxa8=",
+  "dgSpecHash": "ennZc3/bPqs=",
   "success": true,
   "projectFilePath": "/Users/max/Public/Riskmate/RiskMate/RiskMate.MathEngine/RiskMate.Api/RiskMate.Api.csproj",
   "expectedPackageFiles": [
     "/Users/max/.nuget/packages/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg.sha512",
+    "/Users/max/.nuget/packages/mathnet.numerics/5.0.0/mathnet.numerics.5.0.0.nupkg.sha512",
     "/Users/max/.nuget/packages/microsoft.aspnetcore.authentication.jwtbearer/10.0.8/microsoft.aspnetcore.authentication.jwtbearer.10.0.8.nupkg.sha512",
     "/Users/max/.nuget/packages/microsoft.aspnetcore.openapi/10.0.8/microsoft.aspnetcore.openapi.10.0.8.nupkg.sha512",
     "/Users/max/.nuget/packages/microsoft.build.framework/18.0.2/microsoft.build.framework.18.0.2.nupkg.sha512",

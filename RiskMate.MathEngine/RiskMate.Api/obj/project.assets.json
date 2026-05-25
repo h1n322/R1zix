@@ -15,6 +15,19 @@
           }
         }
       },
+      "MathNet.Numerics/5.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/MathNet.Numerics.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/MathNet.Numerics.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "Microsoft.AspNetCore.Authentication.JwtBearer/10.0.8": {
         "type": "package",
         "dependencies": {
@@ -875,6 +888,23 @@
             "related": ".xml"
           }
         }
+      },
+      "RiskMate.MathEngine/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "MathNet.Numerics": "5.0.0",
+          "Swashbuckle.AspNetCore": "6.0.0"
+        },
+        "compile": {
+          "bin/placeholder/RiskMate.MathEngine.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/RiskMate.MathEngine.dll": {}
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
       }
     }
   },
@@ -895,6 +925,28 @@
         "lib/netstandard2.0/Humanizer.dll",
         "lib/netstandard2.0/Humanizer.xml",
         "logo.png"
+      ]
+    },
+    "MathNet.Numerics/5.0.0": {
+      "sha512": "pg1W2VwaEQMAiTpGK840hZgzavnqjlCMTVSbtVCXVyT+7AX4mc1o89SPv4TBlAjhgCOo9c1Y+jZ5m3ti2YgGgA==",
+      "type": "package",
+      "path": "mathnet.numerics/5.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "icon.png",
+        "lib/net461/MathNet.Numerics.dll",
+        "lib/net461/MathNet.Numerics.xml",
+        "lib/net48/MathNet.Numerics.dll",
+        "lib/net48/MathNet.Numerics.xml",
+        "lib/net5.0/MathNet.Numerics.dll",
+        "lib/net5.0/MathNet.Numerics.xml",
+        "lib/net6.0/MathNet.Numerics.dll",
+        "lib/net6.0/MathNet.Numerics.xml",
+        "lib/netstandard2.0/MathNet.Numerics.dll",
+        "lib/netstandard2.0/MathNet.Numerics.xml",
+        "mathnet.numerics.5.0.0.nupkg.sha512",
+        "mathnet.numerics.nuspec"
       ]
     },
     "Microsoft.AspNetCore.Authentication.JwtBearer/10.0.8": {
@@ -2917,6 +2969,11 @@
         "system.identitymodel.tokens.jwt.8.0.1.nupkg.sha512",
         "system.identitymodel.tokens.jwt.nuspec"
       ]
+    },
+    "RiskMate.MathEngine/1.0.0": {
+      "type": "project",
+      "path": "../RiskMate.MathEngine/RiskMate.MathEngine.csproj",
+      "msbuildProject": "../RiskMate.MathEngine/RiskMate.MathEngine.csproj"
     }
   },
   "projectFileDependencyGroups": {
@@ -2926,6 +2983,7 @@
       "Microsoft.EntityFrameworkCore >= 10.0.8",
       "Microsoft.EntityFrameworkCore.Design >= 10.0.8",
       "Npgsql.EntityFrameworkCore.PostgreSQL >= 10.0.1",
+      "RiskMate.MathEngine >= 1.0.0",
       "Swashbuckle.AspNetCore >= 10.1.7"
     ]
   },
@@ -2954,7 +3012,11 @@
         "net10.0": {
           "framework": "net10.0",
           "targetAlias": "net10.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "/Users/max/Public/Riskmate/RiskMate/RiskMate.MathEngine/RiskMate.MathEngine/RiskMate.MathEngine.csproj": {
+              "projectPath": "/Users/max/Public/Riskmate/RiskMate/RiskMate.MathEngine/RiskMate.MathEngine/RiskMate.MathEngine.csproj"
+            }
+          }
         }
       },
       "warningProperties": {

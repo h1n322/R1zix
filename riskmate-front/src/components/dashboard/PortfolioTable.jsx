@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { db } from '../../firebase';
 import styles from '../dashboard/css/PortfolioTable.module.css';
 
 const PortfolioTable = ({ user, onLoadPortfolio }) => {
@@ -14,16 +12,32 @@ const PortfolioTable = ({ user, onLoadPortfolio }) => {
         return;
       }
       try {
-        const q = query(collection(db, "users", user.uid, "portfolios"), orderBy("updatedAt", "desc"));
-        const querySnapshot = await getDocs(q);
-        const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Отримуємо свіжий токен від Firebase
+        const token = await user.getIdToken();
+
+        // Стукаємо на наш новий C# API
+        const response = await fetch("http://localhost:5266/api/portfolio", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Помилка сервера: ${response.status}`);
+        }
+
+        const data = await response.json();
         setPortfolios(data);
+
       } catch (error) {
         console.error("🚨 Помилка завантаження таблиці:", error);
       } finally {
         setIsLoading(false);
       }
     };
+
     fetchPortfolios();
   }, [user]);
 
@@ -42,7 +56,6 @@ const PortfolioTable = ({ user, onLoadPortfolio }) => {
       {isLoading ? (
         <div className={styles.emptyState}>Завантаження даних...</div>
       ) : portfolios.length === 0 ? (
-        // ⚡️ Правильний UX: показуємо користувачу, що тут БУДУТЬ його дані
         <div className={styles.emptyState}>
           <div className={styles.emptyStateIcon}>📁</div>
           <p>У вас ще немає збережених портфелів.</p>
@@ -63,20 +76,18 @@ const PortfolioTable = ({ user, onLoadPortfolio }) => {
             {portfolios.map((p) => (
               <tr key={p.id} className={styles.tr}>
                 <td className={`${styles.td} ${styles.tickerCell}`}>
-                  {/* Замінюємо коми на красиві пробіли, якщо це масив тикерів */}
                   {p.tickers?.replace(/,/g, ', ') || 'N/A'}
                 </td>
                 <td className={styles.td}>
-                  {/* Красива плашка алгоритму */}
                   <span className={styles.algoBadge}>
-                    {p.inputs?.algorithm || 'Monte Carlo'}
+                    {p.algorithm || 'Monte Carlo'}
                   </span>
                 </td>
                 <td className={`${styles.td} ${styles.priceCell}`}>
-                  ${formatMoney(p.metrics?.expected_price)}
+                  ${formatMoney(p.expectedPrice)}
                 </td>
                 <td className={`${styles.td} ${styles.dateCell}`}>
-                  {new Date(p.updatedAt).toLocaleDateString('uk-UA', {
+                  {new Date(p.createdAt).toLocaleDateString('uk-UA', {
                     day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
                   })}
                 </td>

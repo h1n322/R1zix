@@ -1,6 +1,12 @@
-namespace RiskMate.MathEngine.Models;
+using System.Collections.Generic;
 
-public class MarkowitzResult
+namespace RiskMate.MathEngine.Models
 {
-    
+    public class MarkowitzResult
+    {
+        public Dictionary<string, double> OptimalWeights { get; set; } = new();
+        public double ExpectedReturn { get; set; }
+        public double Volatility { get; set; }
+        public double SharpeRatio { get; set; }
+    }
 }

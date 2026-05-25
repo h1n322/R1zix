@@ -19,11 +19,9 @@ namespace RiskMate.MathEngine.Simulators
 
                 for (int day = 1; day <= horizon; day++)
                 {
-                    // Випадково витягуємо реальну дохідність з минулого
                     int randomIndex = _random.Next(historicalReturns.Count);
                     double sampledReturn = historicalReturns[randomIndex];
                     
-                    // Застосовуємо історичну дохідність
                     currentPrice *= Math.Exp(sampledReturn);
                     path.Add(currentPrice);
                 }

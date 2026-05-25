@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RiskMate.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7f69b2dca0e164917788d0eddcb14a554bc8872a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cc616ff50a423dcf93cf320359334a1a7445b607")]
 [assembly: System.Reflection.AssemblyProductAttribute("RiskMate.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RiskMate.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
