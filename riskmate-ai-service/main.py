@@ -32,6 +32,8 @@ app.include_router(simulations_router)
 app.include_router(portfolio_router)
 app.include_router(market_router)
 app.include_router(webhook_router)
+from api.routes_ml import router as ml_router
+app.include_router(ml_router)
 
 @app.get("/")
 def health_check():

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { collection, addDoc, getDocs, query, orderBy, limit, doc, setDoc, getDoc } from 'firebase/firestore'; 
 import { logout, db } from '../firebase';
 import toast, { Toaster } from 'react-hot-toast'; 
@@ -20,13 +20,17 @@ import { styles } from '../styles';
 
 const Dashboard = ({ user }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [ticker, setTicker] = useState('AAPL');
   const [algorithm, setAlgorithm] = useState('gbm');
   const [simulations, setSimulations] = useState(1000);
   const [horizon, setHorizon] = useState(30);
-  const [scenario, setScenario] = useState('covid');
   const [chartData, setChartData] = useState([]);
+  const [scenario, setScenario] = useState('covid');
+  const [aiSummary, setAiSummary] = useState(null);
+  const [lstmForecast, setLstmForecast] = useState(null);
+  const [hedging, setHedging] = useState(null);
   const [metrics, setMetrics] = useState({ expected_price: 0, var_5: 0, cvar_5: 0, volatility: 0 });
   const [isChartExpanded, setIsChartExpanded] = useState(false);
   const [isWatchlistOpen, setIsWatchlistOpen] = useState(false);
@@ -162,28 +166,58 @@ const Dashboard = ({ user }) => {
         }
       }
       else {
-        const resp = await fetch('http://127.0.0.1:8000/api/simulate', {
+        const token = localStorage.getItem('token');
+        const resp = await fetch('/api/simulation/run', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` 
+          },
           body: JSON.stringify({ 
-            ticker, 
-            algorithm, 
-            simulations: parseInt(simulations), 
-            horizon: parseInt(horizon), 
-            scenario,
-            lookback_years: parseInt(lookback),      
-            var_confidence: parseFloat(varConf),     
-            risk_free_rate: parseFloat(rfRate) / 100 
+            ticker: ticker,
+            algorithm: algorithm === 'stress' ? 'gbm' : algorithm,
+            simulationsCount: parseInt(simulations),
+            horizon: parseInt(horizon),
+            scenario: algorithm === 'stress' ? scenario : 'base',
+            confidenceLevel: parseFloat(varConf)
           })
         });
         const data = await resp.json();
-        setChartData(data.chart_data);
-        setMetrics(data);
-       setAssetDetails(data.stock_info);
-        setNews(data.news);                                 
-        setCorrelationMatrix(data.correlation_matrix);      
-        setHistogramData(data.histogram); 
+        
+        if (!resp.ok) {
+          throw new Error(data.message || 'Помилка під час симуляції');
+        }
+        setChartData(data.chartPoints || []);
+        
+        setMetrics({
+          expected_price: data.expectedPrice || 0,
+          var_5: data.valueAtRisk || 0,
+          cvar_5: data.conditionalValueAtRisk || 0,
+          volatility: data.volatility || 0,
+        });
+        
+        setAssetDetails(null);
+        setNews(data.news || []);
+        setAiSummary(data.aiSummary || null);
+        setHedging(data.hedging || null);
+        setCorrelationMatrix(null);
+        setHistogramData(data.histogramBins || []); 
+        
         toast.success('Симуляцію завершено!', { id: loadingToast });
+
+        // Спробуємо отримати LSTM прогноз з Python бекенду
+        try {
+          const mlResp = await fetch(`http://127.0.0.1:8000/api/predict/${ticker}`);
+          if (mlResp.ok) {
+            const mlData = await mlResp.json();
+            setLstmForecast(mlData.predicted_price_tomorrow);
+          } else {
+            setLstmForecast(null);
+          }
+        } catch (mlErr) {
+          console.warn("ML бекенд недоступний", mlErr);
+          setLstmForecast(null);
+        }
       }
     } catch (err) {
       toast.error('Помилка під час виконання запиту', { id: loadingToast });
@@ -196,13 +230,16 @@ const Dashboard = ({ user }) => {
   const downloadReport = async () => {
     const loadingToast = toast.loading('Генерація PDF...');
     try {
-      const resp = await fetch('http://127.0.0.1:8000/api/report', {
+      const resp = await fetch('/api/simulation/report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          ticker, algorithm, simulations: parseInt(simulations), horizon: parseInt(horizon), scenario 
+          ticker, algorithm, simulationsCount: parseInt(simulations), horizon: parseInt(horizon), scenario 
         })
       });
+      if (!resp.ok) {
+        throw new Error('Помилка сервера при генерації PDF');
+      }
       const blob = await resp.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -324,6 +361,14 @@ const Dashboard = ({ user }) => {
       toast.error("Помилка завантаження: " + e.message, { id: loadingToast });
     }
   };
+
+  React.useEffect(() => {
+    if (location.state?.portfolioToLoad) {
+      loadSelectedPortfolio(location.state.portfolioToLoad);
+      // Clear the state so it doesn't reload on refresh
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state]);
 
   const loadSelectedPortfolio = (data) => {
     setTicker(data.tickers || 'AAPL');
@@ -460,12 +505,54 @@ const Dashboard = ({ user }) => {
           </span>
         </div>
 
-        <KpiCards metrics={metrics} varConf={varConf} />
+        <KpiCards metrics={metrics} varConf={varConf} algorithm={algorithm} />
         
         {algorithm === 'markowitz' && markowitzData && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '20px' }}>
             <MarkowitzPieChart allocations={markowitzData} />
             {correlationMatrix && <CorrelationMatrix matrix={correlationMatrix} />}
+          </div>
+        )}
+
+        {(chartData && chartData.length > 0 && algorithm !== 'markowitz') && (
+          <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '15px', marginBottom: '20px', border: '1px solid #3b82f6' }}>
+            <h3 style={{ color: '#fff', marginTop: 0, marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              🧠 AI Аналітика
+            </h3>
+            
+            {aiSummary ? (
+              <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: '1.6', margin: '0 0 10px 0' }}>{aiSummary}</p>
+            ) : (
+              <p style={{ color: '#94a3b8', fontSize: '14px', fontStyle: 'italic', margin: '0 0 10px 0' }}>
+                Аналітика від LLM недоступна (переконайся, що C# сервер перезапущено і введено Gemini API ключ).
+              </p>
+            )}
+            
+            {lstmForecast ? (
+              <div style={{ marginTop: '10px', display: 'inline-block', backgroundColor: 'rgba(59, 130, 246, 0.1)', padding: '10px 15px', borderRadius: '10px' }}>
+                <span style={{ color: '#94a3b8', fontSize: '12px', display: 'block', marginBottom: '5px' }}>Прогноз нейромережі (LSTM) на завтра:</span>
+                <span style={{ color: '#3b82f6', fontSize: '18px', fontWeight: 'bold' }}>${lstmForecast.toFixed(2)}</span>
+              </div>
+            ) : (
+              <div style={{ marginTop: '10px' }}>
+                <span style={{ color: '#94a3b8', fontSize: '12px' }}>LSTM прогноз недоступний. Python-мікросервіс вимкнений або модель не знайдена. </span>
+                <button 
+                  onClick={async () => {
+                    toast.loading('Навчання моделі...', {id: 'train'});
+                    try {
+                      const res = await fetch(`http://127.0.0.1:8000/api/ml/train/${ticker}`, {method: 'POST'});
+                      if (res.ok) toast.success('Навчання розпочато! Це займе 1-2 хвилини.', {id: 'train'});
+                      else throw new Error("Помилка");
+                    } catch (e) {
+                      toast.error('Не вдалося звʼязатися з Python-сервером на порту 8000.', {id: 'train'});
+                    }
+                  }}
+                  style={{ background: 'none', border: 'none', color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}
+                >
+                  Натренувати модель
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -476,6 +563,28 @@ const Dashboard = ({ user }) => {
         {!isChartExpanded && algorithm !== 'markowitz' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px', marginBottom: '20px' }}>
             <AssetDetails details={assetDetails} />
+
+            {hedging && (
+              <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '15px', border: '1px solid #10b981', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <h3 style={{ margin: 0, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  🛡 Ідея для хеджування (Black-Scholes)
+                </h3>
+                <p style={{ margin: 0, color: '#94a3b8', fontSize: '14px', lineHeight: '1.5' }}>
+                  Щоб захистити свій портфель від падіння нижче рівня ризику (VaR) <strong>${hedging.strikePrice.toFixed(2)}</strong> на наступні {hedging.expiration}, ви можете купити <strong>Put-опціон</strong>.
+                </p>
+                <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
+                  <div>
+                    <div style={{ color: '#94a3b8', fontSize: '12px' }}>Орієнтовна премія за 1 акцію</div>
+                    <div style={{ color: '#10b981', fontSize: '20px', fontWeight: 'bold' }}>${hedging.putOptionPremium.toFixed(2)}</div>
+                  </div>
+                  <div>
+                    <div style={{ color: '#94a3b8', fontSize: '12px' }}>Вартість контракту (100 акцій)</div>
+                    <div style={{ color: '#10b981', fontSize: '20px', fontWeight: 'bold' }}>${hedging.totalCostFor100Shares.toFixed(2)}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
               <NewsFeed news={news} />
               <CorrelationMatrix matrix={correlationMatrix} />

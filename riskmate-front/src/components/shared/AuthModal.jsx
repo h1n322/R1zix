@@ -42,6 +42,7 @@ const AuthModal = ({ isOpen, onClose }) => {
       onClose();
       navigate('/dashboard');
     } catch (error) {
+      console.warn('Google login error:', error);
       toast.error('Помилка входу через Google');
     }
   };

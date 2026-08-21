@@ -57,33 +57,46 @@ const KpiCard = ({ title, value, prefix = "$", suffix = "", color = "#f8fafc", t
   );
 };
 
-const KpiCards = ({ metrics, varConf }) => {
+const KpiCards = ({ metrics, varConf, algorithm }) => {
   const confLevel = varConf ? (varConf * 100).toFixed(0) : 95;
   const varTitle = `Максимальний ризик (VaR ${confLevel}%)`;
   
+  const expectedPrice = metrics?.expected_price ?? metrics?.expectedPrice ?? 0;
+  const var5 = metrics?.var_5 ?? metrics?.valueAtRisk ?? 0;
+  const cvar5 = metrics?.cvar_5 ?? metrics?.conditionalValueAtRisk ?? 0;
+  const rawVol = Number(metrics?.volatility ?? metrics?.annualVolatility ?? 0);
+  const volatility = (rawVol > 0 && rawVol <= 1.0) ? rawVol * 100 : rawVol;
+  const sharpeRatio = metrics?.sharpe_ratio ?? metrics?.sharpeRatio ?? 0;
+  const maxDrawdown = metrics?.max_drawdown ?? metrics?.maxDrawdown ?? 0;
+
+  const isMarkowitz = algorithm === 'markowitz';
+
   return (
     <div className={styles.container}>
       <KpiCard 
-        title="Очікувана ціна активу" 
-        value={metrics?.expected_price} 
+        title={isMarkowitz ? "Очікувана дохідність" : "Очікувана ціна активу"} 
+        value={expectedPrice} 
+        prefix={isMarkowitz ? "" : "$"}
+        suffix={isMarkowitz ? "%" : ""}
         color="#10b981"
-        tooltip="Найбільш ймовірна ціна активу в кінці обраного періоду, розрахована як середнє значение всіх симуляцій."
+        tooltip={isMarkowitz ? "Середньорічна очікувана дохідність оптимізованого портфеля." : "Найбільш ймовірна ціна активу в кінці обраного періоду, розрахована як середнє значення всіх симуляцій."}
       />
       <KpiCard 
         title={varTitle} 
-        value={Math.abs(metrics?.var_5 || 0)} 
+        value={Math.abs(var5)} 
+        prefix={isMarkowitz ? "" : "$"}
         color="#ef4444"
         tooltip={`З імовірністю ${confLevel}% ваші збитки не перевищать цю суму на обраному проміжку часу.`}
       />
       <KpiCard 
         title="Екстремальний ризик (CVaR)" 
-        value={Math.abs(metrics?.cvar_5 || 0)} 
-        color="#f97316"
+        value={Math.abs(cvar5)} 
+        prefix={isMarkowitz ? "" : "$"}
         tooltip="Середній очікуваний збиток у найгірших 5% сценаріїв (коли ринок пробиває рівень VaR)."
       />
       <KpiCard 
         title="Історична волатильність" 
-        value={metrics?.volatility || 0}
+        value={volatility}
         prefix="" 
         suffix="%" 
         color="#3b82f6"
@@ -91,14 +104,14 @@ const KpiCards = ({ metrics, varConf }) => {
       />
       <KpiCard 
         title="Коефіцієнт Шарпа" 
-        value={metrics?.sharpe_ratio || 0}
+        value={sharpeRatio}
         prefix="" 
-        color={(metrics?.sharpe_ratio || 0) >= 0 ? "#a855f7" : "#ef4444"}
-        tooltip="Покажує дохідність на одиницю ризику. Значення > 1 — добре, > 2 — відмінно, < 0 — актив гірший за безризиковий."
+        color={Number(sharpeRatio) >= 0 ? "#a855f7" : "#ef4444"}
+        tooltip="Показує дохідність на одиницю ризику. Значення > 1 — добре, > 2 — відмінно, < 0 — актив гірший за безризиковий."
       />
       <KpiCard 
         title="Макс. просадка" 
-        value={Math.abs(metrics?.max_drawdown || 0)}
+        value={Math.abs(maxDrawdown)}
         prefix="" 
         suffix="%" 
         color="#ec4899"

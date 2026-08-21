@@ -9,7 +9,6 @@ export const styles = {
     borderRight: '1px solid #334155', 
     boxShadow: '4px 0 15px rgba(0,0,0,0.1)', 
     zIndex: 10, 
-    overflowY: 'auto',
     borderRadius: '0 24px 24px 0',
     position: 'sticky',
     top: 0,
@@ -71,7 +70,6 @@ export const styles = {
     transition: 'border-color 0.2s' 
   },
   buttonPrimary: { width: '100%', padding: '14px', background: 'linear-gradient(90deg, #3b82f6 0%, #6366f1 100%)', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: '600', fontSize: '15px', cursor: 'pointer', marginTop: '10px', boxShadow: '0 4px 14px rgba(99, 102, 241, 0.3)', transition: 'transform 0.1s, opacity 0.2s' },
-  main: { flex: 1, padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px', overflowY: 'auto' },
   headerInfo: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' },
   pageTitle: { fontSize: '28px', fontWeight: '700', margin: 0 },
   pageSubtitle: { color: '#94a3b8', fontSize: '15px', marginTop: '4px' },

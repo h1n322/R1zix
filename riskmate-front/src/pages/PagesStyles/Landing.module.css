@@ -7,25 +7,49 @@
   position: relative;
 }
 
-/* 🎯 Анімований преміальний фон */
 .animatedBg {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   z-index: 0;
-  background: linear-gradient(-45deg, #0B0E14, #1e1b4b, #0B0E14, #172554, #0B0E14);
-  background-size: 400% 400%;
-  animation: gradientMove 15s ease infinite;
-  will-change: background-position;
-  transform: translateZ(0);
+  overflow: hidden;
 }
 
-@keyframes gradientMove {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+.animatedBg::before {
+  content: "";
+  position: absolute;
+
+  width: 200%;
+  height: 200%;
+
+  left: -50%;
+  top: -50%;
+
+  background: linear-gradient(
+    -45deg,
+    #0B0E14,
+    #1e1b4b,
+    #0B0E14,
+    #172554,
+    #0B0E14
+  );
+
+  will-change: transform;
+
+  animation: moveGradient 20s linear infinite;
+}
+
+@keyframes moveGradient {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(-15%, -15%, 0);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
 }
 
 .contentWrapper {
@@ -45,8 +69,7 @@
   align-items: center;
   padding: 0 40px;
   background-color: rgba(11, 14, 20, 0.7);
-  backdrop-filter: blur(16px);
-  z-index: 1000;
+background-color: rgba(11, 14, 20, 0.8);  z-index: 1000;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -270,7 +293,7 @@
   width: 240px;
   flex-shrink: 0;
   background-color: rgba(11, 14, 20, 0.6);
-  backdrop-filter: blur(16px);
+background-color: rgba(11, 14, 20, 0.8);
   padding: 25px;
   border-radius: 20px;
   border: 1px solid #1F2937;
@@ -307,8 +330,7 @@
 
 .featureCard {
   background-color: rgba(11, 14, 20, 0.6);
-  backdrop-filter: blur(16px);
-  padding: 40px 30px;
+background-color: rgba(11, 14, 20, 0.8);  padding: 40px 30px;
   border-radius: 20px;
   border: 1px solid #1F2937;
   text-align: center;

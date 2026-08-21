@@ -8,8 +8,6 @@ namespace RiskMate.MathEngine.Optimizers
 {
     public class MarkowitzOptimizer
     {
-        private static readonly Random _random = new Random();
-
         /// <summary>
         /// Знаходить оптимальні ваги активів для максимізації коефіцієнта Шарпа.
         /// </summary>
@@ -25,8 +23,8 @@ namespace RiskMate.MathEngine.Optimizers
             var expectedReturns = new double[n];
             for (int i = 0; i < n; i++)
             {
-                // Множимо на 252 (торгові дні), щоб отримати річну дохідність
-                expectedReturns[i] = assetReturns[tickers[i]].Average() * 252; 
+                // Множимо на кількість торгових днів, щоб отримати річну дохідність
+                expectedReturns[i] = assetReturns[tickers[i]].Average() * Constants.TradingDaysPerYear; 
             }
 
             // 2. Попередньо рахуємо матрицю коваріацій (річну)
@@ -37,7 +35,7 @@ namespace RiskMate.MathEngine.Optimizers
                 {
                     covarianceMatrix[i, j] = MatrixCalculator.CalculateCovariance(
                         assetReturns[tickers[i]], 
-                        assetReturns[tickers[j]]) * 252;
+                        assetReturns[tickers[j]]) * Constants.TradingDaysPerYear;
                 }
             }
 
@@ -52,7 +50,7 @@ namespace RiskMate.MathEngine.Optimizers
                 // Генеруємо випадкові ваги
                 for (int i = 0; i < n; i++)
                 {
-                    currentWeights[i] = _random.NextDouble();
+                    currentWeights[i] = Random.Shared.NextDouble();
                     weightSum += currentWeights[i];
                 }
 

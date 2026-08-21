@@ -30,7 +30,7 @@ function App() {
           
           // Відправляємо його на наш ASP.NET Core сервер
           // Перевір порт (5276), якщо твій C# сервер запустився на іншому — зміни тут
-          fetch("http://localhost:5266/api/auth/sync", {
+          fetch("/api/auth/sync", {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${token}`,

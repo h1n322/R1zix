@@ -21,8 +21,8 @@ const PortfolioPieChart = ({ ticker }) => {
       {/* ⚡️ ВИПРАВЛЕНО: Додано уточнення про рівні частки */}
       <h3 className={styles.title}>Базовий розподіл (Рівні частки)</h3>
       
-      <div className={styles.chartWrapper}>
-        <ResponsiveContainer width="100%" height="100%">
+      <div className={styles.chartWrapper} style={{ width: '100%', minWidth: 0, minHeight: '300px', height: '300px' }}>
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
           <PieChart>
             <Pie
               data={data}

@@ -19,15 +19,15 @@ const MarkowitzPieChart = ({ allocations }) => {
   </p>
   
   {/* Додаємо клас-маркер .pieChartContainer для CSS */}
-  <div className={styles.chartWrapper} style={{ width: '100%', height: '100%' }}>
-    <ResponsiveContainer width="100%" height="100%">
+  <div className={`${styles.chartWrapper} ${styles.pieChartContainer}`} style={{ width: '100%', minWidth: 0, minHeight: '300px', height: '300px' }}>
+    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
       <PieChart>
         <Pie
           data={data}
           cx="50%"
           cy="50%"
-          innerRadius={90}  
-          outerRadius={140} 
+          innerRadius={80}  
+          outerRadius={115} 
           paddingAngle={5}  
           dataKey="value"   
           label={({ name, value }) => `${name} ${value}%`} 

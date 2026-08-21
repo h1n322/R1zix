@@ -9,9 +9,32 @@ services:
       POSTGRES_PASSWORD: supersecretpassword
       POSTGRES_DB: riskmate_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+
+  csharp-api:
+    build:
+      context: ./RiskMate.MathEngine
+      dockerfile: RiskMate.Api/Dockerfile
+    container_name: riskmate_csharp_api
+    ports:
+      - "5266:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=riskmate_db;Username=postgres;Password=supersecretpassword
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - db
+
+  python-ml:
+    build:
+      context: ./riskmate-ai-service
+      dockerfile: Dockerfile
+    container_name: riskmate_python_ml
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./riskmate-ai-service/models:/app/models
 
 volumes:
   pgdata:

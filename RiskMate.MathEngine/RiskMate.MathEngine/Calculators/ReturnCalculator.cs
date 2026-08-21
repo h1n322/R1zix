@@ -10,6 +10,8 @@ namespace RiskMate.MathEngine.Calculators
             var returns = new List<double>();
             for (int i = 1; i < prices.Count; i++)
             {
+                // Пропускаємо недодатні ціни (нульові/від'ємні значення ламають Math.Log)
+                if (prices[i] <= 0 || prices[i - 1] <= 0) continue;
                 returns.Add(Math.Log(prices[i] / prices[i - 1]));
             }
             return returns;

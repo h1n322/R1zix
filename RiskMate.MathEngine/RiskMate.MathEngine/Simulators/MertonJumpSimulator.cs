@@ -7,8 +7,6 @@ namespace RiskMate.MathEngine.Simulators
 {
     public class MertonJumpSimulator
     {
-        private static readonly Random _random = new Random();
-
         /// <summary>
         /// Симуляція з урахуванням раптових цінових стрибків (гепів).
         /// </summary>
@@ -26,7 +24,7 @@ namespace RiskMate.MathEngine.Simulators
             var allPaths = new List<List<double>>(simulationsCount);
             
             // Денна ймовірність стрибка
-            double dailyJumpProbability = jumpIntensity / 252.0;
+            double dailyJumpProbability = jumpIntensity / Constants.TradingDaysPerYear;
 
             for (int i = 0; i < simulationsCount; i++)
             {
@@ -41,7 +39,7 @@ namespace RiskMate.MathEngine.Simulators
                     double returnForDay = parameters.Drift + parameters.Volatility * normalShock;
 
                     // Перевіряємо, чи відбувся раптовий стрибок сьогодні (Пуассонівський процес)
-                    if (_random.NextDouble() < dailyJumpProbability)
+                    if (Random.Shared.NextDouble() < dailyJumpProbability)
                     {
                         // Якщо так, генеруємо розмір цього стрибка
                         double jumpShock = NormalDistribution.Sample();
