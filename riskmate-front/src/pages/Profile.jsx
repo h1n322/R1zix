@@ -2,35 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { signOut } from 'firebase/auth';
-import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import toast, { Toaster } from 'react-hot-toast';
-import styles from './PagesStyles/Profile.module.css'; // Підключаємо модульні стилі
+import styles from './PagesStyles/Profile.module.css'; 
+import PortfolioTable from '../components/dashboard/PortfolioTable';
 
 const Profile = ({ user }) => {
   const navigate = useNavigate();
-  const [portfolios, setPortfolios] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
       navigate('/');
-      return;
     }
-    fetchPortfolios();
   }, [user, navigate]);
-
-  const fetchPortfolios = async () => {
-    try {
-      const q = query(collection(db, "users", user.uid, "portfolios"), orderBy("updatedAt", "desc"));
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setPortfolios(data);
-    } catch (error) {
-      toast.error("Не вдалося завантажити історію");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -41,12 +24,6 @@ const Profile = ({ user }) => {
   const getInitials = (email) => {
     if (!email) return 'U';
     return email.substring(0, 2).toUpperCase();
-  };
-
-  // Хелпер для красивого форматування грошей
-  const formatMoney = (val) => {
-    if (val === undefined || val === null) return '0.00';
-    return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   if (!user) return null;
@@ -83,59 +60,15 @@ const Profile = ({ user }) => {
           </button>
         </div>
 
-        {/* Збережені портфелі */}
-        <h2 className={styles.sectionTitle}>Історія збережених симуляцій</h2>
-        
-        {loading ? (
-          <p className={styles.loadingText}>Завантаження даних...</p>
-        ) : portfolios.length > 0 ? (
-          <div className={styles.portfolioGrid}>
-            {portfolios.map((port) => (
-              <div 
-                key={port.id} 
-                onClick={() => {
-                  toast.success('Перейдіть в Дашборд та натисніть "Завантажити"');
-                  navigate('/dashboard');
-                }}
-                className={styles.portfolioCard}
-              >
-                <div className={styles.cardHeader}>
-                  <span className={styles.tickerBadge}>
-                    {port.tickers || 'N/A'}
-                  </span>
-                  <span className={styles.dateBadge}>
-                    {new Date(port.updatedAt).toLocaleDateString('uk-UA', {
-                      day: 'numeric', month: 'short', year: 'numeric'
-                    })}
-                  </span>
-                </div>
-                
-                <div className={styles.metricsRow}>
-                  <div className={styles.metricBlock}>
-                    <span className={styles.metricLabel}>Очікувана ціна:</span>
-                    <span className={styles.metricValue}>
-                      ${formatMoney(port.metrics?.expected_price)}
-                    </span>
-                  </div>
-                  <div className={`${styles.metricBlock} ${styles.metricBlockRight}`}>
-                    <span className={styles.metricLabel}>VaR (Ризик 95%):</span>
-                    <span className={styles.metricRisk}>
-                      ${formatMoney(port.metrics?.var_5)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>📊</div>
-            <p className={styles.emptyText}>У вас ще немає збережених симуляцій.</p>
-            <button onClick={() => navigate('/dashboard')} className={styles.actionBtn}>
-              Зробити перший розрахунок
-            </button>
-          </div>
-        )}
+        {/* Збережені портфелі (Новий компонент) */}
+        <div style={{ marginTop: '2rem' }}>
+          <PortfolioTable 
+            user={user} 
+            onLoadPortfolio={(portfolio) => {
+              navigate('/dashboard', { state: { portfolioToLoad: portfolio } });
+            }} 
+          />
+        </div>
       </div>
     </div>
   );

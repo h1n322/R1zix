@@ -15,9 +15,49 @@ namespace RiskMate.MathEngine
         private readonly MertonJumpSimulator _merton = new();
         private readonly GarchSimulator _garch = new();
 
-        public SimulationResult RunSimulation(List<double> historicalPrices, string algorithm, int simulationsCount, int horizon, string scenario,double confidenceLevel = 0.95)
+        public SimulationResult RunSimulation(
+            List<double> historicalPrices,
+            SimulationAlgorithm algorithm,
+            int simulationsCount,
+            int horizon,
+            StressScenario? scenario = null,
+            double confidenceLevel = 0.95,
+            double customShockPercentage = 0)
         {
+            var startDate = DateTime.UtcNow.AddDays(-historicalPrices.Count);
+            var priceData = historicalPrices.Select((p, i) => new PriceDataPoint { Date = startDate.AddDays(i), Price = p }).ToList();
+            return RunSimulation(priceData, algorithm, simulationsCount, horizon, scenario, confidenceLevel, customShockPercentage);
+        }
+
+        public SimulationResult RunSimulation(
+            List<PriceDataPoint> historicalData,
+            SimulationAlgorithm algorithm,
+            int simulationsCount,
+            int horizon,
+            StressScenario? scenario = null,
+            double confidenceLevel = 0.95,
+            double customShockPercentage = 0,
+            bool isBacktest = false)
+        {
+            if (historicalData == null || historicalData.Count == 0)
+            {
+                throw new ArgumentException("Історичні дані не можуть бути порожніми.", nameof(historicalData));
+            }
+
+            List<PriceDataPoint> validationData = null;
+            if (isBacktest && historicalData.Count > horizon)
+            {
+                validationData = historicalData.Skip(historicalData.Count - horizon).ToList();
+                historicalData = historicalData.Take(historicalData.Count - horizon).ToList();
+            }
+
+            var historicalPrices = historicalData.Select(h => h.Price).ToList();
             var returns = ReturnsCalculator.CalculateLogReturns(historicalPrices);
+            if (returns.Count == 0)
+            {
+                throw new ArgumentException("Недостатньо коректних історичних даних для розрахунку дохідностей.", nameof(historicalData));
+            }
+
             double currentPrice = historicalPrices.Last();
             
             double meanReturn = returns.Average();
@@ -34,55 +74,106 @@ namespace RiskMate.MathEngine
 
             List<List<double>> paths;
 
-            if (algorithm.ToLower() == "historical")
+            switch (algorithm)
             {
-                paths = _historical.Simulate(currentPrice, returns, simulationsCount, horizon);
-            }
-            else if (algorithm.ToLower() == "merton")
-            {
-                paths = _merton.Simulate(parameters, simulationsCount, horizon);
-            }
-            else if (algorithm.ToLower() == "garch")
-            {
-                paths = _garch.Simulate(parameters, simulationsCount, horizon);
-            }
-            else if (!string.IsNullOrEmpty(scenario) && scenario.ToLower() != "base" && scenario.ToLower() != "none" && scenario.ToLower() != "covid") 
-            {
-                // Если выбран кризисный сценарий (стресс-тест)
-                var stressScenario = MapScenario(scenario);
-                paths = _stressTest.Simulate(parameters, simulationsCount, horizon, stressScenario);
-            }
-            else
-            {
-                // По умолчанию — классический Geometric Brownian Motion (Монте-Карло)
-                paths = _monteCarlo.Simulate(parameters, simulationsCount, horizon);
+                case SimulationAlgorithm.Historical:
+                    paths = _historical.Simulate(currentPrice, returns, simulationsCount, horizon);
+                    break;
+                case SimulationAlgorithm.Merton:
+                    paths = _merton.Simulate(parameters, simulationsCount, horizon);
+                    break;
+                case SimulationAlgorithm.Garch:
+                    paths = _garch.Simulate(parameters, simulationsCount, horizon);
+                    break;
+                default:
+                    if (scenario.HasValue)
+                    {
+                        paths = _stressTest.Simulate(parameters, simulationsCount, horizon, scenario.Value, customShockPercentage);
+                    }
+                    else
+                    {
+                        paths = _monteCarlo.Simulate(parameters, simulationsCount, horizon);
+                    }
+                    break;
             }
 
+            var metrics = MetricsCalculator.CalculateMetrics(paths, confidenceLevel);
 
             var result = new SimulationResult
             {
-                ExpectedPrice = MetricsCalculator.CalculateExpectedPrice(paths),
-                
-                // Передаємо рівень довіри сюди:
-                ValueAtRisk = MetricsCalculator.CalculateVaR(paths, confidenceLevel), 
-                
-                // І сюди:
-                ConditionalValueAtRisk = MetricsCalculator.CalculateCVaR(paths, confidenceLevel), 
-                
-                Volatility = volatility * Math.Sqrt(252) 
+                ExpectedPrice = metrics.ExpectedPrice,
+                ValueAtRisk = metrics.ValueAtRisk,
+                ConditionalValueAtRisk = metrics.ConditionalValueAtRisk,
+                Volatility = volatility * Math.Sqrt(Constants.TradingDaysPerYear) * 100.0
             };
 
-            for (int day = 0; day <= horizon; day++)
+            double strikePrice = currentPrice - Math.Abs(metrics.ValueAtRisk);
+            if (strikePrice > 0 && horizon > 0 && algorithm != SimulationAlgorithm.Markowitz)
             {
-                var dayPrices = paths.Select(p => p[day]).ToList();
-                dayPrices.Sort();
+                result.Hedging = Options.BlackScholesCalculator.CalculatePutOption(
+                    currentPrice: currentPrice,
+                    strikePrice: strikePrice,
+                    timeToExpirationYears: horizon / 365.0,
+                    riskFreeRate: 0.045, 
+                    volatility: volatility * Math.Sqrt(Constants.TradingDaysPerYear)
+                );
+            }
+
+            // 1. Додаємо історичні дані
+            for (int i = 0; i < historicalData.Count; i++)
+            {
+                var h = historicalData[i];
+                // Для останньої історичної точки встановимо також Forecast = Price, щоб лінії з'єдналися
+                double? forecastVal = (i == historicalData.Count - 1) ? h.Price : null;
 
                 result.ChartPoints.Add(new ChartPointData
                 {
-                    DayLabel = $"День {day}",
-                    ExpectedPrice = dayPrices.Average(),
-                    LowerBound = dayPrices[(int)(simulationsCount * 0.05)], 
-                    UpperBound = dayPrices[(int)(simulationsCount * 0.95)] 
+                    Name = h.Date.ToString("yyyy-MM-dd"),
+                    History = h.Price,
+                    Forecast = forecastVal,
+                    LowerBound = null,
+                    UpperBound = null
+                });
+            }
+
+            // 2. Додаємо симуляційний прогноз (майбутні дні)
+            // Вибираємо репрезентативну (медіанну) траєкторію з реалістичною стохастичною волатильністю
+            var finalPricesIndexed = paths
+                .Select((p, idx) => new { Index = idx, FinalPrice = p.Last() })
+                .OrderBy(x => x.FinalPrice)
+                .ToList();
+            int medianPathIndex = finalPricesIndexed[finalPricesIndexed.Count / 2].Index;
+            var representativePath = paths[medianPathIndex];
+
+            double lowerPercentile = (1.0 - confidenceLevel) / 2.0;
+            double upperPercentile = 1.0 - lowerPercentile;
+            var lastDate = historicalData.Last().Date;
+
+            for (int day = 1; day <= horizon; day++)
+            {
+                var futureDate = lastDate.AddDays(day);
+                var dayPrices = paths.Select(p => p[day]).ToList();
+                dayPrices.Sort();
+
+                int lowerIndex = (int)Math.Floor(dayPrices.Count * lowerPercentile);
+                int upperIndex = (int)Math.Ceiling(dayPrices.Count * upperPercentile) - 1;
+                lowerIndex = Math.Clamp(lowerIndex, 0, dayPrices.Count - 1);
+                upperIndex = Math.Clamp(upperIndex, 0, dayPrices.Count - 1);
+
+                double? actualVal = null;
+                if (isBacktest && validationData != null && day <= validationData.Count)
+                {
+                    actualVal = validationData[day - 1].Price;
+                }
+
+                result.ChartPoints.Add(new ChartPointData
+                {
+                    Name = futureDate.ToString("yyyy-MM-dd"),
+                    History = null,
+                    Forecast = Math.Round(representativePath[day], 2),
+                    Actual = actualVal,
+                    LowerBound = Math.Round(dayPrices[lowerIndex], 2),
+                    UpperBound = Math.Round(dayPrices[upperIndex], 2)
                 });
             }
 
@@ -91,26 +182,23 @@ namespace RiskMate.MathEngine
             return result;
         }
 
-        private StressScenario MapScenario(string scenario)
-        {
-            return scenario.ToLower() switch
-            {
-                "covid" => StressScenario.Covid19Crash,
-                "dotcom" => StressScenario.DotComBubble00,
-                "crisis08" => StressScenario.FinancialCrisis08,
-                "blackmonday" => StressScenario.BlackMonday87,
-                "war2022" => StressScenario.GeopoliticalShock22,
-                "aibubble" => StressScenario.AIBubbleBurst,
-                _ => StressScenario.CustomShock
-            };
-        }
-
         private List<HistogramBinData> GenerateHistogram(List<double> finalPrices, int binCount = 15)
         {
             var bins = new List<HistogramBinData>();
             double min = finalPrices.Min();
             double max = finalPrices.Max();
             double range = max - min;
+
+            if (range <= 0)
+            {
+                bins.Add(new HistogramBinData
+                {
+                    BinRange = $"${Math.Round(min, 1)}",
+                    Frequency = finalPrices.Count
+                });
+                return bins;
+            }
+
             double binWidth = range / binCount;
 
             var counts = new int[binCount];

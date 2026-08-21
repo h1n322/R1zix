@@ -5,6 +5,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using RiskMate.Api.Models;
 using RiskMate.Api.Services;
+using RiskMate.MathEngine;
+using RiskMate.MathEngine.Simulators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,21 +32,33 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") 
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://localhost:3000")
+              .SetIsOriginAllowed(_ => true)
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
 builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddMemoryCache();
 builder.Services.AddControllers();
 builder.Services.AddHttpClient<YahooFinanceService>();
+builder.Services.AddHttpClient<AiAnalyticsService>();
+builder.Services.AddSingleton<RiskEngine>();
+builder.Services.AddSingleton<BacktestSimulator>();
+builder.Services.AddSingleton<PdfReportService>();
 var app = builder.Build();
 
 
 app.UseCors("AllowReactApp");
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 app.UseAuthentication();      
 app.UseAuthorization();       
 app.MapControllers();

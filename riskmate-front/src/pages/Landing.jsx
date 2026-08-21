@@ -53,7 +53,7 @@ const Landing = () => {
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        const resp = await fetch('http://localhost:8000/api/market-overview');
+        const resp = await fetch('/api/market-overview');
         const data = await resp.json();
         setMarketData(data);
       } catch (error) {

@@ -10,24 +10,29 @@ namespace RiskMate.MathEngine.Simulators
     {
         public BacktestResult RunHistoricalRiskBacktest(List<double> prices, int windowSize = 252, double confidenceLevel = 0.95)
         {
-            var returns = ReturnsCalculator.CalculateLogReturns(prices);
+            var returns = ReturnsCalculator.CalculateLogReturns(prices).ToArray();
             var result = new BacktestResult();
             
-            if (returns.Count <= windowSize) return result;
+            if (returns.Length <= windowSize) return result;
 
             int percentileIndex = (int)Math.Floor(windowSize * (1.0 - confidenceLevel));
 
             var predictedCVaRsOnBreachDays = new List<double>();
             var actualReturnsOnBreachDays = new List<double>();
 
-            for (int i = windowSize; i < returns.Count; i++)
+            // Перевикористовуємо один буфер замість створення нових списків на кожну ітерацію
+            var window = new double[windowSize];
+
+            for (int i = windowSize; i < returns.Length; i++)
             {
-                var historicalWindow = returns.Skip(i - windowSize).Take(windowSize).ToList();
-                historicalWindow.Sort();
+                Array.Copy(returns, i - windowSize, window, 0, windowSize);
+                Array.Sort(window);
 
-                double predictedVaR = historicalWindow[percentileIndex]; 
+                double predictedVaR = window[percentileIndex];
 
-                double predictedCVaR = historicalWindow.Take(percentileIndex).Average();
+                double predictedCVaR = percentileIndex > 0
+                    ? window.Take(percentileIndex).Average()
+                    : predictedVaR;
 
                 double actualReturn = returns[i];
                 bool isBreach = actualReturn < predictedVaR;
@@ -49,7 +54,7 @@ namespace RiskMate.MathEngine.Simulators
                 }
             }
 
-            result.TotalTestedDays = returns.Count - windowSize;
+            result.TotalTestedDays = returns.Length - windowSize;
             result.ExpectedBreaches = (int)Math.Round(result.TotalTestedDays * (1.0 - confidenceLevel));
             result.BreachRate = (double)result.ActualBreaches / result.TotalTestedDays;
 
