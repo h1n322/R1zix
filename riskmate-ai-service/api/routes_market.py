@@ -51,3 +51,21 @@ def get_prediction(
         "predicted_price_tomorrow": round(price, 2),
         "message": "Прогноз згенеровано успішно за допомогою LSTM",
     }
+
+
+# -----------------------------------------------------------------------
+# GET /api/info/{ticker}
+# -----------------------------------------------------------------------
+
+@router.get("/info/{ticker}")
+def get_asset_info(
+    ticker: str,
+    provider: YFinanceProvider = Depends(get_data_provider),
+):
+    """Повертає метаінформацію про актив для панелі деталей."""
+    from services.simulation_service import SimulationService
+    info = provider.fetch_info(ticker)
+    
+    # Використовуємо той самий форматер, що і в SimulationService
+    sim_service = SimulationService(provider)
+    return sim_service._build_stock_info(info)

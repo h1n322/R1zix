@@ -96,7 +96,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/methodology" element={<Methodology />} />
         <Route path="/guide" element={<Guide />} />
-        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/pricing" element={<Pricing user={user} />} />
 
         <Route path="/dashboard" element={user ? <Dashboard user={user} /> : <Navigate to="/" />} />
         <Route path="/profile" element={user ? <Profile user={user} /> : <Navigate to="/" />} />

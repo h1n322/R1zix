@@ -228,6 +228,11 @@ const Dashboard = ({ user }) => {
   };
 
   const downloadReport = async () => {
+    if (user?.tier !== 'pro') {
+      toast.error('Експорт PDF доступний лише у тарифі Pro Analyst! 🚀', { icon: '🔒' });
+      setTimeout(() => navigate('/pricing'), 1500);
+      return;
+    }
     const loadingToast = toast.loading('Генерація PDF...');
     try {
       const resp = await fetch('/api/simulation/report', {
@@ -365,10 +370,17 @@ const Dashboard = ({ user }) => {
   React.useEffect(() => {
     if (location.state?.portfolioToLoad) {
       loadSelectedPortfolio(location.state.portfolioToLoad);
-      // Clear the state so it doesn't reload on refresh
       window.history.replaceState({}, document.title)
     }
-  }, [location.state]);
+
+    // Перевірка на повернення після успішної оплати Stripe
+    const params = new URLSearchParams(location.search);
+    if (params.get('success') === 'true') {
+      toast.success('Оплата успішна! Вітаємо в тарифі PRO 🎉', { duration: 5000 });
+      // Очищаємо URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [location.state, location.search]);
 
   const loadSelectedPortfolio = (data) => {
     setTicker(data.tickers || 'AAPL');

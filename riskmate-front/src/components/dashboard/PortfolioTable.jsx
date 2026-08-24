@@ -3,11 +3,11 @@ import styles from '../dashboard/css/PortfolioTable.module.css';
 import { auth } from '../../firebase';
 import toast from 'react-hot-toast';
 
-const STORAGE_KEY = 'riskmate_saved_portfolios';
-
 const PortfolioTable = ({ user, onLoadPortfolio }) => {
   const [portfolios, setPortfolios] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const STORAGE_KEY = user ? `riskmate_saved_portfolios_${user.uid}` : 'riskmate_saved_portfolios';
 
   const fetchPortfolios = useCallback(async () => {
     setIsLoading(true);

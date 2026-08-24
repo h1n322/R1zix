@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routes_simulations import router as simulations_router
 from api.routes_portfolio import router as portfolio_router
 from api.routes_market import router as market_router
-from api.routes_webhook import router as webhook_router
+from api.routes_billing import router as billing_router
 
 load_dotenv()
 
@@ -31,7 +31,7 @@ app.add_middleware(
 app.include_router(simulations_router)
 app.include_router(portfolio_router)
 app.include_router(market_router)
-app.include_router(webhook_router)
+app.include_router(billing_router)
 from api.routes_ml import router as ml_router
 app.include_router(ml_router)
 

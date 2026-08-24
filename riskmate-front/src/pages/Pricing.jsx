@@ -41,13 +41,28 @@ const PricingCard = ({ title, price, features, isPopular, buttonText, onClick })
   );
 };
 
-const Pricing = () => {
+const Pricing = ({ user }) => {
   const navigate = useNavigate();
 
-  const STRIPE_PRO_LINK = "https://buy.stripe.com/test_9B600cfMQh10dOKgiUgnK00"; 
-
-  const handleProPlan = () => {
-    window.open(STRIPE_PRO_LINK, '_blank');
+  const handleProPlan = async () => {
+    if (!user) {
+      navigate('/?login=true'); // Or whatever the login logic is
+      return;
+    }
+    
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email })
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (e) {
+      console.error("Payment setup failed:", e);
+    }
   };
 
   const handleBasicPlan = () => {

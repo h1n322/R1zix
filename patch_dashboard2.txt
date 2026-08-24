@@ -1,0 +1,41 @@
+        {(chartData && chartData.length > 0 && algorithm !== 'markowitz') && (
+          <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '15px', marginBottom: '20px', border: '1px solid #3b82f6' }}>
+            <h3 style={{ color: '#fff', marginTop: 0, marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              🧠 AI Аналітика
+            </h3>
+            
+            {aiSummary ? (
+              <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: '1.6', margin: '0 0 10px 0' }}>{aiSummary}</p>
+            ) : (
+              <p style={{ color: '#94a3b8', fontSize: '14px', fontStyle: 'italic', margin: '0 0 10px 0' }}>
+                Аналітика від LLM недоступна (переконайся, що C# сервер перезапущено і введено Gemini API ключ).
+              </p>
+            )}
+            
+            {lstmForecast ? (
+              <div style={{ marginTop: '10px', display: 'inline-block', backgroundColor: 'rgba(59, 130, 246, 0.1)', padding: '10px 15px', borderRadius: '10px' }}>
+                <span style={{ color: '#94a3b8', fontSize: '12px', display: 'block', marginBottom: '5px' }}>Прогноз нейромережі (LSTM) на завтра:</span>
+                <span style={{ color: '#3b82f6', fontSize: '18px', fontWeight: 'bold' }}>${lstmForecast.toFixed(2)}</span>
+              </div>
+            ) : (
+              <div style={{ marginTop: '10px' }}>
+                <span style={{ color: '#94a3b8', fontSize: '12px' }}>LSTM прогноз недоступний. Python-мікросервіс вимкнений або модель не знайдена. </span>
+                <button 
+                  onClick={async () => {
+                    toast.loading('Навчання моделі...', {id: 'train'});
+                    try {
+                      const res = await fetch(`http://127.0.0.1:8000/api/ml/train/${ticker}`, {method: 'POST'});
+                      if (res.ok) toast.success('Навчання розпочато! Це займе 1-2 хвилини.', {id: 'train'});
+                      else throw new Error("Помилка");
+                    } catch (e) {
+                      toast.error('Не вдалося звʼязатися з Python-сервером на порту 8000.', {id: 'train'});
+                    }
+                  }}
+                  style={{ background: 'none', border: 'none', color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}
+                >
+                  Натренувати модель
+                </button>
+              </div>
+            )}
+          </div>
+        )}

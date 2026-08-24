@@ -35,6 +35,16 @@ services:
       - "8000:8000"
     volumes:
       - ./riskmate-ai-service/models:/app/models
+  frontend:
+    build:
+      context: ./riskmate-front
+      dockerfile: Dockerfile
+    container_name: riskmate_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - python-ml
+      - csharp-api
 
 volumes:
   pgdata:

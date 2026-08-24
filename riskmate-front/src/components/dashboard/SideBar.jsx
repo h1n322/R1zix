@@ -26,6 +26,75 @@ const Sidebar = ({
 
   const toggleDrawer = () => setIsDrawerOpen(!isDrawerOpen);
 
+  const algorithms = [
+    { value: "gbm", label: "Classic GBM Monte Carlo", pro: false },
+    { value: "historical", label: "Historical Simulation", pro: false },
+    { value: "merton", label: "Merton Jump-Diffusion", pro: false },
+    { value: "garch", label: "GARCH Volatility", pro: true },
+    { value: "stress", label: "Stress Testing", pro: false },
+    { value: "backtest", label: "Backtesting (Test)", pro: false },
+    { value: "lstm", label: "AI Forecast (LSTM)", pro: true },
+    { value: "markowitz", label: "Portfolio Optimization", pro: true }
+  ];
+
+  const CustomSelect = ({ value, onChange, options, isPro }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const selected = options.find(o => o.value === value);
+
+    return (
+      <div style={{ position: 'relative', width: '100%' }}>
+        <div 
+          className={styles.select} 
+          onClick={() => setIsOpen(!isOpen)}
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+        >
+          <span>{selected?.label}</span>
+          <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 4 6 7 9 4"></polyline>
+          </svg>
+        </div>
+        
+        {isOpen && (
+          <div style={{
+            position: 'absolute', top: '100%', left: 0, right: 0, 
+            backgroundColor: '#0F172A', border: '1px solid #1F2937', 
+            borderRadius: '8px', marginTop: '4px', zIndex: 10,
+            overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
+          }}>
+            {options.map(opt => (
+              <div 
+                key={opt.value}
+                onClick={() => {
+                  onChange(opt.value);
+                  setIsOpen(false);
+                }}
+                style={{
+                  padding: '10px 14px', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  backgroundColor: opt.value === value ? '#1E293B' : 'transparent',
+                  color: (!isPro && opt.pro) ? '#64748B' : '#F8FAFC'
+                }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1E293B'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = opt.value === value ? '#1E293B' : 'transparent'}
+              >
+                <span>{opt.label}</span>
+                {(!isPro && opt.pro) && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                )}
+                {(isPro && opt.pro) && (
+                  <span style={{ fontSize: '10px', background: '#3B82F6', color: '#fff', padding: '2px 6px', borderRadius: '4px' }}>PRO</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className={styles.wrapper}>
       
@@ -87,21 +156,12 @@ const Sidebar = ({
 
           <div className={styles.inputGroup}>
             <label className={styles.label}>Тип алгоритму</label>
-            <select className={styles.select} value={algorithm} onChange={e => setAlgorithm(e.target.value)}>
-              <option value="gbm">Classic GBM Monte Carlo</option>
-              <option value="historical">Historical Simulation</option>
-              <option value="merton">Merton Jump-Diffusion</option>
-              <option value="garch">GARCH Volatility</option>
-              <option value="stress">Stress Testing</option>
-              <option value="backtest">Backtesting (Test)</option>
-              
-              <option value="lstm" disabled={!isPro}>
-                {isPro ? 'AI Forecast (LSTM)' : '🔒 AI Forecast (Pro)'}
-              </option>
-              <option value="markowitz" disabled={!isPro}>
-                {isPro ? 'Portfolio Optimization' : '🔒 Optimization (Pro)'}
-              </option>
-            </select>
+            <CustomSelect 
+              value={algorithm} 
+              onChange={setAlgorithm} 
+              options={algorithms} 
+              isPro={isPro} 
+            />
           </div>
 
           {algorithm === 'stress' && (
@@ -169,8 +229,9 @@ const Sidebar = ({
           {/* Кнопка PDF */}
           <button 
             className={`${styles.dockBtn} ${styles.dockBtnPdf}`} 
-            onClick={onDownload} 
-            title="Завантажити PDF звіт"
+            onClick={!isPro ? (e) => { e.preventDefault(); onDownload(); } : onDownload}
+            style={!isPro ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+            title={isPro ? "Завантажити PDF звіт" : "🔒 PDF звіт (Pro)"}
           >
             <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
