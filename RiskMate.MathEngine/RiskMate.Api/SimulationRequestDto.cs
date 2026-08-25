@@ -25,5 +25,8 @@ namespace RiskMate.Api.DTOs
         public double? CustomShockPercentage { get; set; } // Для сценарію "custom" (частка падіння, напр. 0.2 = -20%)
 
         public bool IsBacktest { get; set; } = false;
+
+        [Range(1, 20)]
+        public int LookbackYears { get; set; } = 5;
     }
 }

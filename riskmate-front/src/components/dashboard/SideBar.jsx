@@ -147,11 +147,39 @@ const Sidebar = ({
           <div className={styles.inputGroup}>
             <label className={styles.label}>Актив (Тикер)</label>
             <input 
+              list="popular-tickers"
               className={styles.input} 
               value={ticker} 
               onChange={e => setTicker(e.target.value.toUpperCase())}
-              placeholder="AAPL, MSFT, BTC-USD..."
+              placeholder="Оберіть зі списку або введіть..."
+              autoComplete="off"
             />
+            <datalist id="popular-tickers">
+              {/* Популярні акції */}
+              <option value="AAPL">Apple Inc.</option>
+              <option value="MSFT">Microsoft Corp.</option>
+              <option value="NVDA">NVIDIA Corp.</option>
+              <option value="GOOGL">Alphabet (Google)</option>
+              <option value="AMZN">Amazon.com</option>
+              <option value="META">Meta Platforms</option>
+              <option value="TSLA">Tesla Inc.</option>
+              <option value="BRK-B">Berkshire Hathaway</option>
+              <option value="JPM">JPMorgan Chase</option>
+              <option value="V">Visa Inc.</option>
+              {/* Популярні ETF */}
+              <option value="SPY">SPDR S&P 500 ETF</option>
+              <option value="QQQ">Invesco QQQ (Nasdaq 100)</option>
+              <option value="DIA">SPDR Dow Jones ETF</option>
+              {/* Криптовалюти */}
+              <option value="BTC-USD">Bitcoin (Крипто)</option>
+              <option value="ETH-USD">Ethereum (Крипто)</option>
+              <option value="SOL-USD">Solana (Крипто)</option>
+              <option value="BNB-USD">Binance Coin (Крипто)</option>
+              {/* Європейські та інші компанії */}
+              <option value="NVO">Novo Nordisk</option>
+              <option value="ASML">ASML Holding</option>
+              <option value="TCEHY">Tencent Holdings</option>
+            </datalist>
           </div>
 
           <div className={styles.inputGroup}>

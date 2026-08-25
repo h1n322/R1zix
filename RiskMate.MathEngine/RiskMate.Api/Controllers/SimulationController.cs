@@ -54,7 +54,7 @@ namespace RiskMate.Api.Controllers
                 List<HistoricalPriceDto> historicalDataDto = null;
                 try
                 {
-                    historicalDataDto = await _yahooFinanceService.GetHistoricalDataAsync(dto.Ticker);
+                    historicalDataDto = await _yahooFinanceService.GetHistoricalDataAsync(dto.Ticker, dto.LookbackYears);
                 }
                 catch (Exception ex)
                 {
@@ -72,6 +72,8 @@ namespace RiskMate.Api.Controllers
                     Date = h.Date,
                     Price = h.Close
                 }).ToList();
+
+                Console.WriteLine($"LAST PRICE BEFORE SIM (RunSimulation): {priceDataPoints.LastOrDefault()?.Price}");
 
                 var simulationResult = _riskEngine.RunSimulation(
                     priceDataPoints,
@@ -119,11 +121,13 @@ namespace RiskMate.Api.Controllers
                 if (algorithm is null) return BadRequest(new { Message = "Невідомий алгоритм" });
                 var scenario = ParseScenario(dto.Scenario);
 
-                var historicalDataDto = await _yahooFinanceService.GetHistoricalDataAsync(dto.Ticker);
+                var historicalDataDto = await _yahooFinanceService.GetHistoricalDataAsync(dto.Ticker, dto.LookbackYears);
                 if (historicalDataDto == null || historicalDataDto.Count < 10)
                     return BadRequest(new { Message = "Не вдалося отримати історичні дані." });
 
                 var priceDataPoints = historicalDataDto.Select(h => new PriceDataPoint { Date = h.Date, Price = h.Close }).ToList();
+
+                Console.WriteLine($"LAST PRICE BEFORE SIM: {priceDataPoints.LastOrDefault()?.Price}");
 
                 var simulationResult = _riskEngine.RunSimulation(
                     priceDataPoints, algorithm.Value, dto.SimulationsCount, dto.Horizon, scenario, dto.ConfidenceLevel, dto.CustomShockPercentage ?? 0, isBacktest);
@@ -147,7 +151,9 @@ namespace RiskMate.Api.Controllers
                 List<double> historicalPrices = null;
                 try
                 {
-                    historicalPrices = await _yahooFinanceService.GetHistoricalPricesAsync(dto.Ticker);
+                    var yearsStr = dto.Range.Replace("y", "");
+                    int lookback = int.TryParse(yearsStr, out var y) ? y : 5;
+                    historicalPrices = await _yahooFinanceService.GetHistoricalPricesAsync(dto.Ticker, lookback);
                 }
                 catch (Exception ex)
                 {

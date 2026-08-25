@@ -1,3 +1,4 @@
+import { Icon } from "@iconify/react";
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { collection, addDoc, getDocs, query, orderBy, limit, doc, setDoc, getDoc } from 'firebase/firestore'; 
@@ -22,7 +23,7 @@ const Dashboard = ({ user }) => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const [ticker, setTicker] = useState('AAPL');
+  const [ticker, setTicker] = useState('');
   const [algorithm, setAlgorithm] = useState('gbm');
   const [simulations, setSimulations] = useState(1000);
   const [horizon, setHorizon] = useState(30);
@@ -60,7 +61,7 @@ const Dashboard = ({ user }) => {
     const premiumAlgorithms = ['lstm', 'markowitz']; 
     
     if (premiumAlgorithms.includes(algorithm) && user?.tier !== 'pro') {
-      toast.error('Цей алгоритм доступний лише у тарифі Pro Analyst! 🚀', {
+      toast.error('Цей алгоритм доступний лише у тарифі Pro Analyst!', {
         icon: '🔒',
         duration: 4000,
         style: {
@@ -179,7 +180,8 @@ const Dashboard = ({ user }) => {
             simulationsCount: parseInt(simulations),
             horizon: parseInt(horizon),
             scenario: algorithm === 'stress' ? scenario : 'base',
-            confidenceLevel: parseFloat(varConf)
+            confidenceLevel: parseFloat(varConf),
+            lookbackYears: parseInt(lookback)
           })
         });
         const data = await resp.json();
@@ -196,7 +198,20 @@ const Dashboard = ({ user }) => {
           volatility: data.volatility || 0,
         });
         
-        setAssetDetails(null);
+        // Отримуємо деталі про актив безпосередньо від Python Data Gateway
+        try {
+          const infoResp = await fetch(`http://127.0.0.1:8000/api/info/${ticker}`);
+          if (infoResp.ok) {
+            const infoData = await infoResp.json();
+            setAssetDetails(infoData);
+          } else {
+            setAssetDetails(null);
+          }
+        } catch (e) {
+          console.error("Не вдалося завантажити деталі активу", e);
+          setAssetDetails(null);
+        }
+        
         setNews(data.news || []);
         setAiSummary(data.aiSummary || null);
         setHedging(data.hedging || null);
@@ -229,7 +244,7 @@ const Dashboard = ({ user }) => {
 
   const downloadReport = async () => {
     if (user?.tier !== 'pro') {
-      toast.error('Експорт PDF доступний лише у тарифі Pro Analyst! 🚀', { icon: '🔒' });
+      toast.error('Експорт PDF доступний лише у тарифі Pro Analyst! ', { icon: '🔒' });
       setTimeout(() => navigate('/pricing'), 1500);
       return;
     }
@@ -527,9 +542,36 @@ const Dashboard = ({ user }) => {
         )}
 
         {(chartData && chartData.length > 0 && algorithm !== 'markowitz') && (
-          <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '15px', marginBottom: '20px', border: '1px solid #3b82f6' }}>
-            <h3 style={{ color: '#fff', marginTop: 0, marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              🧠 AI Аналітика
+          <div style={{ 
+            backgroundColor: '#0B0E14', 
+            padding: '20px 24px', 
+            borderRadius: '16px', 
+            marginBottom: '20px', 
+            border: '1px solid #1F2937',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
+          }}>
+            <h3 style={{ 
+              color: '#f8fafc', 
+              marginTop: 0, 
+              marginBottom: '16px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px',
+              fontSize: '16px',
+              fontWeight: '600'
+            }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                backgroundColor: 'rgba(59, 130, 246, 0.15)', 
+                color: '#3b82f6', 
+                padding: '8px', 
+                borderRadius: '10px' 
+              }}>
+                <Icon icon="lucide:brain-circuit" width="22" height="22" />
+              </div>
+              AI Аналітика
             </h3>
             
             {aiSummary ? (
@@ -577,9 +619,38 @@ const Dashboard = ({ user }) => {
             <AssetDetails details={assetDetails} />
 
             {hedging && (
-              <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '15px', border: '1px solid #10b981', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <h3 style={{ margin: 0, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  🛡 Ідея для хеджування (Black-Scholes)
+              <div style={{ 
+                backgroundColor: '#0B0E14', 
+                padding: '20px 24px', 
+                borderRadius: '16px', 
+                border: '1px solid #1F2937', 
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '12px' 
+              }}>
+                <h3 style={{ 
+                  color: '#f8fafc', 
+                  marginTop: 0, 
+                  marginBottom: '4px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '12px',
+                  fontSize: '16px',
+                  fontWeight: '600'
+                }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(16, 185, 129, 0.15)', 
+                    color: '#10b981', 
+                    padding: '8px', 
+                    borderRadius: '10px' 
+                  }}>
+                    <Icon icon="lucide:shield-check" width="22" height="22" />
+                  </div>
+                  Ідея для хеджування (Black-Scholes)
                 </h3>
                 <p style={{ margin: 0, color: '#94a3b8', fontSize: '14px', lineHeight: '1.5' }}>
                   Щоб захистити свій портфель від падіння нижче рівня ризику (VaR) <strong>${hedging.strikePrice.toFixed(2)}</strong> на наступні {hedging.expiration}, ви можете купити <strong>Put-опціон</strong>.
