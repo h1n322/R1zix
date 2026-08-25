@@ -13,6 +13,12 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    container_name: riskmate_redis
+    ports:
+      - "6379:6379"
+
   csharp-api:
     build:
       context: ./RiskMate.MathEngine
@@ -21,8 +27,9 @@ services:
     ports:
       - "5266:8080"
     environment:
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=riskmate_db;Username=postgres;Password=supersecretpassword
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=riskmate_db;Username=postgres;Password=${DB_PASSWORD}
       - ASPNETCORE_ENVIRONMENT=Development
+      - GeminiApiKey=${GEMINI_API_KEY}
     depends_on:
       - db
 
@@ -34,14 +41,25 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./riskmate-ai-service/models:/app/models
+      - ./riskmate-ai-service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      - redis
+
   frontend:
     build:
       context: ./riskmate-front
       dockerfile: Dockerfile
+      target: build
     container_name: riskmate_frontend
     ports:
-      - "3000:80"
+      - "5173:5173"
+    environment:
+      - PROXY_API_URL=http://csharp-api:8080
+    volumes:
+      - ./riskmate-front:/app
+      - /app/node_modules
+    command: npm run dev -- --host
     depends_on:
       - python-ml
       - csharp-api

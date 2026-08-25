@@ -1,240 +1,225 @@
 import time
+import json
 from datetime import datetime
 
-import yfinance as yf
+import httpx
+import redis
 import pandas as pd
 import numpy as np
-import requests_cache
+import yfinance as yf
 
-# Глобально кешуємо всі HTTP запити для уникнення Rate Limit (кеш живе 1 годину)
-requests_cache.install_cache('yfinance_cache', expire_after=3600)
+# Налаштування Redis. Використовуємо ім'я контейнера "redis" з docker-compose
+redis_client = redis.Redis(host='redis', port=6379, db=0, decode_responses=True)
 
+# Підміняємо User-Agent для прямих запитів, щоб обійти базовий захист Yahoo
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 
 class YFinanceProvider:
     """
-    Єдине місце у проєкті, де живе yfinance.
-    Всі сервіси отримують дані тільки через цей клас.
-    Завдяки цьому, якщо yfinance зміниться або ми захочемо
-    підмінити джерело даних — змінюємо тільки тут.
+    Data Gateway для фінансових даних.
+    Використовує Redis для кешування (15 хвилин) та httpx для прямих запитів,
+    щоб уникнути Rate Limit від Yahoo Finance.
     """
 
-    def __init__(self, retries: int = 3, retry_delay: float = 5.0):
+    def __init__(self, retries: int = 3, retry_delay: float = 2.0):
         self._retries = retries
         self._retry_delay = retry_delay
-        self._cache: dict = {}
+        self._cache_ttl = 900  # Кеш живе 15 хвилин (900 секунд)
 
     # ------------------------------------------------------------------
     # Публічні методи
     # ------------------------------------------------------------------
 
     def fetch_history(self, ticker: str, period: str) -> pd.DataFrame:
-        """
-        Повертає повний OHLCV DataFrame для одного тикера.
-        Колонки: Open, High, Low, Close, Volume
-        """
+        """Повертає повний OHLCV DataFrame для одного тикера."""
         cache_key = f"history_{ticker}_{period}"
-        if cache_key in self._cache:
-            print(f"📦 Кеш: history {ticker}")
-            return self._cache[cache_key]
+        
+        try:
+            cached = redis_client.get(cache_key)
+            if cached:
+                print(f"📦 Redis Кеш: history {ticker} ({period})")
+                return pd.read_json(cached, orient="split")
+        except Exception as e:
+            print(f"⚠️ Помилка Redis (читання history): {e}")
 
         for attempt in range(self._retries):
             try:
+                # Використовуємо yfinance для OHLCV, але оскільки є Redis,
+                # ми не будемо спамити Yahoo.
                 df = yf.Ticker(ticker).history(period=period)
                 if not df.empty:
-                    self._cache[cache_key] = df
+                    # Прибираємо timezone, щоб JSON серіалізація була консистентною
+                    if df.index.tz is not None:
+                        df.index = df.index.tz_localize(None)
+                        
+                    try:
+                        redis_client.setex(cache_key, self._cache_ttl, df.to_json(orient="split", date_format="iso"))
+                    except Exception as e:
+                        print(f"⚠️ Помилка Redis (запис history): {e}")
                     return df
             except Exception as e:
-                print(f"⚠️  Спроба {attempt + 1}/{self._retries} для {ticker}: {e}")
-            delay = self._retry_delay * (2 ** attempt)
-            print(f"⏳ Чекаємо {delay:.0f}с...")
-            time.sleep(delay)
+                print(f"⚠️ Спроба {attempt + 1}/{self._retries} для {ticker} history: {e}")
+            time.sleep(self._retry_delay)
             
         print(f"🔄 Генеруємо MOCK-дані для {ticker} через Rate Limit...")
-        import numpy as np
+        return self._generate_mock_history(ticker)
+
+    def fetch_close(self, ticker: str, period: str) -> pd.Series:
+        df = self.fetch_history(ticker, period)
+        return df["Close"].squeeze()
+
+    def fetch_multi_close(self, tickers: list[str], period: str) -> pd.DataFrame:
+        """Повертає DataFrame з цінами закриття для кількох тикерів."""
+        tickers_str = '_'.join(sorted(tickers))
+        cache_key = f"multi_{tickers_str}_{period}"
+        
+        try:
+            cached = redis_client.get(cache_key)
+            if cached:
+                print(f"📦 Redis Кеш: multi_close {tickers}")
+                return pd.read_json(cached, orient="split")
+        except Exception as e:
+            print(f"⚠️ Помилка Redis (читання multi_close): {e}")
+
+        # Збираємо дані по кожному тикеру окремо через наш fetch_close (який вже кешується)
+        # Це надійніше, ніж yf.download, який часто падає на групі тикерів
+        result_dict = {}
+        for t in tickers:
+            try:
+                result_dict[t] = self.fetch_close(t, period)
+            except Exception as e:
+                print(f"⚠️ Не вдалося завантажити {t} для multi_close: {e}")
+            
+        if result_dict:
+            df = pd.DataFrame(result_dict)
+            try:
+                redis_client.setex(cache_key, self._cache_ttl, df.to_json(orient="split", date_format="iso"))
+            except Exception as e:
+                pass
+            return df
+
+        print(f"🔄 Генеруємо MOCK-дані для портфеля {tickers}...")
+        return self._generate_mock_multi(tickers)
+
+    def fetch_info(self, ticker: str) -> dict:
+        """Повертає метаінформацію про актив через yfinance (захищено Redis)."""
+        cache_key = f"info_{ticker}"
+        
+        try:
+            cached = redis_client.get(cache_key)
+            if cached:
+                print(f"📦 Redis Кеш: info {ticker}")
+                return json.loads(cached)
+        except Exception as e:
+            pass
+
+        try:
+            # Використовуємо yfinance, оскільки ми оновили його до 1.6.0
+            # і він успішно обходить блокування через curl_cffi
+            info = yf.Ticker(ticker).info
+            
+            try:
+                redis_client.setex(cache_key, self._cache_ttl, json.dumps(info))
+            except Exception:
+                pass
+            return info
+        except Exception as e:
+            print(f"⚠️ Не вдалося отримати yfinance info для {ticker}: {e}")
+        
+        return {}
+
+    def fetch_news(self, ticker: str, limit: int = 5) -> list[dict]:
+        """Повертає новини через прямий пошуковий API Yahoo."""
+        cache_key = f"news_{ticker}"
+        try:
+            cached = redis_client.get(cache_key)
+            if cached:
+                print(f"📦 Redis Кеш: news {ticker}")
+                return json.loads(cached)
+        except Exception:
+            pass
+
+        try:
+            url = f"https://query2.finance.yahoo.com/v1/finance/search?q={ticker}&newsCount={limit}"
+            with httpx.Client() as client:
+                resp = client.get(url, headers={"User-Agent": USER_AGENT}, timeout=10.0)
+                if resp.status_code == 200:
+                    news_data = resp.json().get("news", [])
+                    result = []
+                    for n in news_data:
+                        result.append({
+                            "title": n.get("title", ""),
+                            "publisher": n.get("publisher", "Yahoo Finance"),
+                            "link": n.get("link", "#"),
+                            "timestamp": int(n.get("providerPublishTime", 0))
+                        })
+                    try:
+                        redis_client.setex(cache_key, self._cache_ttl, json.dumps(result))
+                    except Exception:
+                        pass
+                    return result
+        except Exception as e:
+            print(f"⚠️ Не вдалося отримати HTTP новини для {ticker}: {e}")
+        
+        return []
+
+    def fetch_market_overview(self, tickers: list[str]) -> list[dict]:
+        """Повертає поточні ціни та добову зміну для списку тикерів."""
+        tickers_str = '_'.join(sorted(tickers))
+        cache_key = f"overview_{tickers_str}"
+        
+        try:
+            cached = redis_client.get(cache_key)
+            if cached:
+                print(f"📦 Redis Кеш: market overview")
+                return json.loads(cached)
+        except Exception:
+            pass
+
+        result = []
+        for t in tickers:
+            info = self.fetch_info(t)
+            if info and info.get("regularMarketPrice"):
+                current = float(info["regularMarketPrice"])
+                prev = float(info.get("previousClose") or current)
+                change_pct = ((current - prev) / prev) * 100 if prev else 0
+                result.append({
+                    "ticker": t,
+                    "price": f"{current:,.2f}",
+                    "change": f"{change_pct:+.2f}%",
+                    "isUp": change_pct >= 0,
+                })
+        
+        if result:
+            try:
+                redis_client.setex(cache_key, self._cache_ttl, json.dumps(result))
+            except Exception:
+                pass
+            
+        return result
+
+    # ------------------------------------------------------------------
+    # Приватні допоміжні методи
+    # ------------------------------------------------------------------
+
+    def _generate_mock_history(self, ticker: str) -> pd.DataFrame:
         dates = pd.date_range(end=pd.Timestamp.today().normalize(), periods=252 * 5, freq='B')
         np.random.seed(hash(ticker) % (2**32))
         returns = np.random.normal(0.0005, 0.02, len(dates))
         prices = 100 * np.exp(np.cumsum(returns))
-        df = pd.DataFrame({
+        return pd.DataFrame({
             "Open": prices * np.random.uniform(0.99, 1.01, len(dates)),
             "High": prices * np.random.uniform(1.0, 1.02, len(dates)),
             "Low": prices * np.random.uniform(0.98, 1.0, len(dates)),
             "Close": prices,
             "Volume": np.random.randint(100000, 10000000, len(dates))
         }, index=dates)
-        self._cache[cache_key] = df
-        return df
 
-    def fetch_close(self, ticker: str, period: str) -> pd.Series:
-        """
-        Повертає тільки ціни закриття (Close) як Series.
-        """
-        df = self.fetch_history(ticker, period)
-        return df["Close"].squeeze()
-
-    def fetch_multi_close(self, tickers: list[str], period: str) -> pd.DataFrame:
-        """
-        Повертає DataFrame з цінами закриття для кількох тикерів.
-        Колонки = тикери, рядки = дати.
-        """
-        cache_key = f"multi_{'_'.join(sorted(tickers))}_{period}"
-        if cache_key in self._cache:
-            print(f"📦 Кеш: multi_close {tickers}")
-            return self._cache[cache_key]
-
-        for attempt in range(self._retries):
-            try:
-                data = yf.download(tickers, period=period, auto_adjust=True)
-                if not data.empty:
-                    # yfinance 1.x повертає MultiIndex колонки для кількох тикерів
-                    close = data["Close"] if "Close" in data.columns else data
-                    result = close.dropna(how="all")
-                    self._cache[cache_key] = result
-                    return result
-            except Exception as e:
-                print(f"⚠️  Спроба {attempt + 1}/{self._retries} для {tickers}: {e}")
-            delay = self._retry_delay * (2 ** attempt)
-            print(f"⏳ Чекаємо {delay:.0f}с...")
-            time.sleep(delay)
-            
-        print(f"🔄 Генеруємо MOCK-дані для портфеля {tickers} через Rate Limit...")
-        import numpy as np
+    def _generate_mock_multi(self, tickers: list[str]) -> pd.DataFrame:
         dates = pd.date_range(end=pd.Timestamp.today().normalize(), periods=252 * 5, freq='B')
         mock_data = {}
         for t in tickers:
             np.random.seed(hash(t) % (2**32))
             returns = np.random.normal(0.0005, 0.02, len(dates))
             mock_data[t] = 100 * np.exp(np.cumsum(returns))
-        
-        df = pd.DataFrame(mock_data, index=dates)
-        self._cache[cache_key] = df
-        return df
-
-    def fetch_info(self, ticker: str) -> dict:
-        """
-        Повертає метаінформацію про актив (P/E, market cap, beta тощо).
-        При помилці повертає порожній словник, щоб не ламати симуляцію.
-        """
-        cache_key = f"info_{ticker}"
-        if cache_key in self._cache:
-            print(f"📦 Кеш: info {ticker}")
-            return self._cache[cache_key]
-
-        try:
-            result = yf.Ticker(ticker).info or {}
-            self._cache[cache_key] = result
-            return result
-        except Exception as e:
-            print(f"⚠️  Не вдалося отримати info для {ticker}: {e}")
-            return {}
-
-    def fetch_news(self, ticker: str, limit: int = 5) -> list[dict]:
-        """
-        Повертає список новин для тикера.
-
-        Увага: yfinance 1.x змінив структуру новин — тепер кожен елемент
-        має вигляд {'id': ..., 'content': {...}}, де у 'content' лежать
-        title, provider, canonicalUrl, pubDate. Обробляємо обидва формати.
-        """
-        cache_key = f"news_{ticker}"
-        if cache_key in self._cache:
-            print(f"📦 Кеш: news {ticker}")
-            return self._cache[cache_key]
-
-        try:
-            raw_news = yf.Ticker(ticker).news or []
-            result = []
-            for n in raw_news:
-                content = n.get("content") or {}
-                title = (
-                    content.get("title")
-                    or content.get("summary")
-                    or n.get("title")
-                    or n.get("headline")
-                    or ""
-                )
-                if not title:
-                    continue
-
-                provider = content.get("provider") or {}
-                publisher = (
-                    provider.get("displayName")
-                    or provider.get("longName")
-                    or n.get("publisher")
-                    or n.get("source")
-                    or "Yahoo Finance"
-                )
-
-                canonical = content.get("canonicalUrl") or {}
-                link = (
-                    canonical.get("url")
-                    or content.get("clickThroughUrl")
-                    or n.get("link")
-                    or n.get("url")
-                    or "#"
-                )
-
-                pub_date = content.get("pubDate") or n.get("providerPublishTime") or 0
-                timestamp = self._parse_timestamp(pub_date)
-
-                result.append({
-                    "title": title,
-                    "publisher": publisher,
-                    "link": link,
-                    "timestamp": timestamp,
-                })
-                if len(result) >= limit:
-                    break
-            self._cache[cache_key] = result
-            return result
-        except Exception as e:
-            print(f"⚠️  Не вдалося отримати новини для {ticker}: {e}")
-            return []
-
-    def fetch_market_overview(self, tickers: list[str]) -> list[dict]:
-        """
-        Повертає поточні ціни та добову зміну для списку тикерів.
-        Використовується для Market Overview на головній сторінці.
-        """
-        cache_key = f"overview_{'_'.join(sorted(tickers))}"
-        if cache_key in self._cache:
-            print(f"📦 Кеш: market overview")
-            return self._cache[cache_key]
-
-        try:
-            data = yf.download(tickers, period="5d", auto_adjust=True)["Close"]
-            result = []
-            for t in tickers:
-                series = data[t].dropna() if t in data.columns else pd.Series()
-                if len(series) >= 2:
-                    current = float(series.iloc[-1])
-                    prev = float(series.iloc[-2])
-                    change_pct = ((current - prev) / prev) * 100
-                    result.append({
-                        "ticker": t,
-                        "price": f"{current:,.2f}",
-                        "change": f"{change_pct:+.2f}%",
-                        "isUp": change_pct >= 0,
-                    })
-            self._cache[cache_key] = result
-            return result
-        except Exception as e:
-            print(f"⚠️  Market overview помилка: {e}")
-            return []
-
-    # ------------------------------------------------------------------
-    # Приватні допоміжні методи
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def _parse_timestamp(value) -> int:
-        """Конвертує pubDate (ISO-рядок або epoch-секунди) у epoch-секунди."""
-        if isinstance(value, (int, float)):
-            return int(value)
-        if isinstance(value, str):
-            try:
-                iso = value.replace("Z", "+00:00")
-                return int(datetime.fromisoformat(iso).timestamp())
-            except Exception:
-                return 0
-        return 0
+        return pd.DataFrame(mock_data, index=dates)

@@ -18,65 +18,34 @@ namespace RiskMate.Api.Services
         {
             _httpClient = httpClient;
             _cache = cache;
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "RiskMate C# Backend");
         }
 
-        public async Task<List<HistoricalPriceDto>> GetHistoricalDataAsync(string ticker)
+        public async Task<List<HistoricalPriceDto>> GetHistoricalDataAsync(string ticker, int lookbackYears = 5)
         {
-            var cacheKey = $"history_{ticker}";
+            var cacheKey = $"history_{ticker}_{lookbackYears}";
             
             return await _cache.GetOrCreateAsync(cacheKey, async entry =>
             {
-                // Зберігаємо дані в кеші на 2 години
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
-                
-                DateTime endDate = DateTime.UtcNow;
-                DateTime startDate = endDate.AddYears(-3);
-                long period1 = new DateTimeOffset(startDate).ToUnixTimeSeconds();
-                long period2 = new DateTimeOffset(endDate).ToUnixTimeSeconds();
 
-                var url = $"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?interval=1d&period1={period1}&period2={period2}";
+                // Звертаємось до Python Data Gateway замість Yahoo!
+                var url = $"http://python-ml:8000/api/history/{ticker}?lookback={lookbackYears}";
                 
                 var response = await _httpClient.GetAsync(url);
                 response.EnsureSuccessStatusCode();
 
                 var jsonString = await response.Content.ReadAsStringAsync();
-                
-                using var document = JsonDocument.Parse(jsonString);
-                var root = document.RootElement;
-                var result = root.GetProperty("chart").GetProperty("result")[0];
-                
-                var timestamps = result.GetProperty("timestamp");
-                var closePrices = result.GetProperty("indicators").GetProperty("quote")[0].GetProperty("close");
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var data = JsonSerializer.Deserialize<List<HistoricalPriceDto>>(jsonString, options);
 
-                var list = new List<HistoricalPriceDto>();
-                var timestampEnumerator = timestamps.EnumerateArray();
-                var priceEnumerator = closePrices.EnumerateArray();
-
-                while (timestampEnumerator.MoveNext() && priceEnumerator.MoveNext())
-                {
-                    var tEl = timestampEnumerator.Current;
-                    var pEl = priceEnumerator.Current;
-
-                    if (pEl.ValueKind == JsonValueKind.Number)
-                    {
-                        long unixTime = tEl.GetInt64();
-                        DateTime dt = DateTimeOffset.FromUnixTimeSeconds(unixTime).UtcDateTime;
-                        list.Add(new HistoricalPriceDto
-                        {
-                            Date = dt,
-                            Close = pEl.GetDouble()
-                        });
-                    }
-                }
-
-                return list;
+                return data ?? new List<HistoricalPriceDto>();
             });
         }
 
-        public async Task<List<double>> GetHistoricalPricesAsync(string ticker)
+        public async Task<List<double>> GetHistoricalPricesAsync(string ticker, int lookbackYears = 5)
         {
-            var data = await GetHistoricalDataAsync(ticker);
+            var data = await GetHistoricalDataAsync(ticker, lookbackYears);
             return data.Select(d => d.Close).ToList();
         }
 
@@ -86,42 +55,25 @@ namespace RiskMate.Api.Services
 
             return await _cache.GetOrCreateAsync(cacheKey, async entry =>
             {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30); // Новини кешуємо на 30 хвилин
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30);
                 
-                var list = new List<DTOs.NewsItemDto>();
                 try
                 {
-                    var url = $"https://query2.finance.yahoo.com/v1/finance/search?q={ticker}&newsCount={count}";
+                    // Звертаємось до Python Data Gateway
+                    var url = $"http://python-ml:8000/api/news/{ticker}?limit={count}";
                     var response = await _httpClient.GetAsync(url);
                     response.EnsureSuccessStatusCode();
 
                     var jsonString = await response.Content.ReadAsStringAsync();
-                    using var document = JsonDocument.Parse(jsonString);
+                    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    var data = JsonSerializer.Deserialize<List<DTOs.NewsItemDto>>(jsonString, options);
                     
-                    if (document.RootElement.TryGetProperty("news", out var newsArray) && newsArray.ValueKind == JsonValueKind.Array)
-                    {
-                        foreach (var item in newsArray.EnumerateArray())
-                        {
-                            var newsItem = new DTOs.NewsItemDto();
-                            
-                            if (item.TryGetProperty("title", out var titleProp)) newsItem.Title = titleProp.GetString() ?? "";
-                            if (item.TryGetProperty("link", out var linkProp)) newsItem.Link = linkProp.GetString() ?? "";
-                            if (item.TryGetProperty("publisher", out var pubProp)) newsItem.Publisher = pubProp.GetString() ?? "";
-                            if (item.TryGetProperty("providerPublishTime", out var timeProp) && timeProp.ValueKind == JsonValueKind.Number)
-                            {
-                                newsItem.Timestamp = timeProp.GetInt64();
-                            }
-                            
-                            list.Add(newsItem);
-                        }
-                    }
+                    return data ?? new List<DTOs.NewsItemDto>();
                 }
                 catch (Exception)
                 {
-                    // У разі помилки просто повертаємо порожній список, щоб не ламати симуляцію
+                    return new List<DTOs.NewsItemDto>();
                 }
-                
-                return list;
             });
         }
     }

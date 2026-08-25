@@ -119,10 +119,10 @@ const DistributionChart = ({ data, expectedPrice }) => {
         </h3>
         <div style={{ display: 'flex', gap: '15px', fontSize: '12px' }}>
           <span style={{ color: '#ef4444', fontWeight: 'bold' }}>
-            🔴 Зона ризику: {stats.redPct}%
+            Зона ризику: {stats.redPct}%
           </span>
           <span style={{ color: '#10b981', fontWeight: 'bold' }}>
-            🟢 Оптимістична зона: {stats.greenPct}%
+            Оптимістична зона: {stats.greenPct}%
           </span>
         </div>
       </div>

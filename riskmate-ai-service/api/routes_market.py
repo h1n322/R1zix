@@ -69,3 +69,39 @@ def get_asset_info(
     # Використовуємо той самий форматер, що і в SimulationService
     sim_service = SimulationService(provider)
     return sim_service._build_stock_info(info)
+
+# -----------------------------------------------------------------------
+# GET /api/history/{ticker}
+# -----------------------------------------------------------------------
+
+@router.get("/history/{ticker}")
+def get_historical_data(
+    ticker: str,
+    lookback: int = 5,
+    provider: YFinanceProvider = Depends(get_data_provider),
+):
+    """Повертає історичні ціни закриття для C# бекенду."""
+    period_str = f"{lookback}y"
+    df = provider.fetch_history(ticker, period_str)
+    
+    result = []
+    if not df.empty:
+        for date, row in df.iterrows():
+            result.append({
+                "Date": date.isoformat(),
+                "Close": float(row["Close"])
+            })
+    return result
+
+# -----------------------------------------------------------------------
+# GET /api/news/{ticker}
+# -----------------------------------------------------------------------
+
+@router.get("/news/{ticker}")
+def get_news(
+    ticker: str,
+    limit: int = 5,
+    provider: YFinanceProvider = Depends(get_data_provider),
+):
+    """Повертає новини для C# бекенду (який потім віддає їх на UI)."""
+    return provider.fetch_news(ticker, limit)

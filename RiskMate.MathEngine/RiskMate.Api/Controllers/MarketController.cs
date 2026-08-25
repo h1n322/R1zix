@@ -32,7 +32,7 @@ namespace RiskMate.Api.Controllers
                 {
                     // Беремо історію за останні 5 днів, але наш GetHistoricalPricesAsync повертає за 3 роки.
                     // Ми можемо взяти останні 2 ціни.
-                    var prices = await _yahooFinanceService.GetHistoricalPricesAsync(ticker);
+                    var prices = await _yahooFinanceService.GetHistoricalPricesAsync(ticker, 1);
                     if (prices != null && prices.Count >= 2)
                     {
                         var current = prices.Last();

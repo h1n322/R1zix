@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IoBookmarkOutline } from "react-icons/io5";
+import { IoBookmarkOutline, IoHomeOutline } from "react-icons/io5";
 import styles from '../GeneralStyles/Header.module.css';
 
 const Header = ({ user, onLogout, onOpenWatchlist }) => {
@@ -9,14 +9,25 @@ const Header = ({ user, onLogout, onOpenWatchlist }) => {
   return (
     <header className={styles.header}>
       
-      {/* КНОПКА WATCHLIST */}
-      <button 
-        onClick={onOpenWatchlist}
-        className={styles.watchlistBtn}
-      >
-       <IoBookmarkOutline size={16} />
-        Мій портфель
-      </button>
+      <div style={{ display: 'flex', gap: '10px' }}>
+        {/* КНОПКА ГОЛОВНА */}
+        <button 
+          onClick={() => navigate('/')}
+          className={styles.watchlistBtn}
+        >
+         <IoHomeOutline size={16} />
+          На головну
+        </button>
+
+        {/* КНОПКА WATCHLIST */}
+        <button 
+          onClick={onOpenWatchlist}
+          className={styles.watchlistBtn}
+        >
+         <IoBookmarkOutline size={16} />
+          Мій портфель
+        </button>
+      </div>
 
       {user ? (
         <div className={styles.userBlock}>
