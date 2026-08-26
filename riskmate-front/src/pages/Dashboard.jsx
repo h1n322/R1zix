@@ -340,8 +340,8 @@ const Dashboard = ({ user }) => {
 
         // Мапимо гістограму
         histogramBins: histogramData ? histogramData.map(b => ({
-          binRange: b.range || b.name?.toString() || '',
-          frequency: b.count || b.frequency || 0
+          binRange: b.binRange || b.range || b.name?.toString() || '',
+          frequency: b.frequency || b.count || 0
         })) : []
       };
 
@@ -476,10 +476,7 @@ const Dashboard = ({ user }) => {
 
     // Відновлюємо гістограму
     if (data.histogramBins) {
-      setHistogramData(data.histogramBins.map(hb => ({
-        name: hb.binRange,
-        count: hb.frequency
-      })));
+      setHistogramData(data.histogramBins);
     } else {
       setHistogramData([]);
     }
