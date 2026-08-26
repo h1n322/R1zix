@@ -2,7 +2,7 @@ import { Icon } from "@iconify/react";
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { collection, addDoc, getDocs, query, orderBy, limit, doc, setDoc, getDoc } from 'firebase/firestore'; 
-import { logout, db } from '../firebase';
+import { logout, db, auth } from '../firebase';
 import toast, { Toaster } from 'react-hot-toast'; 
 import { 
   WatchlistDrawer, 
@@ -305,7 +305,7 @@ const Dashboard = ({ user }) => {
     const loadingToast = toast.loading('Збереження у PostgreSQL...');
     try {
       // 1. Отримуємо токен
-      const token = await user.getIdToken();
+      const token = await auth.currentUser.getIdToken();
 
       // 2. Формуємо DTO для C#
       const portfolioDto = {
@@ -385,7 +385,7 @@ const Dashboard = ({ user }) => {
     if (!user) return toast.error("Спочатку увійдіть через Google!");
     const loadingToast = toast.loading('Завантаження...');
     try {
-      const token = await user.getIdToken();
+      const token = await auth.currentUser.getIdToken();
       
       const response = await fetch("http://localhost:5266/api/portfolio", {
         headers: { "Authorization": `Bearer ${token}` }
