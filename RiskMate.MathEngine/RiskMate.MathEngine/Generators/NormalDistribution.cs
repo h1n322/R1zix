@@ -12,6 +12,12 @@ namespace RiskMate.MathEngine.Generators
             _random = new Random(seed);
         }
 
+        public static double NextDouble()
+        {
+            if (_random == null) _random = Random.Shared;
+            return _random.NextDouble();
+        }
+
         public static double Sample()
         {
             if (_random == null) _random = Random.Shared;

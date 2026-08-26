@@ -39,7 +39,7 @@ namespace RiskMate.MathEngine.Simulators
                     double returnForDay = parameters.Drift + parameters.Volatility * normalShock;
 
                     // Перевіряємо, чи відбувся раптовий стрибок сьогодні (Пуассонівський процес)
-                    if (Random.Shared.NextDouble() < dailyJumpProbability)
+                    if (NormalDistribution.NextDouble() < dailyJumpProbability)
                     {
                         // Якщо так, генеруємо розмір цього стрибка
                         double jumpShock = NormalDistribution.Sample();
