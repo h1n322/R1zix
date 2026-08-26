@@ -60,7 +60,7 @@ const DistributionChart = ({ data, expectedPrice }) => {
         count: count,
         label: label
       };
-    });
+    }).sort((a, b) => a.price - b.price);
 
     // Розрахунок середнього та стандартного відхилення для дзвіноподібної кривої Гауса
     const totalCount = parsed.reduce((sum, b) => sum + b.count, 0) || 1;

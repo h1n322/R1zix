@@ -440,13 +440,14 @@ const Dashboard = ({ user }) => {
       maxDrawdown: data.maxDrawdown
     });
 
-    // Відновлюємо графік
+    // Відновлюємо дані графіка
     if (data.chartPoints) {
+      // Сортуємо по ID, щоб зберегти хронологічний порядок, якщо EF Core повернув їх перемішаними
+      const sortedPoints = [...data.chartPoints].sort((a, b) => (a.id || 0) - (b.id || 0));
       const horizonCount = data.horizon || 30;
-      const totalPoints = data.chartPoints.length;
-      const historyCount = totalPoints > horizonCount ? totalPoints - horizonCount : 0;
+      const historyCount = sortedPoints.length > horizonCount ? sortedPoints.length - horizonCount : 0;
 
-      setChartData(data.chartPoints.map((cp, idx) => {
+      setChartData(sortedPoints.map((cp, idx) => {
         const isHistory = idx < historyCount;
         const isForecast = idx >= historyCount - 1;
 
