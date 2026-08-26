@@ -537,7 +537,7 @@ const Dashboard = ({ user }) => {
           </span>
         </div>
 
-        <KpiCards metrics={metrics} varConf={varConf} algorithm={algorithm} />
+        <KpiCards metrics={metrics} varConf={varConf} algorithm={algorithm} isLoading={isLoading} />
         
         {isMock && (
           <div style={{
@@ -637,8 +637,13 @@ const Dashboard = ({ user }) => {
           </div>
         )}
 
-        {algorithm !== 'markowitz' && (
-          <ChartArea chartData={chartData} isExpanded={isChartExpanded} onToggleExpand={() => setIsChartExpanded(!isChartExpanded)} />
+        {(isLoading || (chartData && chartData.length > 0 && algorithm !== 'markowitz')) && (
+          <ChartArea 
+            chartData={chartData} 
+            isExpanded={isChartExpanded} 
+            onToggleExpand={() => setIsChartExpanded(!isChartExpanded)} 
+            isLoading={isLoading}
+          />
         )}
 
         {!isChartExpanded && algorithm !== 'markowitz' && (

@@ -57,7 +57,7 @@ const KpiCard = ({ title, value, prefix = "$", suffix = "", color = "#f8fafc", t
   );
 };
 
-const KpiCards = ({ metrics, varConf, algorithm }) => {
+const KpiCards = ({ metrics, varConf, algorithm, isLoading }) => {
   const confLevel = varConf ? (varConf * 100).toFixed(0) : 95;
   const varTitle = `Максимальний ризик (VaR ${confLevel}%)`;
   
@@ -70,6 +70,25 @@ const KpiCards = ({ metrics, varConf, algorithm }) => {
   const maxDrawdown = metrics?.max_drawdown ?? metrics?.maxDrawdown ?? 0;
 
   const isMarkowitz = algorithm === 'markowitz';
+
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className={styles.card} style={{ height: '90px' }}>
+            <div style={{ height: '16px', width: '60%', backgroundColor: '#334155', borderRadius: '4px', marginBottom: '16px', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}></div>
+            <div style={{ height: '28px', width: '80%', backgroundColor: '#475569', borderRadius: '6px', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}></div>
+          </div>
+        ))}
+        <style>{`
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
