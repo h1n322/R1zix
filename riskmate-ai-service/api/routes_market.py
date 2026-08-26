@@ -85,13 +85,17 @@ def get_historical_data(
     df = provider.fetch_history(ticker, period_str)
     
     result = []
+    is_mock = getattr(df, "attrs", {}).get("is_mock", False)
     if not df.empty:
         for date, row in df.iterrows():
             result.append({
                 "Date": date.isoformat(),
                 "Close": float(row["Close"])
             })
-    return result
+    return {
+        "is_mock": is_mock,
+        "data": result
+    }
 
 # -----------------------------------------------------------------------
 # GET /api/news/{ticker}

@@ -42,6 +42,7 @@ const Dashboard = ({ user }) => {
   const [histogramData, setHistogramData] = useState([]); 
   const [markowitzData, setMarkowitzData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMock, setIsMock] = useState(false);
   const [lookback, setLookback] = useState(5);
   const [varConf, setVarConf] = useState(0.95);
   const [rfRate, setRfRate] = useState(4.5);
@@ -123,6 +124,7 @@ const Dashboard = ({ user }) => {
         setNews(simData.news);                                 
         setCorrelationMatrix(simData.correlation_matrix);      
         setHistogramData(simData.histogram); 
+        setIsMock(simData.is_mock || false);
 
         setMetrics({
           expected_price: aiData.predicted_price_tomorrow, 
@@ -181,7 +183,8 @@ const Dashboard = ({ user }) => {
             horizon: parseInt(horizon),
             scenario: algorithm === 'stress' ? scenario : 'base',
             confidenceLevel: parseFloat(varConf),
-            lookbackYears: parseInt(lookback)
+            lookbackYears: parseInt(lookback),
+            riskFreeRate: parseFloat(rfRate.toString().replace(',', '.')) / 100
           })
         });
         const data = await resp.json();
@@ -196,6 +199,7 @@ const Dashboard = ({ user }) => {
           var_5: data.valueAtRisk || 0,
           cvar_5: data.conditionalValueAtRisk || 0,
           volatility: data.volatility || 0,
+          sharpeRatio: data.sharpeRatio || 0,
         });
         
         // Отримуємо деталі про актив безпосередньо від Python Data Gateway
@@ -217,6 +221,7 @@ const Dashboard = ({ user }) => {
         setHedging(data.hedging || null);
         setCorrelationMatrix(null);
         setHistogramData(data.histogramBins || []); 
+        setIsMock(data.is_mock || data.isMock || false);
         
         toast.success('Симуляцію завершено!', { id: loadingToast });
 
@@ -534,6 +539,28 @@ const Dashboard = ({ user }) => {
 
         <KpiCards metrics={metrics} varConf={varConf} algorithm={algorithm} />
         
+        {isMock && (
+          <div style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            color: '#ef4444',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            border: '1px solid #ef4444',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <Icon icon="lucide:alert-triangle" width="24" height="24" />
+            <div>
+              <strong>Увага: перевищено ліміт запитів до біржі.</strong>
+              <div style={{ fontSize: '14px', marginTop: '4px' }}>
+                Відображаються демонстраційні (згенеровані) дані замість реальних. Спробуйте пізніше або зменшіть інтенсивність запитів.
+              </div>
+            </div>
+          </div>
+        )}
+
         {algorithm === 'markowitz' && markowitzData && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '20px' }}>
             <MarkowitzPieChart allocations={markowitzData} />

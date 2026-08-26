@@ -22,11 +22,12 @@ namespace RiskMate.MathEngine
             int horizon,
             StressScenario? scenario = null,
             double confidenceLevel = 0.95,
-            double customShockPercentage = 0)
+            double customShockPercentage = 0,
+            double riskFreeRate = 0.045)
         {
             var startDate = DateTime.UtcNow.AddDays(-historicalPrices.Count);
             var priceData = historicalPrices.Select((p, i) => new PriceDataPoint { Date = startDate.AddDays(i), Price = p }).ToList();
-            return RunSimulation(priceData, algorithm, simulationsCount, horizon, scenario, confidenceLevel, customShockPercentage);
+            return RunSimulation(priceData, algorithm, simulationsCount, horizon, scenario, confidenceLevel, customShockPercentage, false, riskFreeRate);
         }
 
         public SimulationResult RunSimulation(
@@ -37,7 +38,8 @@ namespace RiskMate.MathEngine
             StressScenario? scenario = null,
             double confidenceLevel = 0.95,
             double customShockPercentage = 0,
-            bool isBacktest = false)
+            bool isBacktest = false,
+            double riskFreeRate = 0.045)
         {
             if (historicalData == null || historicalData.Count == 0)
             {
@@ -99,12 +101,16 @@ namespace RiskMate.MathEngine
 
             var metrics = MetricsCalculator.CalculateMetrics(paths, confidenceLevel);
 
+            double expectedReturnAnn = ((metrics.ExpectedPrice - currentPrice) / currentPrice) * (Constants.TradingDaysPerYear / (double)horizon);
+            double sharpeRatio = (expectedReturnAnn - riskFreeRate) / (volatility * Math.Sqrt(Constants.TradingDaysPerYear));
+
             var result = new SimulationResult
             {
                 ExpectedPrice = metrics.ExpectedPrice,
                 ValueAtRisk = metrics.ValueAtRisk,
                 ConditionalValueAtRisk = metrics.ConditionalValueAtRisk,
-                Volatility = volatility * Math.Sqrt(Constants.TradingDaysPerYear) * 100.0
+                Volatility = volatility * Math.Sqrt(Constants.TradingDaysPerYear) * 100.0,
+                SharpeRatio = sharpeRatio
             };
 
             double strikePrice = currentPrice - Math.Abs(metrics.ValueAtRisk);
@@ -114,7 +120,7 @@ namespace RiskMate.MathEngine
                     currentPrice: currentPrice,
                     strikePrice: strikePrice,
                     timeToExpirationYears: horizon / 365.0,
-                    riskFreeRate: 0.045, 
+                    riskFreeRate: riskFreeRate, 
                     volatility: volatility * Math.Sqrt(Constants.TradingDaysPerYear)
                 );
             }
