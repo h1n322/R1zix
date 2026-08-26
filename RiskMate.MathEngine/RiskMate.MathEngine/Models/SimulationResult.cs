@@ -10,6 +10,7 @@ namespace RiskMate.MathEngine.Models
         public double ConditionalValueAtRisk { get; set; }
         public double Volatility { get; set; }
         public double SharpeRatio { get; set; }
+        public double MaxDrawdown { get; set; }
         
         public List<ChartPointData> ChartPoints { get; set; } = new();
         public List<HistogramBinData> HistogramBins { get; set; } = new();

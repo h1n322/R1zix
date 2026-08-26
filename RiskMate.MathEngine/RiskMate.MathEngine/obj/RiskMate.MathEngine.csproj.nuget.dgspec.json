@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/Users/max/Public/Riskmate/Riskmate/RiskMate.MathEngine/RiskMate.MathEngine/RiskMate.MathEngine.csproj": {}
+    "/Users/max/Public/Riskmate/RiskMate/RiskMate.MathEngine/RiskMate.MathEngine/RiskMate.MathEngine.csproj": {}
   },
   "projects": {
-    "/Users/max/Public/Riskmate/Riskmate/RiskMate.MathEngine/RiskMate.MathEngine/RiskMate.MathEngine.csproj": {
+    "/Users/max/Public/Riskmate/RiskMate/RiskMate.MathEngine/RiskMate.MathEngine/RiskMate.MathEngine.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/max/Public/Riskmate/Riskmate/RiskMate.MathEngine/RiskMate.MathEngine/RiskMate.MathEngine.csproj",
+        "projectUniqueName": "/Users/max/Public/Riskmate/RiskMate/RiskMate.MathEngine/RiskMate.MathEngine/RiskMate.MathEngine.csproj",
         "projectName": "RiskMate.MathEngine",
-        "projectPath": "/Users/max/Public/Riskmate/Riskmate/RiskMate.MathEngine/RiskMate.MathEngine/RiskMate.MathEngine.csproj",
+        "projectPath": "/Users/max/Public/Riskmate/RiskMate/RiskMate.MathEngine/RiskMate.MathEngine/RiskMate.MathEngine.csproj",
         "packagesPath": "/Users/max/.nuget/packages/",
-        "outputPath": "/Users/max/Public/Riskmate/Riskmate/RiskMate.MathEngine/RiskMate.MathEngine/obj/",
+        "outputPath": "/Users/max/Public/Riskmate/RiskMate/RiskMate.MathEngine/RiskMate.MathEngine/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/Users/max/.nuget/NuGet/NuGet.Config"

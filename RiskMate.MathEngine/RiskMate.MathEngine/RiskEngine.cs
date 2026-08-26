@@ -108,13 +108,23 @@ namespace RiskMate.MathEngine
             double expectedReturnAnn = ((metrics.ExpectedPrice - currentPrice) / currentPrice) * (Constants.TradingDaysPerYear / (double)horizon);
             double sharpeRatio = (expectedReturnAnn - riskFreeRate) / (volatility * Math.Sqrt(Constants.TradingDaysPerYear));
 
+            double maxPeak = historicalPrices[0];
+            double maxDrawdown = 0;
+            foreach (var price in historicalPrices)
+            {
+                if (price > maxPeak) maxPeak = price;
+                double drawdown = (maxPeak - price) / maxPeak;
+                if (drawdown > maxDrawdown) maxDrawdown = drawdown;
+            }
+
             var result = new SimulationResult
             {
                 ExpectedPrice = metrics.ExpectedPrice,
                 ValueAtRisk = metrics.ValueAtRisk,
                 ConditionalValueAtRisk = metrics.ConditionalValueAtRisk,
                 Volatility = volatility * Math.Sqrt(Constants.TradingDaysPerYear) * 100.0,
-                SharpeRatio = sharpeRatio
+                SharpeRatio = sharpeRatio,
+                MaxDrawdown = maxDrawdown * 100.0
             };
 
             double strikePrice = currentPrice - Math.Abs(metrics.ValueAtRisk);

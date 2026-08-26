@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "hKWKvRiFkCo=",
+  "dgSpecHash": "pITulnQwBoI=",
   "success": true,
-  "projectFilePath": "/Users/max/Public/Riskmate/Riskmate/RiskMate.MathEngine/RiskMate.Api/RiskMate.Api.csproj",
+  "projectFilePath": "/Users/max/Public/Riskmate/RiskMate/RiskMate.MathEngine/RiskMate.Api/RiskMate.Api.csproj",
   "expectedPackageFiles": [
     "/Users/max/.nuget/packages/harfbuzzsharp/8.3.1.1/harfbuzzsharp.8.3.1.1.nupkg.sha512",
     "/Users/max/.nuget/packages/harfbuzzsharp.nativeassets.linux/8.3.1.1/harfbuzzsharp.nativeassets.linux.8.3.1.1.nupkg.sha512",

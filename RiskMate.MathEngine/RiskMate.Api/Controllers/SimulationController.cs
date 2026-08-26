@@ -97,6 +97,7 @@ namespace RiskMate.Api.Controllers
                     ConditionalValueAtRisk = simulationResult.ConditionalValueAtRisk,
                     Volatility = simulationResult.Volatility,
                     SharpeRatio = simulationResult.SharpeRatio,
+                    MaxDrawdown = simulationResult.MaxDrawdown,
                     ChartPoints = simulationResult.ChartPoints,
                     HistogramBins = simulationResult.HistogramBins,
                     Hedging = simulationResult.Hedging,
