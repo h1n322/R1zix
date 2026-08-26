@@ -7,12 +7,12 @@ namespace RiskMate.MathEngine.Options
         public double StrikePrice { get; set; }
         public double PutOptionPremium { get; set; }
         public double TotalCostFor100Shares { get; set; }
-        public string Expiration { get; set; }
+        public string? Expiration { get; set; }
     }
 
     public static class BlackScholesCalculator
     {
-        public static HedgingSuggestion CalculatePutOption(double currentPrice, double strikePrice, double timeToExpirationYears, double riskFreeRate, double volatility)
+        public static HedgingSuggestion? CalculatePutOption(double currentPrice, double strikePrice, double timeToExpirationYears, double riskFreeRate, double volatility)
         {
             if (timeToExpirationYears <= 0 || volatility <= 0 || currentPrice <= 0 || strikePrice <= 0)
                 return null;

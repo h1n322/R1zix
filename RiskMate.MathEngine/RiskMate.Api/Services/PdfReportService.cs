@@ -14,7 +14,7 @@ namespace RiskMate.Api.Services
             QuestPDF.Settings.License = LicenseType.Community;
         }
 
-        public byte[] GenerateReport(SimulationRequestDto request, SimulationResult result, string aiSummary = null)
+        public byte[] GenerateReport(SimulationRequestDto request, SimulationResult result, string? aiSummary = null)
         {
             var document = Document.Create(container =>
             {
