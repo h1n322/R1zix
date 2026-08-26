@@ -255,12 +255,33 @@ const Dashboard = ({ user }) => {
     }
     const loadingToast = toast.loading('Генерація PDF...');
     try {
-      const resp = await fetch('/api/simulation/report', {
+      const isLstm = algorithm === 'lstm';
+      const endpoint = isLstm ? 'http://127.0.0.1:8000/api/report' : '/api/simulation/report';
+      
+      const payload = isLstm ? {
+        ticker, 
+        algorithm, 
+        simulations: parseInt(simulations), 
+        horizon: parseInt(horizon), 
+        scenario,
+        lookback_years: parseInt(lookback),      
+        var_confidence: parseFloat(varConf),     
+        risk_free_rate: parseFloat(rfRate.toString().replace(',', '.')) / 100 
+      } : {
+        ticker, 
+        algorithm: algorithm === 'stress' ? 'gbm' : algorithm, 
+        simulationsCount: parseInt(simulations), 
+        horizon: parseInt(horizon), 
+        scenario: algorithm === 'stress' ? scenario : 'base',
+        confidenceLevel: parseFloat(varConf),
+        lookbackYears: parseInt(lookback),
+        riskFreeRate: parseFloat(rfRate.toString().replace(',', '.')) / 100 
+      };
+
+      const resp = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          ticker, algorithm, simulationsCount: parseInt(simulations), horizon: parseInt(horizon), scenario 
-        })
+        body: JSON.stringify(payload)
       });
       if (!resp.ok) {
         throw new Error('Помилка сервера при генерації PDF');

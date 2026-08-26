@@ -180,6 +180,29 @@ const Sidebar = ({
               <option value="ASML">ASML Holding</option>
               <option value="TCEHY">Tencent Holdings</option>
             </datalist>
+            {ticker && (
+              <button 
+                onClick={() => setTicker('')} 
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: '#94a3b8', 
+                  fontSize: '12px', 
+                  cursor: 'pointer', 
+                  padding: '4px 0', 
+                  marginTop: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+                title="Очистити поле"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6 6 18M6 6l12 12"/>
+                </svg>
+                Очистити поле
+              </button>
+            )}
           </div>
 
           <div className={styles.inputGroup}>

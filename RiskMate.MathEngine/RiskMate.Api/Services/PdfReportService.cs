@@ -139,6 +139,12 @@ namespace RiskMate.Api.Services
                     
                     table.Cell().Text("Рівень довіри (VaR):");
                     table.Cell().Text($"{request.ConfidenceLevel * 100}%").SemiBold();
+
+                    table.Cell().Text("Глибина історії (років):");
+                    table.Cell().Text(request.LookbackYears.ToString()).SemiBold();
+
+                    table.Cell().Text("Безризикова ставка:");
+                    table.Cell().Text($"{(request.RiskFreeRate * 100):F2}%").SemiBold();
                 });
 
                 column.Item().LineHorizontal(1).LineColor(QuestPDF.Helpers.Colors.Grey.Lighten2);
@@ -163,8 +169,38 @@ namespace RiskMate.Api.Services
                     table.Cell().Text($"${result.ConditionalValueAtRisk:F2}").SemiBold().FontColor(QuestPDF.Helpers.Colors.Red.Darken2);
 
                     table.Cell().Text("Волатильність:");
-                    table.Cell().Text($"{(result.Volatility * 100):F2}%").SemiBold();
+                    table.Cell().Text($"{result.Volatility:F2}%").SemiBold();
+
+                    table.Cell().Text("Коефіцієнт Шарпа:");
+                    table.Cell().Text($"{result.SharpeRatio:F2}").SemiBold();
                 });
+
+                if (result.Hedging != null)
+                {
+                    column.Item().LineHorizontal(1).LineColor(QuestPDF.Helpers.Colors.Grey.Lighten2);
+                    column.Item().Text("Стратегія Хеджування (Black-Scholes)").FontSize(16).SemiBold().FontColor(QuestPDF.Helpers.Colors.Blue.Darken2);
+                    
+                    column.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.RelativeColumn();
+                            columns.RelativeColumn();
+                        });
+
+                        table.Cell().Text("Тип опціону:");
+                        table.Cell().Text(result.Hedging.OptionType).SemiBold();
+                        
+                        table.Cell().Text("Страйк-ціна:");
+                        table.Cell().Text($"${result.Hedging.StrikePrice:F2}").SemiBold();
+                        
+                        table.Cell().Text("Премія за опціон:");
+                        table.Cell().Text($"${result.Hedging.OptionPremium:F2}").SemiBold().FontColor(QuestPDF.Helpers.Colors.Red.Medium);
+                        
+                        table.Cell().Text("Ефективність:");
+                        table.Cell().Text(result.Hedging.Recommendation).SemiBold().FontColor(QuestPDF.Helpers.Colors.Green.Medium);
+                    });
+                }
                 
                 column.Item().LineHorizontal(1).LineColor(QuestPDF.Helpers.Colors.Grey.Lighten2);
                 
