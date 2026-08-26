@@ -442,12 +442,22 @@ const Dashboard = ({ user }) => {
 
     // Відновлюємо графік
     if (data.chartPoints) {
-      setChartData(data.chartPoints.map(cp => ({
-        name: cp.dateLabel,
-        forecast: cp.expectedPrice,
-        bb_lower: cp.lowerBound,
-        bb_upper: cp.upperBound
-      })));
+      const horizonCount = data.horizon || 30;
+      const totalPoints = data.chartPoints.length;
+      const historyCount = totalPoints > horizonCount ? totalPoints - horizonCount : 0;
+
+      setChartData(data.chartPoints.map((cp, idx) => {
+        const isHistory = idx < historyCount;
+        const isForecast = idx >= historyCount - 1;
+
+        return {
+          name: cp.dateLabel,
+          history: isHistory ? cp.expectedPrice : null,
+          forecast: isForecast ? cp.expectedPrice : null,
+          bb_lower: isForecast ? cp.lowerBound : null,
+          bb_upper: isForecast ? cp.upperBound : null
+        };
+      }));
     } else {
       setChartData([]);
     }
