@@ -189,16 +189,19 @@ namespace RiskMate.Api.Services
                         });
 
                         table.Cell().Text("Тип опціону:");
-                        table.Cell().Text(result.Hedging.OptionType).SemiBold();
+                        table.Cell().Text("Put-опціон").SemiBold();
                         
                         table.Cell().Text("Страйк-ціна:");
                         table.Cell().Text($"${result.Hedging.StrikePrice:F2}").SemiBold();
                         
-                        table.Cell().Text("Премія за опціон:");
-                        table.Cell().Text($"${result.Hedging.OptionPremium:F2}").SemiBold().FontColor(QuestPDF.Helpers.Colors.Red.Medium);
+                        table.Cell().Text("Премія за опціон (за 1 акцію):");
+                        table.Cell().Text($"${result.Hedging.PutOptionPremium:F2}").SemiBold().FontColor(QuestPDF.Helpers.Colors.Red.Medium);
                         
-                        table.Cell().Text("Ефективність:");
-                        table.Cell().Text(result.Hedging.Recommendation).SemiBold().FontColor(QuestPDF.Helpers.Colors.Green.Medium);
+                        table.Cell().Text("Вартість хеджу 100 акцій:");
+                        table.Cell().Text($"${result.Hedging.TotalCostFor100Shares:F2}").SemiBold().FontColor(QuestPDF.Helpers.Colors.Red.Medium);
+
+                        table.Cell().Text("Термін дії:");
+                        table.Cell().Text(result.Hedging.Expiration).SemiBold();
                     });
                 }
                 
