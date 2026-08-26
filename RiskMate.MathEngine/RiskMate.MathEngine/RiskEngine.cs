@@ -22,11 +22,12 @@ namespace RiskMate.MathEngine
             int horizon,
             StressScenario? scenario = null,
             double confidenceLevel = 0.95,
-            double customShockPercentage = 0)
+            double customShockPercentage = 0,
+            double riskFreeRate = 0.045)
         {
             var startDate = DateTime.UtcNow.AddDays(-historicalPrices.Count);
             var priceData = historicalPrices.Select((p, i) => new PriceDataPoint { Date = startDate.AddDays(i), Price = p }).ToList();
-            return RunSimulation(priceData, algorithm, simulationsCount, horizon, scenario, confidenceLevel, customShockPercentage);
+            return RunSimulation(priceData, algorithm, simulationsCount, horizon, scenario, confidenceLevel, customShockPercentage, false, riskFreeRate);
         }
 
         public SimulationResult RunSimulation(
@@ -37,7 +38,8 @@ namespace RiskMate.MathEngine
             StressScenario? scenario = null,
             double confidenceLevel = 0.95,
             double customShockPercentage = 0,
-            bool isBacktest = false)
+            bool isBacktest = false,
+            double riskFreeRate = 0.045)
         {
             if (historicalData == null || historicalData.Count == 0)
             {
@@ -59,6 +61,10 @@ namespace RiskMate.MathEngine
             }
 
             double currentPrice = historicalPrices.Last();
+            
+            // Встановлюємо детерміністичний сід, щоб генерація PDF збігалася з відображенням на Dashboard
+            int seed = (currentPrice + horizon + simulationsCount + confidenceLevel * 100).GetHashCode();
+            Generators.NormalDistribution.SetSeed(seed);
             
             double meanReturn = returns.Average();
             double volatility = RiskCalculator.CalculateVolatility(returns);
@@ -99,22 +105,38 @@ namespace RiskMate.MathEngine
 
             var metrics = MetricsCalculator.CalculateMetrics(paths, confidenceLevel);
 
+            double expectedReturnAnn = ((metrics.ExpectedPrice - currentPrice) / currentPrice) * (Constants.TradingDaysPerYear / (double)horizon);
+            double sharpeRatio = (expectedReturnAnn - riskFreeRate) / (volatility * Math.Sqrt(Constants.TradingDaysPerYear));
+
+            double maxPeak = historicalPrices[0];
+            double maxDrawdown = 0;
+            foreach (var price in historicalPrices)
+            {
+                if (price > maxPeak) maxPeak = price;
+                double drawdown = (maxPeak - price) / maxPeak;
+                if (drawdown > maxDrawdown) maxDrawdown = drawdown;
+            }
+
             var result = new SimulationResult
             {
                 ExpectedPrice = metrics.ExpectedPrice,
                 ValueAtRisk = metrics.ValueAtRisk,
                 ConditionalValueAtRisk = metrics.ConditionalValueAtRisk,
-                Volatility = volatility * Math.Sqrt(Constants.TradingDaysPerYear) * 100.0
+                Volatility = volatility * Math.Sqrt(Constants.TradingDaysPerYear) * 100.0,
+                SharpeRatio = sharpeRatio,
+                MaxDrawdown = maxDrawdown * 100.0
             };
 
             double strikePrice = currentPrice - Math.Abs(metrics.ValueAtRisk);
             if (strikePrice > 0 && horizon > 0 && algorithm != SimulationAlgorithm.Markowitz)
             {
+                double timeToExpirationYears = horizon / (double)Constants.TradingDaysPerYear;
+                
                 result.Hedging = Options.BlackScholesCalculator.CalculatePutOption(
                     currentPrice: currentPrice,
                     strikePrice: strikePrice,
-                    timeToExpirationYears: horizon / 365.0,
-                    riskFreeRate: 0.045, 
+                    timeToExpirationYears: timeToExpirationYears,
+                    riskFreeRate: riskFreeRate, 
                     volatility: volatility * Math.Sqrt(Constants.TradingDaysPerYear)
                 );
             }

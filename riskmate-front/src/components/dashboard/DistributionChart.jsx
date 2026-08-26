@@ -60,7 +60,7 @@ const DistributionChart = ({ data, expectedPrice }) => {
         count: count,
         label: label
       };
-    });
+    }).sort((a, b) => a.price - b.price);
 
     // Розрахунок середнього та стандартного відхилення для дзвіноподібної кривої Гауса
     const totalCount = parsed.reduce((sum, b) => sum + b.count, 0) || 1;
@@ -106,7 +106,7 @@ const DistributionChart = ({ data, expectedPrice }) => {
   if (chartBins.length === 0) {
     return (
       <div className={styles.emptyState}>
-        <p>📊 Очікування даних симуляції для побудови розподілу...</p>
+        <p>Очікування даних для побудови розподілу</p>
       </div>
     );
   }

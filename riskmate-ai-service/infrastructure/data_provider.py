@@ -38,7 +38,9 @@ class YFinanceProvider:
             cached = redis_client.get(cache_key)
             if cached:
                 print(f"📦 Redis Кеш: history {ticker} ({period})")
-                return pd.read_json(cached, orient="split")
+                df = pd.read_json(cached, orient="split")
+                df.attrs['is_mock'] = False
+                return df
         except Exception as e:
             print(f"⚠️ Помилка Redis (читання history): {e}")
 
@@ -56,17 +58,30 @@ class YFinanceProvider:
                         redis_client.setex(cache_key, self._cache_ttl, df.to_json(orient="split", date_format="iso"))
                     except Exception as e:
                         print(f"⚠️ Помилка Redis (запис history): {e}")
+                    df.attrs['is_mock'] = False
                     return df
             except Exception as e:
-                print(f"⚠️ Спроба {attempt + 1}/{self._retries} для {ticker} history: {e}")
+                print(f"⚠️ Спроба {attempt + 1}/{self._retries} для {ticker} history (Yahoo): {e}")
             time.sleep(self._retry_delay)
+            
+        print(f"🔄 Пробуємо резервне джерело AlphaVantage для {ticker}...")
+        df = self._fetch_history_alphavantage(ticker, period)
+        if df is not None and not df.empty:
+            df.attrs['is_mock'] = False
+            try:
+                redis_client.setex(cache_key, self._cache_ttl, df.to_json(orient="split", date_format="iso"))
+            except Exception:
+                pass
+            return df
             
         print(f"🔄 Генеруємо MOCK-дані для {ticker} через Rate Limit...")
         return self._generate_mock_history(ticker)
 
     def fetch_close(self, ticker: str, period: str) -> pd.Series:
         df = self.fetch_history(ticker, period)
-        return df["Close"].squeeze()
+        s = df["Close"].squeeze()
+        s.attrs['is_mock'] = df.attrs.get('is_mock', False)
+        return s
 
     def fetch_multi_close(self, tickers: list[str], period: str) -> pd.DataFrame:
         """Повертає DataFrame з цінами закриття для кількох тикерів."""
@@ -77,16 +92,22 @@ class YFinanceProvider:
             cached = redis_client.get(cache_key)
             if cached:
                 print(f"📦 Redis Кеш: multi_close {tickers}")
-                return pd.read_json(cached, orient="split")
+                df = pd.read_json(cached, orient="split")
+                df.attrs['is_mock'] = False
+                return df
         except Exception as e:
             print(f"⚠️ Помилка Redis (читання multi_close): {e}")
 
         # Збираємо дані по кожному тикеру окремо через наш fetch_close (який вже кешується)
         # Це надійніше, ніж yf.download, який часто падає на групі тикерів
+        is_mock_any = False
         result_dict = {}
         for t in tickers:
             try:
-                result_dict[t] = self.fetch_close(t, period)
+                s = self.fetch_close(t, period)
+                result_dict[t] = s
+                if s.attrs.get('is_mock', False):
+                    is_mock_any = True
             except Exception as e:
                 print(f"⚠️ Не вдалося завантажити {t} для multi_close: {e}")
             
@@ -96,6 +117,7 @@ class YFinanceProvider:
                 redis_client.setex(cache_key, self._cache_ttl, df.to_json(orient="split", date_format="iso"))
             except Exception as e:
                 pass
+            df.attrs['is_mock'] = is_mock_any
             return df
 
         print(f"🔄 Генеруємо MOCK-дані для портфеля {tickers}...")
@@ -202,18 +224,55 @@ class YFinanceProvider:
     # Приватні допоміжні методи
     # ------------------------------------------------------------------
 
+    def _fetch_history_alphavantage(self, ticker: str, period: str) -> pd.DataFrame:
+        import os
+        api_key = os.getenv("ALPHAVANTAGE_API_KEY", "demo")
+        # clean crypto tickers
+        av_ticker = ticker.replace("-USD", "")
+        url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={av_ticker}&outputsize=full&apikey={api_key}"
+        try:
+            with httpx.Client() as client:
+                resp = client.get(url, timeout=5.0)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    ts = data.get("Time Series (Daily)")
+                    if ts:
+                        df = pd.DataFrame.from_dict(ts, orient="index")
+                        df.index = pd.to_datetime(df.index)
+                        df = df.rename(columns={
+                            "1. open": "Open",
+                            "2. high": "High",
+                            "3. low": "Low",
+                            "4. close": "Close",
+                            "5. volume": "Volume"
+                        })
+                        df = df.astype(float)
+                        df = df.sort_index()
+                        
+                        # filter by period approximately
+                        if period.endswith('y'):
+                            years = int(period[:-1])
+                            cutoff = pd.Timestamp.today() - pd.DateOffset(years=years)
+                            df = df[df.index >= cutoff]
+                        return df
+        except Exception as e:
+            print(f"⚠️ AlphaVantage помилка: {e}")
+        return None
+
     def _generate_mock_history(self, ticker: str) -> pd.DataFrame:
         dates = pd.date_range(end=pd.Timestamp.today().normalize(), periods=252 * 5, freq='B')
         np.random.seed(hash(ticker) % (2**32))
         returns = np.random.normal(0.0005, 0.02, len(dates))
         prices = 100 * np.exp(np.cumsum(returns))
-        return pd.DataFrame({
+        df = pd.DataFrame({
             "Open": prices * np.random.uniform(0.99, 1.01, len(dates)),
             "High": prices * np.random.uniform(1.0, 1.02, len(dates)),
             "Low": prices * np.random.uniform(0.98, 1.0, len(dates)),
             "Close": prices,
             "Volume": np.random.randint(100000, 10000000, len(dates))
         }, index=dates)
+        df.attrs['is_mock'] = True
+        return df
 
     def _generate_mock_multi(self, tickers: list[str]) -> pd.DataFrame:
         dates = pd.date_range(end=pd.Timestamp.today().normalize(), periods=252 * 5, freq='B')
@@ -222,4 +281,6 @@ class YFinanceProvider:
             np.random.seed(hash(t) % (2**32))
             returns = np.random.normal(0.0005, 0.02, len(dates))
             mock_data[t] = 100 * np.exp(np.cumsum(returns))
-        return pd.DataFrame(mock_data, index=dates)
+        df = pd.DataFrame(mock_data, index=dates)
+        df.attrs['is_mock'] = True
+        return df

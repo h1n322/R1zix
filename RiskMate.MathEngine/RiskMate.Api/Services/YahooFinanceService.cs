@@ -9,6 +9,12 @@ namespace RiskMate.Api.Services
         public double Close { get; set; }
     }
 
+    public class HistoryResponseDto
+    {
+        public bool is_mock { get; set; }
+        public List<HistoricalPriceDto> data { get; set; }
+    }
+
     public class YahooFinanceService
     {
         private readonly HttpClient _httpClient;
@@ -21,9 +27,9 @@ namespace RiskMate.Api.Services
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "RiskMate C# Backend");
         }
 
-        public async Task<List<HistoricalPriceDto>> GetHistoricalDataAsync(string ticker, int lookbackYears = 5)
+        public async Task<HistoryResponseDto> GetHistoricalDataAsync(string ticker, int lookbackYears = 5)
         {
-            var cacheKey = $"history_{ticker}_{lookbackYears}";
+            var cacheKey = $"history_response_{ticker}_{lookbackYears}";
             
             return await _cache.GetOrCreateAsync(cacheKey, async entry =>
             {
@@ -37,16 +43,16 @@ namespace RiskMate.Api.Services
 
                 var jsonString = await response.Content.ReadAsStringAsync();
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var data = JsonSerializer.Deserialize<List<HistoricalPriceDto>>(jsonString, options);
+                var data = JsonSerializer.Deserialize<HistoryResponseDto>(jsonString, options);
 
-                return data ?? new List<HistoricalPriceDto>();
+                return data ?? new HistoryResponseDto { data = new List<HistoricalPriceDto>() };
             });
         }
 
         public async Task<List<double>> GetHistoricalPricesAsync(string ticker, int lookbackYears = 5)
         {
-            var data = await GetHistoricalDataAsync(ticker, lookbackYears);
-            return data.Select(d => d.Close).ToList();
+            var resp = await GetHistoricalDataAsync(ticker, lookbackYears);
+            return resp.data.Select(d => d.Close).ToList();
         }
 
         public async Task<List<DTOs.NewsItemDto>> GetAssetNewsAsync(string ticker, int count = 5)

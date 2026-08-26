@@ -115,6 +115,12 @@ class SimulationService:
         roll_max = data.cummax()
         historical_dd = float(((data - roll_max) / roll_max).min() * 100)
 
+        is_mock = False
+        if full_df is not None and getattr(full_df, "attrs", {}).get("is_mock"):
+            is_mock = True
+        elif len(tickers) > 1 and getattr(close_df, "attrs", {}).get("is_mock"):
+            is_mock = True
+
         return {
             "expected_price": round(float(np.mean(f_p)), 2),
             "var_5": round(float(last_price - np.percentile(f_p, alpha_pct)), 2),
@@ -131,6 +137,7 @@ class SimulationService:
             "news": news_list,
             "correlation_matrix": correlation_matrix,
             "histogram": histogram_data,
+            "is_mock": is_mock,
         }
 
     # ------------------------------------------------------------------

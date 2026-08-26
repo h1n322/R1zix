@@ -2,7 +2,7 @@ import { Icon } from "@iconify/react";
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { collection, addDoc, getDocs, query, orderBy, limit, doc, setDoc, getDoc } from 'firebase/firestore'; 
-import { logout, db } from '../firebase';
+import { logout, db, auth } from '../firebase';
 import toast, { Toaster } from 'react-hot-toast'; 
 import { 
   WatchlistDrawer, 
@@ -42,6 +42,7 @@ const Dashboard = ({ user }) => {
   const [histogramData, setHistogramData] = useState([]); 
   const [markowitzData, setMarkowitzData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMock, setIsMock] = useState(false);
   const [lookback, setLookback] = useState(5);
   const [varConf, setVarConf] = useState(0.95);
   const [rfRate, setRfRate] = useState(4.5);
@@ -123,6 +124,7 @@ const Dashboard = ({ user }) => {
         setNews(simData.news);                                 
         setCorrelationMatrix(simData.correlation_matrix);      
         setHistogramData(simData.histogram); 
+        setIsMock(simData.is_mock || false);
 
         setMetrics({
           expected_price: aiData.predicted_price_tomorrow, 
@@ -181,7 +183,8 @@ const Dashboard = ({ user }) => {
             horizon: parseInt(horizon),
             scenario: algorithm === 'stress' ? scenario : 'base',
             confidenceLevel: parseFloat(varConf),
-            lookbackYears: parseInt(lookback)
+            lookbackYears: parseInt(lookback),
+            riskFreeRate: parseFloat(rfRate.toString().replace(',', '.')) / 100
           })
         });
         const data = await resp.json();
@@ -196,6 +199,8 @@ const Dashboard = ({ user }) => {
           var_5: data.valueAtRisk || 0,
           cvar_5: data.conditionalValueAtRisk || 0,
           volatility: data.volatility || 0,
+          sharpeRatio: data.sharpeRatio || 0,
+          maxDrawdown: data.maxDrawdown || 0,
         });
         
         // Отримуємо деталі про актив безпосередньо від Python Data Gateway
@@ -217,6 +222,7 @@ const Dashboard = ({ user }) => {
         setHedging(data.hedging || null);
         setCorrelationMatrix(null);
         setHistogramData(data.histogramBins || []); 
+        setIsMock(data.is_mock || data.isMock || false);
         
         toast.success('Симуляцію завершено!', { id: loadingToast });
 
@@ -250,12 +256,33 @@ const Dashboard = ({ user }) => {
     }
     const loadingToast = toast.loading('Генерація PDF...');
     try {
-      const resp = await fetch('/api/simulation/report', {
+      const isLstm = algorithm === 'lstm';
+      const endpoint = isLstm ? 'http://127.0.0.1:8000/api/report' : '/api/simulation/report';
+      
+      const payload = isLstm ? {
+        ticker, 
+        algorithm, 
+        simulations: parseInt(simulations), 
+        horizon: parseInt(horizon), 
+        scenario,
+        lookback_years: parseInt(lookback),      
+        var_confidence: parseFloat(varConf),     
+        risk_free_rate: parseFloat(rfRate.toString().replace(',', '.')) / 100 
+      } : {
+        ticker, 
+        algorithm: algorithm === 'stress' ? 'gbm' : algorithm, 
+        simulationsCount: parseInt(simulations), 
+        horizon: parseInt(horizon), 
+        scenario: algorithm === 'stress' ? scenario : 'base',
+        confidenceLevel: parseFloat(varConf),
+        lookbackYears: parseInt(lookback),
+        riskFreeRate: parseFloat(rfRate.toString().replace(',', '.')) / 100 
+      };
+
+      const resp = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          ticker, algorithm, simulationsCount: parseInt(simulations), horizon: parseInt(horizon), scenario 
-        })
+        body: JSON.stringify(payload)
       });
       if (!resp.ok) {
         throw new Error('Помилка сервера при генерації PDF');
@@ -279,7 +306,7 @@ const Dashboard = ({ user }) => {
     const loadingToast = toast.loading('Збереження у PostgreSQL...');
     try {
       // 1. Отримуємо токен
-      const token = await user.getIdToken();
+      const token = await auth.currentUser.getIdToken();
 
       // 2. Формуємо DTO для C#
       const portfolioDto = {
@@ -314,8 +341,8 @@ const Dashboard = ({ user }) => {
 
         // Мапимо гістограму
         histogramBins: histogramData ? histogramData.map(b => ({
-          binRange: b.range || b.name?.toString() || '',
-          frequency: b.count || b.frequency || 0
+          binRange: b.binRange || b.range || b.name?.toString() || '',
+          frequency: b.frequency || b.count || 0
         })) : []
       };
 
@@ -359,7 +386,7 @@ const Dashboard = ({ user }) => {
     if (!user) return toast.error("Спочатку увійдіть через Google!");
     const loadingToast = toast.loading('Завантаження...');
     try {
-      const token = await user.getIdToken();
+      const token = await auth.currentUser.getIdToken();
       
       const response = await fetch("http://localhost:5266/api/portfolio", {
         headers: { "Authorization": `Bearer ${token}` }
@@ -414,14 +441,25 @@ const Dashboard = ({ user }) => {
       maxDrawdown: data.maxDrawdown
     });
 
-    // Відновлюємо графік
+    // Відновлюємо дані графіка
     if (data.chartPoints) {
-      setChartData(data.chartPoints.map(cp => ({
-        name: cp.dateLabel,
-        forecast: cp.expectedPrice,
-        bb_lower: cp.lowerBound,
-        bb_upper: cp.upperBound
-      })));
+      // Сортуємо по ID, щоб зберегти хронологічний порядок, якщо EF Core повернув їх перемішаними
+      const sortedPoints = [...data.chartPoints].sort((a, b) => (a.id || 0) - (b.id || 0));
+      const horizonCount = data.horizon || 30;
+      const historyCount = sortedPoints.length > horizonCount ? sortedPoints.length - horizonCount : 0;
+
+      setChartData(sortedPoints.map((cp, idx) => {
+        const isHistory = idx < historyCount;
+        const isForecast = idx >= historyCount - 1;
+
+        return {
+          name: cp.dateLabel,
+          history: isHistory ? cp.expectedPrice : null,
+          forecast: isForecast ? cp.expectedPrice : null,
+          bb_lower: isForecast ? cp.lowerBound : null,
+          bb_upper: isForecast ? cp.upperBound : null
+        };
+      }));
     } else {
       setChartData([]);
     }
@@ -440,10 +478,7 @@ const Dashboard = ({ user }) => {
 
     // Відновлюємо гістограму
     if (data.histogramBins) {
-      setHistogramData(data.histogramBins.map(hb => ({
-        name: hb.binRange,
-        count: hb.frequency
-      })));
+      setHistogramData(data.histogramBins);
     } else {
       setHistogramData([]);
     }
@@ -532,8 +567,30 @@ const Dashboard = ({ user }) => {
           </span>
         </div>
 
-        <KpiCards metrics={metrics} varConf={varConf} algorithm={algorithm} />
+        <KpiCards metrics={metrics} varConf={varConf} algorithm={algorithm} isLoading={isLoading} />
         
+        {isMock && (
+          <div style={{
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            color: '#ef4444',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            border: '1px solid #ef4444',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <Icon icon="lucide:alert-triangle" width="24" height="24" />
+            <div>
+              <strong>Увага: перевищено ліміт запитів до біржі.</strong>
+              <div style={{ fontSize: '14px', marginTop: '4px' }}>
+                Відображаються демонстраційні (згенеровані) дані замість реальних. Спробуйте пізніше або зменшіть інтенсивність запитів.
+              </div>
+            </div>
+          </div>
+        )}
+
         {algorithm === 'markowitz' && markowitzData && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '20px' }}>
             <MarkowitzPieChart allocations={markowitzData} />
@@ -610,8 +667,13 @@ const Dashboard = ({ user }) => {
           </div>
         )}
 
-        {algorithm !== 'markowitz' && (
-          <ChartArea chartData={chartData} isExpanded={isChartExpanded} onToggleExpand={() => setIsChartExpanded(!isChartExpanded)} />
+        {(isLoading || (chartData && chartData.length > 0 && algorithm !== 'markowitz')) && (
+          <ChartArea 
+            chartData={chartData} 
+            isExpanded={isChartExpanded} 
+            onToggleExpand={() => setIsChartExpanded(!isChartExpanded)} 
+            isLoading={isLoading}
+          />
         )}
 
         {!isChartExpanded && algorithm !== 'markowitz' && (

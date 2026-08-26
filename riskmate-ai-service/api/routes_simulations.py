@@ -80,10 +80,15 @@ def get_report(
         sim_data = service.run(simulation)
 
         metrics = {
+            "algorithm": req.algorithm,
+            "horizon": req.horizon,
             "expected_price": sim_data["expected_price"],
             "var_5": sim_data["var_5"],
             "cvar_5": sim_data["cvar_5"],
             "volatility": sim_data["volatility"],
+            "sharpe_ratio": sim_data.get("sharpe_ratio", 0),
+            "max_drawdown": sim_data.get("max_drawdown", 0),
+            "return_pct": sim_data.get("return_pct", 0)
         }
 
         pdf_content = generate_pdf_report(metrics, sim_data["chart_data"], simulation.ticker)

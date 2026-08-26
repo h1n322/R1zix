@@ -51,10 +51,10 @@ namespace RiskMate.Api.Controllers
 
                 var scenario = ParseScenario(dto.Scenario);
 
-                List<HistoricalPriceDto> historicalDataDto = null;
+                HistoryResponseDto historyResponse = null;
                 try
                 {
-                    historicalDataDto = await _yahooFinanceService.GetHistoricalDataAsync(dto.Ticker, dto.LookbackYears);
+                    historyResponse = await _yahooFinanceService.GetHistoricalDataAsync(dto.Ticker, dto.LookbackYears);
                 }
                 catch (Exception ex)
                 {
@@ -62,12 +62,12 @@ namespace RiskMate.Api.Controllers
                     return StatusCode(502, new { Message = "Помилка завантаження актуальних котирувань з провайдера даних." });
                 }
 
-                if (historicalDataDto == null || historicalDataDto.Count < 10)
+                if (historyResponse?.data == null || historyResponse.data.Count < 10)
                 {
                     return BadRequest(new { Message = $"Не вдалося отримати достатньо історичних даних для тикера {dto.Ticker}" });
                 }
 
-                var priceDataPoints = historicalDataDto.Select(h => new PriceDataPoint
+                var priceDataPoints = historyResponse.data.Select(h => new PriceDataPoint
                 {
                     Date = h.Date,
                     Price = h.Close
@@ -83,7 +83,8 @@ namespace RiskMate.Api.Controllers
                     scenario,
                     dto.ConfidenceLevel,
                     dto.CustomShockPercentage ?? 0,
-                    isBacktest
+                    isBacktest,
+                    dto.RiskFreeRate
                 );
 
                 var news = await _yahooFinanceService.GetAssetNewsAsync(dto.Ticker);
@@ -95,11 +96,14 @@ namespace RiskMate.Api.Controllers
                     ValueAtRisk = simulationResult.ValueAtRisk,
                     ConditionalValueAtRisk = simulationResult.ConditionalValueAtRisk,
                     Volatility = simulationResult.Volatility,
+                    SharpeRatio = simulationResult.SharpeRatio,
+                    MaxDrawdown = simulationResult.MaxDrawdown,
                     ChartPoints = simulationResult.ChartPoints,
                     HistogramBins = simulationResult.HistogramBins,
                     Hedging = simulationResult.Hedging,
                     News = news,
-                    AiSummary = aiSummary
+                    AiSummary = aiSummary,
+                    is_mock = historyResponse.is_mock
                 });
             }
             catch (Exception ex)
@@ -121,11 +125,11 @@ namespace RiskMate.Api.Controllers
                 if (algorithm is null) return BadRequest(new { Message = "Невідомий алгоритм" });
                 var scenario = ParseScenario(dto.Scenario);
 
-                var historicalDataDto = await _yahooFinanceService.GetHistoricalDataAsync(dto.Ticker, dto.LookbackYears);
-                if (historicalDataDto == null || historicalDataDto.Count < 10)
+                var historyResponse = await _yahooFinanceService.GetHistoricalDataAsync(dto.Ticker, dto.LookbackYears);
+                if (historyResponse?.data == null || historyResponse.data.Count < 10)
                     return BadRequest(new { Message = "Не вдалося отримати історичні дані." });
 
-                var priceDataPoints = historicalDataDto.Select(h => new PriceDataPoint { Date = h.Date, Price = h.Close }).ToList();
+                var priceDataPoints = historyResponse.data.Select(h => new PriceDataPoint { Date = h.Date, Price = h.Close }).ToList();
 
                 Console.WriteLine($"LAST PRICE BEFORE SIM: {priceDataPoints.LastOrDefault()?.Price}");
 

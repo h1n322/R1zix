@@ -28,5 +28,8 @@ namespace RiskMate.Api.DTOs
 
         [Range(1, 20)]
         public int LookbackYears { get; set; } = 5;
+
+        [Range(0.0, 0.5)]
+        public double RiskFreeRate { get; set; } = 0.045;
     }
 }

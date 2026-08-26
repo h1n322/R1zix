@@ -30,7 +30,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-const ChartArea = ({ chartData, isExpanded, onToggleExpand }) => {
+const ChartArea = ({ chartData, isExpanded, onToggleExpand, isLoading }) => {
   const [activePeriod, setActivePeriod] = useState('3М'); 
   
   const [showSMA, setShowSMA] = useState(false);
@@ -39,6 +39,20 @@ const ChartArea = ({ chartData, isExpanded, onToggleExpand }) => {
   const [showATR, setShowATR] = useState(false); 
   
   const [chartType, setChartType] = useState('line');
+
+  React.useEffect(() => {
+    if (chartData && chartData.length > 0) {
+      if (chartData.length > 500) {
+        setActivePeriod('ВСІ');
+      } else if (chartData.length > 200) {
+        setActivePeriod('1Р');
+      } else if (chartData.length > 100) {
+        setActivePeriod('6М');
+      } else {
+        setActivePeriod('3М');
+      }
+    }
+  }, [chartData]);
 
   const timePeriods = useMemo(() => [
     { label: '1М', points: 30 },
@@ -81,6 +95,22 @@ const ChartArea = ({ chartData, isExpanded, onToggleExpand }) => {
     color: isActive ? '#fff' : '#8E8E93',
     fontWeight: isActive ? 'bold' : 'normal',
   });
+
+  if (isLoading) {
+    return (
+      <div 
+        className={styles.cardContainer} 
+        style={{ height: isExpanded ? 'calc(100vh - 120px)' : 600, display: 'flex', flexDirection: 'column' }}
+      >
+        <div style={{ display: 'flex', gap: '10px', padding: '20px' }}>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} style={{ height: '32px', width: '60px', backgroundColor: '#334155', borderRadius: '8px', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}></div>
+          ))}
+        </div>
+        <div style={{ flex: 1, margin: '20px', backgroundColor: '#1e293b', borderRadius: '12px', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}></div>
+      </div>
+    );
+  }
 
   return (
     <div 

@@ -15,10 +15,22 @@ def generate_pdf_report(metrics, chart_data, ticker):
     pdf.cell(0, 10, "Key Metrics:", ln=True)
     
     pdf.set_font("Arial", size=12)
+    if 'algorithm' in metrics:
+        pdf.cell(0, 8, f"Algorithm: {metrics['algorithm'].upper()}", ln=True)
+    if 'horizon' in metrics:
+        pdf.cell(0, 8, f"Horizon: {metrics['horizon']} days", ln=True)
+
     pdf.cell(0, 8, f"Expected price: ${metrics['expected_price']}", ln=True)
     pdf.cell(0, 8, f"VaR (5%): ${metrics['var_5']}", ln=True)
     pdf.cell(0, 8, f"CVaR (5%): ${metrics['cvar_5']}", ln=True)
     pdf.cell(0, 8, f"Volatility: {metrics['volatility']}%", ln=True)
+    
+    if 'sharpe_ratio' in metrics:
+        pdf.cell(0, 8, f"Sharpe Ratio: {metrics['sharpe_ratio']:.2f}", ln=True)
+    if 'max_drawdown' in metrics:
+        pdf.cell(0, 8, f"Max Drawdown: {metrics['max_drawdown']:.2f}%", ln=True)
+    if 'return_pct' in metrics:
+        pdf.cell(0, 8, f"Expected Return: {metrics['return_pct']:.2f}%", ln=True)
     
     plt.figure(figsize=(9, 4.5))
     prices = []
