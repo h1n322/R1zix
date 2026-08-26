@@ -200,6 +200,7 @@ const Dashboard = ({ user }) => {
           cvar_5: data.conditionalValueAtRisk || 0,
           volatility: data.volatility || 0,
           sharpeRatio: data.sharpeRatio || 0,
+          maxDrawdown: data.maxDrawdown || 0,
         });
         
         // Отримуємо деталі про актив безпосередньо від Python Data Gateway
