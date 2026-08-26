@@ -1,199 +1,125 @@
 <div align="center">
 
-# RiskMate
+# 📈 RiskMate
 
-**Система прогнозування фінансових ризиків та оптимізації інвестиційних портфелів**
+**Комплексна платформа для аналізу фінансових ризиків, стрес-тестування та прогнозування на базі математичного моделювання та штучного інтелекту.**
 
-[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-FF6F00?style=flat-square&logo=tensorflow&logoColor=white)](https://tensorflow.org)
-[![Firebase](https://img.shields.io/badge/Firebase-Auth-FFCA28?style=flat-square&logo=firebase&logoColor=black)](https://firebase.google.com)
-[![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?style=flat-square&logo=stripe&logoColor=white)](https://stripe.com)
+[![React](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-7-purple.svg)](https://vitejs.dev/)
+[![.NET](https://img.shields.io/badge/.NET-10-512BD4.svg)](https://dotnet.microsoft.com/)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB.svg)](https://python.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://docker.com/)
 
 </div>
 
 ---
 
-## Зміст
+## 🌟 Про проєкт
 
-- [Про проєкт](#про-проєкт)
-- [Функціонал](#функціонал)
-- [Технічний стек](#технічний-стек)
-- [Архітектура](#архітектура)
-- [Встановлення та запуск](#встановлення-та-запуск)
-- [API Reference](#api-reference)
-- [Конфігурація](#конфігурація)
-- [Скриншоти](#скриншоти)
+**RiskMate** — це сучасний веб-додаток, розроблений для допомоги інвесторам, трейдерам та фінансовим аналітикам у кількісній оцінці ризиків. Платформа поєднує класичні математичні моделі (Броунівський рух, Блек-Шоулз) з передовими технологіями машинного навчання (LSTM, GARCH) та Генеративного ШІ (Gemini AI).
+
+Проєкт розроблено в рамках науково-дослідницької роботи для **Малої академії наук України**.
 
 ---
 
-## Про проєкт
+## ✨ Основні функції
 
-RiskMate — комплексна веб-платформа, що поєднує **класичні мікроекономічні моделі** з **алгоритмами машинного навчання** для оцінки волатильності фінансових активів. Система підтримує аналіз як традиційних акцій, так і криптовалют, надаючи інвесторам інструменти для кількісної оцінки ризику та побудови оптимального портфеля.
-
-Проєкт розроблено як інструмент для поглибленого вивчення фінансової інженерії та ризик-менеджменту.
-
----
-
-## Функціонал
-
-|Модуль                   |Тип  |Опис                                                                                                                                                                                                       |
-|-------------------------|-----|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|**Симуляція Монте-Карло**|Core |Генерація тисяч цінових сценаріїв на основі геометричного броунівського руху (GBM). Моделює стохастичну динаміку активу з урахуванням дрейфу (μ) та волатильності (σ)                                      |
-|**Історичне моделювання**|Core |Генерація сценаріїв на основі реальних історичних прибутковостей без параметричних припущень. Ресемплінг (bootstrap) з фактичних денних повернень — враховує реальні “стрибки” та аномалії ринку           |
-|**VaR та CVaR**          |Risk |Розрахунок Value at Risk і Conditional Value at Risk з урахуванням “товстих хвостів” розподілу. Підтримує параметричний, історичний та Монте-Карло підходи на довільному рівні довіри                      |
-|**Стрес-тестування**     |Risk |Оцінка поведінки портфеля в екстремальних умовах: криза 2008, COVID-crash 2020, Flash Crash та кастомні сценарії із заданими шоками. Розраховує просадку (drawdown) та відносні втрати під кожним сценарієм|
-|**Бектестинг стратегій** |Risk |Перевірка точності VaR-моделі на реальних даних: підрахунок порушень (violations), Купієць-тест (Kupiec POF-test) та тест Крістоффєрсена. Виводить Sharpe ratio, max drawdown та hit rate                  |
-|**LSTM-нейромережа**     |AI   |Аналіз часових рядів і прогнозування цін на базі TensorFlow/Keras. Навчання на ковзних вікнах, нормалізація через MinMaxScaler, підтримка мультикрокового прогнозу                                         |
-|**Модель Марковіца**     |AI   |Оптимізація портфеля за критерієм Шарпа з побудовою ефективної межі (Efficient Frontier). Враховує кореляційну матрицю активів та обмеження на вагові частки                                               |
-|**Інтерактивний дашборд**|UI   |Візуалізація даних у реальному часі: candlestick-графіки, розподіл симуляцій, ефективна межа, heatmap кореляцій. Адаптивний layout для мобільних та десктопних пристроїв                                   |
-|**Аутентифікація**       |Infra|Firebase Auth з підтримкою Google OAuth, email/password входу та захищених маршрутів через JWT-токени на стороні FastAPI backend                                                                           |
-|**Система підписок**     |Infra|Stripe Payments з обробкою вебхуків для активації тарифів та диференційованим доступом до функцій залежно від рівня плану (Free / Pro / Premium)                                                           |
----
-
-## Технічний стек
-
-### Backend
-- **Python 3.12** + **FastAPI** — REST API сервер
-- **Pandas, NumPy, SciPy** — математичне моделювання
-- **TensorFlow** — LSTM-нейромережа для аналізу часових рядів
-- **arch** — GARCH-моделі волатильності
-- **yfinance** — отримання ринкових даних у реальному часі
-
-### Frontend
-- **React 18** + **Vite** — SPA-додаток
-- **Recharts / Lightweight Charts** — фінансові графіки та візуалізація
-- **Tailwind CSS** — стилізація інтерфейсу
-
-### Інфраструктура
-- **Firebase** — аутентифікація користувачів та хмарна база даних
-- **Stripe** — обробка платежів та керування підписками
+| Модуль | Тип | Опис |
+|--------|-----|------|
+| **Симуляція Монте-Карло** | Math | Генерація десятків тисяч можливих сценаріїв руху ціни за допомогою алгоритмів **Classic GBM** та **Merton Jump Diffusion**. Розраховує VaR (Value at Risk) та CVaR на заданий горизонт часу. |
+| **Оцінка Волатильності** | Math | Прогнозування та моделювання ризиків на базі **GARCH-моделей** та історичної симуляції (Historical Bootstrapping) для врахування "товстих хвостів". |
+| **AI Аналітика (Gemini)**| AI | Автоматична генерація текстових висновків про рівень ризику, аналіз останніх новин компанії (через Yahoo Finance) та персоналізовані поради інвестору. |
+| **LSTM-нейромережа** | AI | Прогнозування нелінійних патернів поведінки ціни за допомогою рекурентних нейромереж (Long Short-Term Memory). |
+| **Формула Блека-Шоулза**| Math | Автоматичний розрахунок вартості хеджування (Put-опціонів) для захисту портфеля від обвалів ринку. |
+| **Портфель Марковіца** | Math | Оптимізація мульти-активного портфеля. Знаходження "Ефективного рубежу" для максимізації дохідності при заданому рівні ризику. |
+| **PDF Звітування** | Docs | Генерація детальних багатосторінкових PDF-звітів із графіками, метриками та висновками ШІ. |
 
 ---
 
-## Архітектура
+## 🛠 Технічний стек
 
-```
-riskmate-back/
-├── main.py                 # Точка входу, реєстрація роутерів
-├── routers/                # API-маршрути (simulation, portfolio, auth)
-├── services/               # Бізнес-логіка (Monte Carlo, Markowitz, VaR)
-├── models/                 # LSTM-модель, Pydantic-схеми
-└── requirements.txt
+Проєкт використовує мікросервісну архітектуру та розгорнутий за допомогою **Docker Compose**:
 
-riskmate-front/
-├── src/
-│   ├── pages/              # Dashboard, Simulation, Portfolio, Pricing
-│   ├── components/         # Переиспользуемые UI-компоненти та графіки
-│   └── services/           # API-клієнт, Firebase SDK
-├── vite.config.js
-└── tailwind.config.js
+### 1. Frontend (Клієнтська частина)
+- **React 18** + **Vite** — швидкий SPA-додаток.
+- **Recharts** — візуалізація даних (графіки цін, гістограми розподілу).
+- **CSS Modules** — стилізація без конфліктів класів.
+- **Firebase Auth** — безпечна аутентифікація користувачів (Google OAuth, Email).
+
+### 2. Math Engine (Високопродуктивний бекенд)
+- **.NET 10 (C#) / ASP.NET Core** — основне ядро для математичних симуляцій. Завдяки багатопотоковості швидко генерує 10 000+ траєкторій Монте-Карло.
+- **Entity Framework Core + PostgreSQL** — збереження історії симуляцій, звітів та налаштувань профілю користувачів.
+- **QuestPDF** — генерація професійних PDF-звітів на льоту.
+- **Google Gemini API** — генерація аналітичних summary.
+
+### 3. ML Service (Машинне навчання)
+- **Python 3.12 + FastAPI** — мікросервіс для AI/ML задач.
+- **TensorFlow / Keras** — LSTM-моделі для аналізу часових рядів.
+- **Arch / SciPy / NumPy** — GARCH-моделювання та Марковіц.
+- **yfinance** — завантаження актуальних ринкових даних та новин.
+
+---
+
+## 🏗 Архітектура (Docker Compose)
+
+```text
+RiskMate/
+├── riskmate-front/       (React, Vite, Firebase Auth) -> Port 5173
+├── RiskMate.MathEngine/  (C#, ASP.NET 10, EF Core)    -> Port 5266
+├── riskmate-python-ml/   (Python, FastAPI, TF)        -> Port 8000
+├── docker-compose.yml    (Оркестрація контейнерів)
+└── README.md
 ```
 
 ---
 
-## Встановлення та запуск
+## 🚀 Встановлення та запуск
 
 ### Передумови
+- **Docker** та **Docker Compose**
+- Node.js 20+ (для локальної розробки фронтенду)
+- .NET 10 SDK (опціонально для бекенду)
+- Python 3.12 (опціонально для ML)
 
-- Python 3.12+
-- Node.js 18+
-- Stripe CLI (для локального тестування вебхуків)
+### Запуск в один клік (через Docker)
 
-### 1. Backend
+1. Клонуйте репозиторій:
+   ```bash
+   git clone https://github.com/h1n322/RiskMate-project.git
+   cd RiskMate-project
+   ```
 
-```bash
-cd riskmate-back
-python3 -m venv venv
-source venv/bin/activate       # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
+2. Створіть `.env` файли (заповніть вашими API ключами для Firebase, Stripe та Gemini).
 
-API буде доступне за адресою: `http://localhost:8000`  
-Інтерактивна документація: `http://localhost:8000/docs`
+3. Запустіть всі сервіси:
+   ```bash
+   docker-compose up -d --build
+   ```
 
-### 2. Frontend
-
-```bash
-cd riskmate-front
-npm install
-npm run dev
-```
-
-Додаток буде доступний за адресою: `http://localhost:5173`
-
-### 3. Stripe Webhook (опціонально)
-
-```bash
-stripe listen --forward-to localhost:8000/api/webhook
-```
+4. Доступ до додатку:
+   - Фронтенд: [http://localhost:5173](http://localhost:5173)
+   - C# API Swagger: [http://localhost:5266/swagger](http://localhost:5266/swagger)
+   - Python ML API Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
-## API Reference
+## 📸 Скриншоти
 
-| Метод | Маршрут | Опис |
-|-------|---------|------|
-| `POST` | `/api/simulate` | Запуск симуляції Монте-Карло |
-| `POST` | `/api/portfolio/optimize` | Оптимізація портфеля (Марковіц) |
-| `GET` | `/api/asset/{ticker}/history` | Історичні дані активу |
-| `POST` | `/api/risk/var` | Розрахунок VaR та CVaR |
-| `POST` | `/api/predict` | LSTM-прогноз ціни |
-| `POST` | `/api/webhook` | Stripe webhook handler |
-
-Повна документація генерується автоматично через Swagger UI за адресою `/docs`.
-
----
-
-## Конфігурація
-
-Створіть файли `.env` у відповідних директоріях:
-
-**`riskmate-back/.env`**
-```env
-FIREBASE_CREDENTIALS=path/to/serviceAccountKey.json
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-```
-
-**`riskmate-front/.env`**
-```env
-VITE_API_URL=http://localhost:8000
-VITE_FIREBASE_API_KEY=...
-VITE_FIREBASE_AUTH_DOMAIN=...
-VITE_FIREBASE_PROJECT_ID=...
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
-```
-
----
-
-## Скриншоти
-
-### Головна сторінка (Landing)
+### Головна сторінка
 ![RiskMate Landing](assets/landing.png)
-*Сучасний дизайн, огляд ринку в реальному часі та доступ до основного функціоналу.*
 
-### Дашборд Аналітики
-![Dashboard Empty](assets/dashboard-empty.png)
-*Гнучка панель налаштувань для симуляцій Монте-Карло (GBM). Користувач може задавати горизонт, кількість симуляцій та рівень довіри (VaR).*
+### Дашборд та результати симуляції
+![Dashboard Analysis](assets/dashboard-aapl.png)
+*Прогнозування ціни, візуалізація коридору ймовірностей та відображення ключових метрик ризику (VaR, Sharpe Ratio, Max Drawdown).*
 
-### Аналіз традиційних активів (AAPL)
-![AAPL Simulation](assets/dashboard-aapl.png)
-*Розрахунок майбутньої ціни, VaR (Value at Risk) та CVaR для акцій Apple з візуалізацією історичних даних та прогнозу.*
-
-### Аналіз криптоактивів (BTC)
-![BTC Simulation](assets/dashboard-btc.png)
-*Адаптація алгоритмів для високоволатильних активів на прикладі Bitcoin.*
-
-### Розподіл Імовірностей Монте-Карло
+### Розподіл Імовірностей (Дзвін Монте-Карло)
 ![Distribution Chart](assets/dashboard-distribution.png)
-*Візуалізація результатів 10,000 симуляцій у вигляді розподілу ймовірностей (з чітким розділенням зон ризику та прибутку).*
+*Візуалізація ймовірності різних сценаріїв (з червоною зоною ризику та зеленою зоною прибутку).*
 
-### Особистий Кабінет
+### Історія Збережень (Особистий Кабінет)
 ![Profile](assets/profile.png)
-*Збереження історії симуляцій у базі даних (Firebase) для подальшого аналізу та швидкого доступу.*
+*Всі проведені симуляції зберігаються у базі даних PostgreSQL для подальшого швидкого доступу.*
+
 ---
 
 <div align="center">
