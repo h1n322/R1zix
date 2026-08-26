@@ -62,6 +62,10 @@ namespace RiskMate.MathEngine
 
             double currentPrice = historicalPrices.Last();
             
+            // Встановлюємо детерміністичний сід, щоб генерація PDF збігалася з відображенням на Dashboard
+            int seed = (currentPrice + horizon + simulationsCount + confidenceLevel * 100).GetHashCode();
+            Generators.NormalDistribution.SetSeed(seed);
+            
             double meanReturn = returns.Average();
             double volatility = RiskCalculator.CalculateVolatility(returns);
             double drift = DriftCalculator.CalculateGbmDrift(meanReturn, volatility);
@@ -116,10 +120,12 @@ namespace RiskMate.MathEngine
             double strikePrice = currentPrice - Math.Abs(metrics.ValueAtRisk);
             if (strikePrice > 0 && horizon > 0 && algorithm != SimulationAlgorithm.Markowitz)
             {
+                double timeToExpirationYears = horizon / (double)Constants.TradingDaysPerYear;
+                
                 result.Hedging = Options.BlackScholesCalculator.CalculatePutOption(
                     currentPrice: currentPrice,
                     strikePrice: strikePrice,
-                    timeToExpirationYears: horizon / 365.0,
+                    timeToExpirationYears: timeToExpirationYears,
                     riskFreeRate: riskFreeRate, 
                     volatility: volatility * Math.Sqrt(Constants.TradingDaysPerYear)
                 );
