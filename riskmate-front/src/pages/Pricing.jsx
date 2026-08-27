@@ -50,19 +50,12 @@ const Pricing = ({ user }) => {
       return;
     }
     
-    try {
-      const res = await fetch('http://127.0.0.1:8000/api/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: user.email })
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch (e) {
-      console.error("Payment setup failed:", e);
-    }
+    // Перенаправляємо користувача на сторінку Patreon.
+    // Важливо: користувач має реєструватися на Patreon з тим самим email, що і в Rizix.
+    const PATREON_URL = "https://www.patreon.com/c/Rizix"; // Ваша реальна сторінка Patreon
+    
+    // Перенаправляємо користувача
+    window.location.href = PATREON_URL;
   };
 
   const handleBasicPlan = () => {
@@ -70,7 +63,7 @@ const Pricing = ({ user }) => {
   };
 
   const handleEnterprisePlan = () => {
-    window.location.href = "mailto:support@riskmate.com?subject=Enterprise Plan Inquiry";
+    window.location.href = "mailto:support@rizix.com?subject=Enterprise Plan Inquiry";
   };
 
   return (
@@ -83,7 +76,7 @@ const Pricing = ({ user }) => {
           </button>
 
           <div className={styles.headerText}>
-            <h1 className={styles.mainTitle}>Тарифи RiskMate</h1>
+            <h1 className={styles.mainTitle}>Тарифи Rizix</h1>
             <p className={styles.subtitle}>
               Оберіть план, який найкраще підходить для ваших інвестиційних потреб. Від базового аналізу до професійних нейромереж.
             </p>
@@ -121,7 +114,7 @@ const Pricing = ({ user }) => {
               price="Custom" 
               features={[
                 'Прогнозування через AI (LSTM)', 
-                'Доступ до RiskMate API', 
+                'Доступ до Rizix API', 
                 'Інтеграція з вашим брокером', 
                 'Персональний менеджер', 
                 'Окрема хмарна інфраструктура'

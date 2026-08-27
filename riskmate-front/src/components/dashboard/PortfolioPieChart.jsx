@@ -2,7 +2,7 @@ import React from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import styles from '../dashboard/css/PortfolioPieChart.module.css';
 
-// ⚡️ ВИПРАВЛЕНО: Використовуємо ЄДИНУ фірмову палітру RiskMate для всіх кругових діаграм
+// ⚡️ ВИПРАВЛЕНО: Використовуємо ЄДИНУ фірмову палітру Rizix для всіх кругових діаграм
 const COLORS = ['#3b82f6', '#10b981', '#f97316', '#8b5cf6', '#ec4899', '#eab308', '#06b6d4'];
 
 const PortfolioPieChart = ({ ticker }) => {

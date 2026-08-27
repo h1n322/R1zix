@@ -9,7 +9,7 @@ def generate_pdf_report(metrics, chart_data, ticker):
     pdf.add_page()
     
     pdf.set_font("Arial", 'B', size=16)
-    pdf.cell(0, 15, f"RiskMate Report: {ticker.upper()}", ln=True, align='C')
+    pdf.cell(0, 15, f"Rizix Report: {ticker.upper()}", ln=True, align='C')
     
     pdf.set_font("Arial", 'B', size=12)
     pdf.cell(0, 10, "Key Metrics:", ln=True)

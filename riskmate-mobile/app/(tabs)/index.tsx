@@ -93,7 +93,7 @@ export default function ExploreScreen() {
         
         {/* --- HERO СЕКЦІЯ --- */}
         <View style={styles.heroSection}>
-          <Text style={styles.heroTitle}>RiskMate</Text>
+          <Text style={styles.heroTitle}>Rizix</Text>
           <Text style={styles.heroSubtitle}>
             Професійний інструмент для прогнозування фінансових ризиків та аналізу портфелів.
           </Text>

@@ -164,7 +164,7 @@ const handleAnalyze = async () => {
         
         {/* --- HEADER --- */}
         <View style={styles.header}>
-          <Text style={styles.logoText}>RiskMate</Text>
+          <Text style={styles.logoText}>Rizix</Text>
           
           <TouchableOpacity 
             style={styles.userBadge} 

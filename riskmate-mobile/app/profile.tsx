@@ -79,7 +79,7 @@ export default function ProfileScreen() {
             </View>
             <View>
               <Text style={styles.userName}>{userName}</Text>
-              <Text style={styles.userRole}>Інвестор RiskMate</Text>
+              <Text style={styles.userRole}>Інвестор Rizix</Text>
               <Text style={styles.userEmailSub}>{userEmail}</Text>
             </View>
           </View>
