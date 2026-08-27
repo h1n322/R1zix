@@ -6,7 +6,7 @@ const CorrelationMatrix = ({ matrix }) => {
 
   const tickers = Object.keys(matrix);
 
-  // 🔥 Оновлені фірмові кольори RiskMate (Смарагдовий та Червоний)
+  // 🔥 Оновлені фірмові кольори Rizix (Смарагдовий та Червоний)
   const getCellColor = (val) => {
     if (val === 1) return 'rgba(255, 255, 255, 0.05)'; 
     // rgb(16, 185, 129) - це #10B981

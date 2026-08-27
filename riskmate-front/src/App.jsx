@@ -85,7 +85,7 @@ function App() {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white', backgroundColor: '#0f172a' }}>
-        Завантаження RiskMate...
+        Завантаження Rizix...
       </div>
     );
   }

@@ -31,11 +31,11 @@ export default function AboutScreen() {
         <View style={styles.card}>
           <View style={styles.logoContainer}>
             <Ionicons name="shield-checkmark" size={50} color="#3B82F6" />
-            <Text style={styles.brandName}>RiskMate</Text>
+            <Text style={styles.brandName}>Rizix</Text>
           </View>
 
           <Text style={styles.description}>
-            RiskMate — це інноваційний науково-дослідницький проєкт, створений для участі у конкурсі-захисті Малої академії наук України (МАН). 
+            Rizix — це інноваційний науково-дослідницький проєкт, створений для участі у конкурсі-захисті Малої академії наук України (МАН). 
           </Text>
           
           <Text style={styles.description}>
@@ -71,7 +71,7 @@ export default function AboutScreen() {
           </View>
         </View>
 
-        <Text style={styles.footerText}>RiskMate © 2026. Всі права захищено.</Text>
+        <Text style={styles.footerText}>Rizix © 2026. Всі права захищено.</Text>
 
       </ScrollView>
     </SafeAreaView>

@@ -62,7 +62,7 @@ export default function LoginScreen() {
           
           <View style={styles.header}>
             <Ionicons name="shield-checkmark" size={60} color="#3B82F6" />
-            <Text style={styles.logo}>RiskMate</Text>
+            <Text style={styles.logo}>Rizix</Text>
             <Text style={styles.subtitle}>Вхід у систему аналітики</Text>
           </View>
 

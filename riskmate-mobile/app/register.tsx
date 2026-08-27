@@ -64,7 +64,7 @@ export default function RegisterScreen() {
         <View style={styles.formContainer}>
           
           <View style={styles.header}>
-            <Text style={styles.logo}>RiskMate</Text>
+            <Text style={styles.logo}>Rizix</Text>
             <Text style={styles.subtitle}>Створіть акаунт для доступу до PRO-аналітики</Text>
           </View>
 

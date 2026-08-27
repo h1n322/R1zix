@@ -119,7 +119,7 @@ const Landing = () => {
               </span>
             ))}
 
-            <a href="/RiskMate-Demo.exe" download className={styles.btnDemo}>
+            <a href="/Rizix-Demo.exe" download className={styles.btnDemo}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="7 10 12 15 17 10"></polyline>
@@ -156,7 +156,7 @@ const Landing = () => {
           
           {/* HERO */}
           <div id="hero" className={styles.hero}>
-            <h1 className={styles.heroTitle}>RiskMate</h1>
+            <h1 className={styles.heroTitle}>Rizix</h1>
             <p className={styles.heroSubtitle}>
               Професійний інструмент для прогнозування фінансових ризиків та аналізу портфелів за допомогою симуляцій Монте-Карло та Штучного Інтелекту.
             </p>
@@ -205,7 +205,7 @@ const Landing = () => {
 
           {/* FEATURES */}
           <div id="features" style={{ width: '100%', maxWidth: '1100px', marginBottom: '120px', paddingTop: '40px' }}>
-            <h2 className={styles.sectionTitle}>Чому обирають RiskMate?</h2>
+            <h2 className={styles.sectionTitle}>Чому обирають Rizix?</h2>
             
             <div className={styles.featuresGrid}>
               <div className={styles.featureCard}>
@@ -240,7 +240,7 @@ const Landing = () => {
             <div className={styles.aboutBox}>
               <div style={{ position: 'absolute', top: '-1px', left: '10%', right: '10%', height: '1px', background: 'linear-gradient(90deg, transparent, #3B82F6, transparent)' }}></div>
               <p style={{ color: '#e2e8f0', lineHeight: '1.9', fontSize: '1.15rem', margin: 0 }}>
-                RiskMate — це інноваційний науково-дослідницький проєкт, створений для участі у конкурсі-захисті Малої академії наук України (МАН). 
+                Rizix — це інноваційний науково-дослідницький проєкт, створений для участі у конкурсі-захисті Малої академії наук України (МАН). 
                 Головна мета платформи — демократизувати доступ до складних інструментів фінансової аналітики. Ми поєднали класичні математичні моделі (GBM, оптимізація Марковіца) з сучасними алгоритмами штучного інтелекту, загорнувши це у швидкий, безпечний та інтуїтивно зрозумілий веб-інтерфейс.
               </p>
             </div>
@@ -250,7 +250,7 @@ const Landing = () => {
 
         {/* FOOTER */}
         <footer className={styles.footer}>
-          <p style={{ color: '#94a3b8', fontSize: '1rem', fontWeight: '500', margin: '0 0 10px 0' }}>RiskMate © 2026. Проєкт для МАН України.</p>
+          <p style={{ color: '#94a3b8', fontSize: '1rem', fontWeight: '500', margin: '0 0 10px 0' }}>Rizix © 2026. Проєкт для МАН України.</p>
           <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>Дизайн та розробка: <span style={{ color: '#f8fafc', fontWeight: 'bold' }}>Максим Тиванюк</span></p>
         </footer>
 

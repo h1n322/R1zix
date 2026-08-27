@@ -51,7 +51,7 @@ const Profile = ({ user }) => {
               {user.displayName ? user.displayName.charAt(0).toUpperCase() : getInitials(user.email)}
             </div>
             <div>
-              <h2 className={styles.userName}>{user.displayName || 'Інвестор RiskMate'}</h2>
+              <h2 className={styles.userName}>{user.displayName || 'Інвестор Rizix'}</h2>
               <p className={styles.userEmail}>{user.email}</p>
             </div>
           </div>

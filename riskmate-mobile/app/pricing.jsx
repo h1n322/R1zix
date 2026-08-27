@@ -34,7 +34,7 @@ export default function PricingScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerCentered}>
-          <Text style={styles.pageTitle}>Тарифи RiskMate</Text>
+          <Text style={styles.pageTitle}>Тарифи Rizix</Text>
           <Text style={styles.subtitle}>
             Оберіть план, який найкраще підходить для ваших інвестиційних потреб.
           </Text>
@@ -77,7 +77,7 @@ export default function PricingScreen() {
           <Text style={styles.priceText}>Custom</Text>
           <View style={styles.divider} />
           <FeatureItem text="Прогнозування через AI (LSTM)" />
-          <FeatureItem text="Доступ до RiskMate API" />
+          <FeatureItem text="Доступ до Rizix API" />
           <FeatureItem text="Інтеграція з вашим брокером" />
           <FeatureItem text="Окрема хмарна інфраструктура" />
           <TouchableOpacity style={styles.btnSecondary}>

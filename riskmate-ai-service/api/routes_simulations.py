@@ -99,7 +99,7 @@ def get_report(
             pdf_content = bytes(pdf_content)
 
         safe_ticker = simulation.ticker.replace(",", "_").replace(" ", "")
-        filename = f"RiskMate_Report_{safe_ticker}.pdf"
+        filename = f"Rizix_Report_{safe_ticker}.pdf"
 
         return Response(
             content=pdf_content,

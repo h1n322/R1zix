@@ -291,7 +291,7 @@ const Dashboard = ({ user }) => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `RiskMate_Report_${ticker}.pdf`;
+      a.download = `Rizix_Report_${ticker}.pdf`;
       a.click();
       toast.success('Звіт завантажено!', { id: loadingToast });
     } catch (err) { 
@@ -377,7 +377,7 @@ const Dashboard = ({ user }) => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `RiskMate_Data_${ticker}.csv`;
+    a.download = `Rizix_Data_${ticker}.csv`;
     a.click();
     toast.success('CSV-дані успішно завантажено!', { id: loadingToast });
   };

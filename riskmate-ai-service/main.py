@@ -18,7 +18,7 @@ firebase_admin.initialize_app(cred)
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
-app = FastAPI(title="RiskMate API", version="2.0.0")
+app = FastAPI(title="Rizix API", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,4 +37,4 @@ app.include_router(ml_router)
 
 @app.get("/")
 def health_check():
-    return {"message": "RiskMate API працює 🚀"}
+    return {"message": "Rizix API працює 🚀"}
