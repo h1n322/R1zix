@@ -36,7 +36,7 @@ namespace RiskMate.Api.Services
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2);
 
                 // Звертаємось до Python Data Gateway замість Yahoo!
-                var baseUrl = Environment.GetEnvironmentVariable("PYTHON_API_URL") ?? "http://python-ml:8000";
+                var baseUrl = Environment.GetEnvironmentVariable("PYTHON_API_URL")?.TrimEnd('/') ?? "http://python-ml:8000";
                 var url = $"{baseUrl}/api/history/{ticker}?lookback={lookbackYears}";
                 
                 var response = await _httpClient.GetAsync(url);
@@ -67,7 +67,7 @@ namespace RiskMate.Api.Services
                 try
                 {
                     // Звертаємось до Python Data Gateway
-                    var baseUrl = Environment.GetEnvironmentVariable("PYTHON_API_URL") ?? "http://python-ml:8000";
+                    var baseUrl = Environment.GetEnvironmentVariable("PYTHON_API_URL")?.TrimEnd('/') ?? "http://python-ml:8000";
                     var url = $"{baseUrl}/api/news/{ticker}?limit={count}";
                     var response = await _httpClient.GetAsync(url);
                     response.EnsureSuccessStatusCode();
