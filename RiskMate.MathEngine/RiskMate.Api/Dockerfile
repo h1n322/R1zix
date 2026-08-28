@@ -21,6 +21,7 @@ RUN dotnet publish -c Release -o /out
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 COPY --from=build /out .
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
 
 # Відкриваємо порти
 EXPOSE 8080
