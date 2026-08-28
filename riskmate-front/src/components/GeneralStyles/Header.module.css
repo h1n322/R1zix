@@ -117,3 +117,23 @@
   background-color: #2563EB;
   transform: translateY(-1px);
 }
+/* =========================================
+   📱 Мобільна адаптація для Header
+========================================= */
+@media (max-width: 768px) {
+  .header {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 10px 0;
+    gap: 10px;
+  }
+  .watchlistBtn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  .userBlock {
+    width: 100%;
+    justify-content: center;
+    padding: 8px;
+  }
+}

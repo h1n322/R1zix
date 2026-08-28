@@ -121,3 +121,8 @@ body {
     min-width: 100% !important;
   }
 }
+@media (max-width: 768px) {
+  .main-content-mobile {
+    padding-bottom: 85px !important;
+  }
+}
