@@ -139,3 +139,9 @@ html, body {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
+
+@media (max-width: 768px) {
+  .main-content-mobile {
+    padding-top: env(safe-area-inset-top, 20px) !important;
+  }
+}
