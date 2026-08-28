@@ -347,7 +347,7 @@ const Dashboard = ({ user }) => {
       };
 
       // 3. Відправляємо на C#
-      const response = await fetch("http://localhost:5266/api/portfolio", {
+      const response = await fetch("/api/portfolio", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -388,7 +388,7 @@ const Dashboard = ({ user }) => {
     try {
       const token = await auth.currentUser.getIdToken();
       
-      const response = await fetch("http://localhost:5266/api/portfolio", {
+      const response = await fetch("/api/portfolio", {
         headers: { "Authorization": `Bearer ${token}` }
       });
 
