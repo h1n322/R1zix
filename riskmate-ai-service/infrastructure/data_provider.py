@@ -45,8 +45,12 @@ class YFinanceProvider:
         except Exception as e:
             pass
 
-        session = requests.Session()
-        session.headers.update({'User-Agent': USER_AGENT})
+        try:
+            from curl_cffi import requests as cffi_requests
+            session = cffi_requests.Session(impersonate="chrome")
+        except ImportError:
+            session = requests.Session()
+            session.headers.update({'User-Agent': USER_AGENT})
 
         for attempt in range(self._retries):
             try:
@@ -138,8 +142,13 @@ class YFinanceProvider:
             pass
 
         try:
-            session = requests.Session()
-            session.headers.update({'User-Agent': USER_AGENT})
+            try:
+                from curl_cffi import requests as cffi_requests
+                session = cffi_requests.Session(impersonate="chrome")
+            except ImportError:
+                session = requests.Session()
+                session.headers.update({'User-Agent': USER_AGENT})
+                
             info = yf.Ticker(ticker, session=session).info
             
             try:
@@ -165,9 +174,14 @@ class YFinanceProvider:
 
         try:
             url = f"https://query2.finance.yahoo.com/v1/finance/search?q={ticker}&newsCount={limit}"
-            with httpx.Client() as client:
-                resp = client.get(url, headers={"User-Agent": USER_AGENT}, timeout=10.0)
-                if resp.status_code == 200:
+            try:
+                from curl_cffi import requests as cffi_requests
+                resp = cffi_requests.get(url, impersonate="chrome", timeout=10.0)
+            except ImportError:
+                with httpx.Client() as client:
+                    resp = client.get(url, headers={"User-Agent": USER_AGENT}, timeout=10.0)
+                    
+            if resp.status_code == 200:
                     news_data = resp.json().get("news", [])
                     result = []
                     for n in news_data:
