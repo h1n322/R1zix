@@ -1,5 +1,6 @@
 import time
 import json
+import requests
 from datetime import datetime
 
 import httpx
@@ -30,25 +31,26 @@ class YFinanceProvider:
     # Публічні методи
     # ------------------------------------------------------------------
 
-    def fetch_history(self, ticker: str, period: str) -> pd.DataFrame:
-        """Повертає повний OHLCV DataFrame для одного тикера."""
-        cache_key = f"history_{ticker}_{period}"
+    def fetch_history(self, ticker: str, period: str = "5y") -> pd.DataFrame:
+        """Повертає історію цін, використовуючи yfinance (з кешем). Якщо помилка - fallback."""
+        cache_key = f"hist_{ticker}_{period}"
         
         try:
             cached = redis_client.get(cache_key)
             if cached:
-                print(f"📦 Redis Кеш: history {ticker} ({period})")
-                df = pd.read_json(cached, orient="split")
+                print(f"📦 Redis Кеш: history {ticker}")
+                df = pd.read_json(io.StringIO(cached), orient="split")
                 df.attrs['is_mock'] = False
                 return df
         except Exception as e:
-            print(f"⚠️ Помилка Redis (читання history): {e}")
+            pass
+
+        session = requests.Session()
+        session.headers.update({'User-Agent': USER_AGENT})
 
         for attempt in range(self._retries):
             try:
-                # Використовуємо yfinance для OHLCV, але оскільки є Redis,
-                # ми не будемо спамити Yahoo.
-                df = yf.Ticker(ticker).history(period=period)
+                df = yf.Ticker(ticker, session=session).history(period=period)
                 if not df.empty:
                     # Прибираємо timezone, щоб JSON серіалізація була консистентною
                     if df.index.tz is not None:
@@ -136,9 +138,9 @@ class YFinanceProvider:
             pass
 
         try:
-            # Використовуємо yfinance, оскільки ми оновили його до 1.6.0
-            # і він успішно обходить блокування через curl_cffi
-            info = yf.Ticker(ticker).info
+            session = requests.Session()
+            session.headers.update({'User-Agent': USER_AGENT})
+            info = yf.Ticker(ticker, session=session).info
             
             try:
                 redis_client.setex(cache_key, self._cache_ttl, json.dumps(info))
