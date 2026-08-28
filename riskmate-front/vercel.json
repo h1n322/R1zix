@@ -5,6 +5,10 @@
       "destination": "https://rizix-api.onrender.com/api/:path*"
     },
     {
+      "source": "/ai/:path*",
+      "destination": "https://rizix-ai.onrender.com/api/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
