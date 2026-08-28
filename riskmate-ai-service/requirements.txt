@@ -78,7 +78,7 @@ soupsieve==2.5
 starlette==0.36.3
 statsmodels==0.14.1
 stripe==8.11.0
-tensorflow==2.16.2
+tensorflow-cpu==2.16.2
 termcolor==2.4.0
 threadpoolctl==3.4.0
 typing-inspection==0.4.0

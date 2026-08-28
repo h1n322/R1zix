@@ -11,9 +11,15 @@ from api.routes_portfolio import router as portfolio_router
 from api.routes_market import router as market_router
 from api.routes_billing import router as billing_router
 
+import json
+
 load_dotenv()
 
-cred = credentials.Certificate("serviceAccountKey.json")
+firebase_creds_env = os.environ.get("FIREBASE_CREDENTIALS")
+if firebase_creds_env:
+    cred = credentials.Certificate(json.loads(firebase_creds_env))
+else:
+    cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred)
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
