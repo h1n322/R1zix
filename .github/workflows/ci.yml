@@ -1,0 +1,56 @@
+name: RiskMate CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-dotnet:
+    name: Build C# API
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET 10.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+    - name: Restore dependencies
+      run: dotnet restore RiskMate.MathEngine/RiskMate.Api/RiskMate.Api.csproj
+    - name: Build C# API
+      run: dotnet build RiskMate.MathEngine/RiskMate.Api/RiskMate.Api.csproj --no-restore --configuration Release
+
+  build-react:
+    name: Build React Frontend
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: Install dependencies
+      working-directory: ./riskmate-front
+      run: npm install
+    - name: Lint
+      working-directory: ./riskmate-front
+      run: npm run lint
+    - name: Build
+      working-directory: ./riskmate-front
+      run: npm run build
+
+  build-python:
+    name: Check Python ML Service
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - name: Install dependencies
+      working-directory: ./riskmate-ai-service
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
