@@ -20,6 +20,8 @@ jobs:
       run: dotnet restore RiskMate.MathEngine/RiskMate.Api/RiskMate.Api.csproj
     - name: Build C# API
       run: dotnet build RiskMate.MathEngine/RiskMate.Api/RiskMate.Api.csproj --no-restore --configuration Release
+    - name: Test C# Logic
+      run: dotnet test RiskMate.MathEngine/RiskMate.MathEngine.Tests/RiskMate.MathEngine.Tests.csproj --configuration Release
 
   build-react:
     name: Build React Frontend
