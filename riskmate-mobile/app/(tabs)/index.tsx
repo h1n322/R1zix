@@ -16,18 +16,29 @@ import { useRouter } from 'expo-router';
 const { width: screenWidth } = Dimensions.get('window');
 
 // Мокові дані для карток
-const MARKET_DATA = [
-  { id: '1', symbol: 'SPY', price: '655.83', change: '+0.09%', isUp: true },
-  { id: '2', symbol: 'QQQ', price: '584.98', change: '+0.11%', isUp: true },
-  { id: '3', symbol: 'GLD', price: '429.41', change: '-1.92%', isUp: false },
-  { id: '4', symbol: 'BTC-USD', price: '66,872.67', change: '-0.02%', isUp: false },
-  { id: '5', symbol: 'AAPL', price: '255.92', change: '+0.11%', isUp: true },
-  { id: '6', symbol: 'MSFT', price: '373.46', change: '+1.11%', isUp: true },
-  { id: '7', symbol: 'NVDA', price: '177.39', change: '+0.93%', isUp: true },
-  { id: '8', symbol: 'GOOGL', price: '295.77', change: '-0.54%', isUp: false },
-];
+
 
 export default function ExploreScreen() {
+  const [marketData, setMarketData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('https://rizix-api.onrender.com/api/market-overview')
+      .then(res => res.json())
+      .then(data => {
+        const formatted = data.map((item, index) => ({
+          id: String(index),
+          symbol: item.ticker,
+          price: item.price,
+          change: item.change,
+          isUp: item.isUp
+        }));
+        setMarketData(formatted);
+      })
+      .catch(err => console.error("Error fetching market data:", err))
+      .finally(() => setIsLoading(false));
+  }, []);
+
   const router = useRouter();
   const [user, setUser] = useState(null);
   
@@ -115,7 +126,7 @@ export default function ExploreScreen() {
 
         {/* --- СІТКА КАРТОК --- */}
         <View style={styles.grid}>
-          {MARKET_DATA.map((item) => (
+          {marketData.map((item) => (
             <TouchableOpacity key={item.id} style={styles.card} activeOpacity={0.7}>
               <View style={styles.cardHeader}>
                 <Text style={styles.symbol}>{item.symbol}</Text>
