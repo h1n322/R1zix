@@ -9,7 +9,7 @@ const MobileChart = ({ data }) => {
   if (!data || data.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Введіть тикер та натисніть "Аналіз"</Text>
+        <Text style={styles.emptyText}>Введіть тикер та натисніть {"\"Аналіз\""}</Text>
       </View>
     );
   }

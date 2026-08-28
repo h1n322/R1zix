@@ -69,7 +69,7 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Ім'я</Text>
+            <Text style={styles.label}>{"Ім'я"}</Text>
             <TextInput
               style={styles.input}
               placeholder="Максим"

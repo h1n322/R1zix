@@ -228,7 +228,7 @@ const handleAnalyze = async () => {
           </TouchableOpacity>
 
           {showSettings && (
-            <ProSettings />
+            <ProSettings algorithm={algorithm} setAlgorithm={setAlgorithm} lookback={lookback} setLookback={setLookback} horizon={horizon} setHorizon={setHorizon} simulations={simulations} setSimulations={setSimulations} />
           )}
         </View>
 
