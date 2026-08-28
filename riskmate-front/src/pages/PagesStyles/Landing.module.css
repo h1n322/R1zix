@@ -368,3 +368,38 @@ background-color: rgba(11, 14, 20, 0.8);  padding: 40px 30px;
   background-color: rgba(11, 14, 20, 0.8);
   backdrop-filter: blur(10px);
 }
+/* =========================================
+   📱 Мобільна адаптація для Landing
+========================================= */
+@media (max-width: 768px) {
+  .header {
+    padding: 0 15px;
+    height: auto;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .nav {
+    display: none; /* Ховаємо меню на телефоні для лендінгу, залишаємо тільки кнопки входу */
+  }
+  .heroTitle {
+    font-size: 2.5rem;
+  }
+  .heroSubtitle {
+    font-size: 1rem;
+    padding: 0 10px;
+  }
+  .mainContainer {
+    padding-top: 100px;
+  }
+  .marketSection {
+    margin-bottom: 60px;
+  }
+  .featuresGrid {
+    grid-template-columns: 1fr;
+  }
+  .userBlock, .btnLogin, .btnDemo {
+    margin: 5px 0;
+  }
+}

@@ -121,3 +121,27 @@ body {
     min-width: 100% !important;
   }
 }
+@media (max-width: 768px) {
+  .main-content-mobile {
+    padding-bottom: 85px !important;
+  }
+}
+
+/* Забороняємо горизонтальний скрол та ефект "гумки" на iOS */
+html, body {
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+}
+
+/* Забороняємо виділення тексту для кнопок і плашок, щоб це виглядало як нативний додаток */
+.dockBtn, .drawer, .header-mobile {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+@media (max-width: 768px) {
+  .main-content-mobile {
+    padding-top: env(safe-area-inset-top, 20px) !important;
+  }
+}
