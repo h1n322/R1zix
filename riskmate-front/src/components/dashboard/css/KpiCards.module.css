@@ -104,3 +104,23 @@
   border-style: solid; 
   border-color: #0B0E14 transparent transparent transparent;
 }
+/* =========================================
+   📱 Мобільна адаптація для KpiCards
+========================================= */
+@media (max-width: 768px) {
+  .container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .card {
+    min-width: 0; /* Дозволяємо звужуватися */
+    padding: 15px;
+  }
+  .cardTitle {
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+  .cardValue {
+    font-size: 1.4rem;
+  }
+}
