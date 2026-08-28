@@ -145,3 +145,9 @@ html, body {
     padding-top: env(safe-area-inset-top, 20px) !important;
   }
 }
+
+@media (max-width: 768px) {
+  .main-content-mobile {
+    padding-top: calc(env(safe-area-inset-top, 20px) + 120px) !important;
+  }
+}
