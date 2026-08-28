@@ -94,7 +94,7 @@ const Dashboard = ({ user }) => {
     const loadingToast = toast.loading('Опрацювання даних...');
     try {
       if (algorithm === 'lstm') {
-        const aiResp = await fetch(`http://127.0.0.1:8000/api/predict/${ticker}`);
+        const aiResp = await fetch(`/ai/predict/${ticker}`);
         const aiData = await aiResp.json();
 
         if (aiData.error) {
@@ -103,7 +103,7 @@ const Dashboard = ({ user }) => {
           return;
         }
 
-        const simResp = await fetch('http://127.0.0.1:8000/api/simulate', {
+        const simResp = await fetch('/ai/simulate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -142,7 +142,7 @@ const Dashboard = ({ user }) => {
           return;
         }
 
-        const resp = await fetch('http://127.0.0.1:8000/api/optimize', {
+        const resp = await fetch('/ai/optimize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ tickers: ticker })
@@ -205,7 +205,7 @@ const Dashboard = ({ user }) => {
         
         // Отримуємо деталі про актив безпосередньо від Python Data Gateway
         try {
-          const infoResp = await fetch(`http://127.0.0.1:8000/api/info/${ticker}`);
+          const infoResp = await fetch(`/ai/info/${ticker}`);
           if (infoResp.ok) {
             const infoData = await infoResp.json();
             setAssetDetails(infoData);
@@ -228,7 +228,7 @@ const Dashboard = ({ user }) => {
 
         // Спробуємо отримати LSTM прогноз з Python бекенду
         try {
-          const mlResp = await fetch(`http://127.0.0.1:8000/api/predict/${ticker}`);
+          const mlResp = await fetch(`/ai/predict/${ticker}`);
           if (mlResp.ok) {
             const mlData = await mlResp.json();
             setLstmForecast(mlData.predicted_price_tomorrow);
@@ -257,7 +257,7 @@ const Dashboard = ({ user }) => {
     const loadingToast = toast.loading('Генерація PDF...');
     try {
       const isLstm = algorithm === 'lstm';
-      const endpoint = isLstm ? 'http://127.0.0.1:8000/api/report' : '/api/simulation/report';
+      const endpoint = isLstm ? '/ai/report' : '/api/simulation/report';
       
       const payload = isLstm ? {
         ticker, 
@@ -651,7 +651,7 @@ const Dashboard = ({ user }) => {
                   onClick={async () => {
                     toast.loading('Навчання моделі...', {id: 'train'});
                     try {
-                      const res = await fetch(`http://127.0.0.1:8000/api/ml/train/${ticker}`, {method: 'POST'});
+                      const res = await fetch(`/ai/ml/train/${ticker}`, {method: 'POST'});
                       if (res.ok) toast.success('Навчання розпочато! Це займе 1-2 хвилини.', {id: 'train'});
                       else throw new Error("Помилка");
                     } catch (e) {
