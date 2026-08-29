@@ -30,6 +30,7 @@ services:
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=riskmate_db;Username=postgres;Password=${DB_PASSWORD}
       - ASPNETCORE_ENVIRONMENT=Development
       - GeminiApiKey=${GEMINI_API_KEY}
+      - PYTHON_API_URL=http://python-ml:8000
     depends_on:
       - db
 
