@@ -381,7 +381,12 @@ background-color: rgba(11, 14, 20, 0.8);  padding: 40px 30px;
     padding-bottom: 10px;
   }
   .nav {
-    display: none; /* Ховаємо меню на телефоні для лендінгу, залишаємо тільки кнопки входу */
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+  }
+  .navItem, .navIndicator, .btnDemo {
+    display: none; /* Ховаємо текстові посилання та Demo (.exe) на мобільному */
   }
   .heroTitle {
     font-size: 2.5rem;
@@ -399,7 +404,9 @@ background-color: rgba(11, 14, 20, 0.8);  padding: 40px 30px;
   .featuresGrid {
     grid-template-columns: 1fr;
   }
-  .userBlock, .btnLogin, .btnDemo {
+  .userBlock, .btnLogin {
     margin: 5px 0;
+    width: 100%;
+    justify-content: center;
   }
 }
