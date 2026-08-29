@@ -1,138 +1,162 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   StyleSheet, 
   Text, 
   View, 
   SafeAreaView, 
-  TextInput, 
   TouchableOpacity, 
   ScrollView, 
   StatusBar,
-  Dimensions,
-  KeyboardAvoidingView,
-  Platform
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { auth } from '../firebase'; 
 
-const { width: screenWidth } = Dimensions.get('window');
-const isSmallScreen = screenWidth < 375;
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5266';
 
 export default function PortfolioScreen() {
   const router = useRouter();
-  
-  // Початковий список тикерів (як на твоєму скріншоті)
-  const [tickers, setTickers] = useState(['KO', 'AAPL']);
-  const [newTicker, setNewTicker] = useState('');
+  const [portfolios, setPortfolios] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Функція додавання
-  const handleAddTicker = () => {
-    const trimmed = newTicker.trim().toUpperCase();
-    if (trimmed && !tickers.includes(trimmed)) {
-      setTickers([trimmed, ...tickers]); // Додаємо на початок списку
-      setNewTicker(''); // Очищаємо поле
+  const fetchPortfolios = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        Alert.alert('Помилка', 'Ви не авторизовані');
+        return;
+      }
+      const token = await user.getIdToken();
+      const response = await fetch(`${API_BASE_URL}/api/portfolio`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Помилка завантаження портфелів');
+      
+      const data = await response.json();
+      setPortfolios(data);
+    } catch (e: any) {
+      console.error(e);
+      Alert.alert('Помилка', 'Не вдалося завантажити історію. Перевірте, чи працює C# бекенд.');
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, []);
 
-  // Функція видалення
-  const handleRemoveTicker = (tickerToRemove: string) => {
-    setTickers(tickers.filter(t => t !== tickerToRemove));
+  useEffect(() => {
+    fetchPortfolios();
+  }, [fetchPortfolios]);
+
+  // Хелпер для форматування грошей ($1,234.56)
+  const formatMoney = (val: any) => {
+    if (val === undefined || val === null || isNaN(val)) return '0.00';
+    return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0B0F19" />
       
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          
-          {/* Кнопка "Назад" */}
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>← Назад</Text>
-          </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        
+        {/* Кнопка "Назад" */}
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Text style={styles.backButtonText}>← Назад</Text>
+        </TouchableOpacity>
 
-          <Text style={styles.pageTitle}>Мій портфель</Text>
+        <Text style={styles.pageTitle}>Історія симуляцій</Text>
+        <Text style={styles.sectionLabel}>ЗБЕРЕЖЕНІ РОЗРАХУНКИ</Text>
 
-          {/* Блок додавання тикера */}
-          <View style={styles.addSection}>
-            <TextInput
-              style={styles.input}
-              placeholder="Напр. TSLA"
-              placeholderTextColor="#64748B"
-              autoCapitalize="characters"
-              value={newTicker}
-              onChangeText={setNewTicker}
-            />
-            <TouchableOpacity 
-              style={[styles.addButton, !newTicker.trim() && { opacity: 0.5 }]} 
-              onPress={handleAddTicker}
-              disabled={!newTicker.trim()}
-            >
-              <Text style={styles.addButtonText}>+</Text>
-            </TouchableOpacity>
+        {isLoading ? (
+          <ActivityIndicator color="#3B82F6" size="large" style={{ marginTop: 20 }} />
+        ) : portfolios.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>У вас ще немає збережених симуляцій.</Text>
           </View>
-
-          <Text style={styles.sectionLabel}>ЗБЕРЕЖЕНІ АКТИВИ</Text>
-
-          {/* Список тикерів */}
-          {tickers.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>Ваш портфель порожній.</Text>
-            </View>
-          ) : (
-            tickers.map((ticker, index) => (
-              <View key={index} style={styles.tickerCard}>
-                <View style={styles.tickerInfo}>
-                  <View style={styles.iconPlaceholder}>
-                    <Text style={styles.iconText}>{ticker.charAt(0)}</Text>
-                  </View>
-                  <Text style={styles.tickerName}>{ticker}</Text>
+        ) : (
+          portfolios.map((p, index) => (
+            <TouchableOpacity 
+              key={p.id || index} 
+              style={styles.portfolioCard}
+              onPress={() => {
+                Alert.alert("Інфо", `Тикери: ${p.tickers}\nМодель: ${p.algorithm}\nОчікувана ціна: $${formatMoney(p.expectedPrice)}`);
+              }}
+            >
+              <View style={styles.cardHeader}>
+                <View style={styles.tickerBadge}>
+                  <Text style={styles.tickerText}>{p.tickers || 'N/A'}</Text>
                 </View>
-
-                <TouchableOpacity 
-                  style={styles.deleteButton} 
-                  onPress={() => handleRemoveTicker(ticker)}
-                >
-                  <Text style={styles.deleteText}>Видалити</Text>
-                </TouchableOpacity>
+                <View style={styles.algoBadge}>
+                  <Text style={styles.algoText}>{p.algorithm?.toUpperCase() || 'GBM'}</Text>
+                </View>
               </View>
-            ))
-          )}
 
-        </ScrollView>
-      </KeyboardAvoidingView>
+              <View style={styles.metricsRow}>
+                <View style={styles.metric}>
+                  <Text style={styles.metricLabel}>Очікувана ціна</Text>
+                  <Text style={styles.metricValue}>${formatMoney(p.expectedPrice)}</Text>
+                </View>
+                <View style={styles.metric}>
+                  <Text style={styles.metricLabel}>Дата створення</Text>
+                  <Text style={styles.metricValue}>
+                    {p.createdAt ? new Date(p.createdAt).toLocaleDateString('uk-UA') : 'N/A'}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
+
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-// --- СТИЛІ АДАПТОВАНІ ПІД MINI ---
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B0F19' },
   scrollContent: { padding: 16 },
   backButton: { marginBottom: 15, alignSelf: 'flex-start' },
   backButtonText: { color: '#3B82F6', fontSize: 16, fontWeight: '600' },
   pageTitle: { color: '#FFF', fontSize: 26, fontWeight: 'bold', marginBottom: 25 },
-  
-  // Додавання
-  addSection: { flexDirection: 'row', gap: 10, marginBottom: 30 },
-  input: { flex: 1, backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#334155', borderRadius: 12, color: '#FFFFFF', paddingHorizontal: 16, height: 50, fontSize: 16 },
-  addButton: { backgroundColor: '#3B82F6', width: 50, height: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  addButtonText: { color: '#FFF', fontSize: 24, fontWeight: 'bold' },
-
   sectionLabel: { color: '#64748B', fontSize: 12, fontWeight: 'bold', letterSpacing: 1, marginBottom: 15 },
-
-  // Картка тикера
-  tickerCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1E293B', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#334155', marginBottom: 10 },
-  tickerInfo: { flexDirection: 'row', alignItems: 'center' },
-  iconPlaceholder: { width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(59, 130, 246, 0.2)', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  iconText: { color: '#3B82F6', fontWeight: 'bold', fontSize: 16 },
-  tickerName: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
   
-  deleteButton: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6, backgroundColor: 'rgba(239, 68, 68, 0.1)' },
-  deleteText: { color: '#EF4444', fontSize: 12, fontWeight: '600' },
+  portfolioCard: { 
+    backgroundColor: '#1E293B', 
+    padding: 16, 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    borderColor: '#334155', 
+    marginBottom: 12 
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12
+  },
+  tickerBadge: {
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6
+  },
+  tickerText: { color: '#3B82F6', fontWeight: 'bold', fontSize: 14 },
+  algoBadge: {
+    backgroundColor: 'rgba(148, 163, 184, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6
+  },
+  algoText: { color: '#94A3B8', fontWeight: 'bold', fontSize: 12 },
+  
+  metricsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  metric: {},
+  metricLabel: { color: '#64748B', fontSize: 12, marginBottom: 4 },
+  metricValue: { color: '#F8FAFC', fontSize: 15, fontWeight: 'bold' },
 
   emptyState: { alignItems: 'center', marginTop: 20, padding: 20, backgroundColor: 'rgba(30, 41, 59, 0.5)', borderRadius: 12, borderStyle: 'dashed', borderWidth: 1, borderColor: '#334155' },
-  emptyStateText: { color: '#64748B', fontSize: 14 }
+  emptyStateText: { color: '#64748B', fontSize: 14, textAlign: 'center' }
 });

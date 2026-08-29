@@ -121,26 +121,63 @@ const handleAnalyze = async () => {
       setMetrics(data); // Малюємо графіки на екрані
 
       // ==========================================
-      // 👇 МАГІЯ ЗБЕРЕЖЕННЯ В FIREBASE
+      // 👇 МАГІЯ ЗБЕРЕЖЕННЯ В ПОСТГРЕС ЧЕРЕЗ C# API
       // Зберігаємо ТІЛЬКИ якщо користувач залогінений І бекенд прислав правильні дані
       if (auth.currentUser && data.var_5 !== undefined) {
         try {
-          const today = new Date();
-          const dateString = `${today.getDate().toString().padStart(2, '0')}.${(today.getMonth() + 1).toString().padStart(2, '0')}.${today.getFullYear()}`;
+          const token = await auth.currentUser.getIdToken();
+          const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5266';
+          
+          const portfolioDto = {
+            tickers: ticker.toUpperCase(),
+            algorithm: algorithm,
+            simulationsCount: Number(simulations),
+            horizon: Number(horizon),
+            scenario: 'base',
+            expectedPrice: data.expected_price || 0,
+            valueAtRisk: data.var_5 || 0,
+            conditionalValueAtRisk: data.cvar_5 || 0,
+            volatility: data.volatility || 0,
+            sharpeRatio: data.sharpe_ratio || 0,
+            maxDrawdown: data.max_drawdown || 0,
+            
+            chartPoints: (data.chart_data || []).map((p: any) => ({
+              dateLabel: p.name?.toString() || '',
+              expectedPrice: p.forecast || p.history || p.actual || 0,
+              lowerBound: p.bb_lower || 0,
+              upperBound: p.bb_upper || 0
+            })),
+            
+            assetDetails: [{
+              ticker: ticker.toUpperCase(),
+              companyName: 'N/A', // Можна в майбутньому брати з іншого API
+              sector: 'N/A',
+              currentPrice: data.expected_price || 0
+            }],
+            
+            histogramBins: (data.histogram || []).map((b: any) => ({
+              binRange: b.price?.toString() || b.name?.toString() || '',
+              frequency: b.count || 0
+            }))
+          };
 
-          await addDoc(collection(db, 'simulations'), {
-            userId: auth.currentUser.uid, 
-            ticker: ticker.toUpperCase(),
-            // Використовуємо фолбеки (|| 0), щоб точно уникнути помилок Firebase
-            expected_price: data.expected_price || 0,
-            var_5: data.var_5 || 0,
-            dateStr: dateString,
-            timestamp: serverTimestamp() 
+          const saveResp = await fetch(`${API_BASE_URL}/api/portfolio`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(portfolioDto)
           });
-          console.log("✅ Успішно збережено в хмару Firebase!");
+          
+          if (!saveResp.ok) {
+            console.error("🚨 Помилка збереження на C# бекенд:", await saveResp.text());
+          } else {
+            console.log("✅ Успішно збережено в PostgreSQL через C# API!");
+          }
           
         } catch (dbError) {
-          console.error("🚨 Помилка запису в Firebase:", dbError);
+          console.error("🚨 Помилка збереження:", dbError);
         }
       }
       // ==========================================
@@ -268,6 +305,7 @@ const handleAnalyze = async () => {
               )}
             </View>
 
+
             {/* 3. ГРАФІК РОЗПОДІЛУ ЙМОВІРНОСТЕЙ */}
             <View style={styles.distributionCard}>
               <Text style={styles.distributionTitle}>РОЗПОДІЛ ЙМОВІРНОСТЕЙ (ДЗВІН МОНТЕ-КАРЛО)</Text>
@@ -295,6 +333,7 @@ const handleAnalyze = async () => {
                 <Text style={styles.legendText}>Зелена зона — прибуток</Text>
               </View>
             </View>
+
           </>
         )}
       </ScrollView>
@@ -371,7 +410,7 @@ const styles = StyleSheet.create({
   newsCard: { backgroundColor: '#1E293B', borderRadius: 12, borderWidth: 1, borderColor: '#334155', padding: 20, marginTop: 15 },
   newsTitle: { color: '#94A3B8', fontSize: 13, fontWeight: 'bold', letterSpacing: 1, marginBottom: 10, textAlign: 'center' },
   newsEmptyText: { color: '#64748B', fontSize: 13, fontStyle: 'italic', textAlign: 'center' },
-
+  
   // Дзвін Монте-Карло (Розподіл ймовірностей)
   distributionCard: { backgroundColor: '#1E293B', borderRadius: 12, borderWidth: 1, borderColor: '#334155', padding: 16, marginTop: 15, marginBottom: 30 },
   distributionTitle: { color: '#94A3B8', fontSize: 12, fontWeight: 'bold', letterSpacing: 0.5, textAlign: 'center', marginBottom: 20 },
@@ -380,10 +419,4 @@ const styles = StyleSheet.create({
   legendContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 20 },
   legendDotRed: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444', marginRight: 6 },
   legendText: { color: '#64748B', fontSize: 11 }
-
-
-
-
-
-
 });
