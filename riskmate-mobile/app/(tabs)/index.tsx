@@ -3,12 +3,12 @@ import {
   StyleSheet, 
   Text, 
   View, 
-  SafeAreaView, 
   ScrollView, 
   TouchableOpacity, 
   StatusBar,
   Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../firebase';
 import { useRouter } from 'expo-router';
@@ -79,7 +79,7 @@ export default function ExploreScreen() {
       
       {/* --- ХЕДЕР З БЕЙДЖЕМ --- */}
       <View style={styles.topHeader}>
-        <View style={{ flex: 1 }} /> {/* Розпірка */}
+        <View style={{ flex: 1 }} />
         
         <TouchableOpacity 
           style={styles.badgeContainer}

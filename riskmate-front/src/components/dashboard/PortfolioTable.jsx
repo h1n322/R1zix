@@ -107,10 +107,34 @@ const PortfolioTable = ({ user, onLoadPortfolio }) => {
     return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  const handleSelect = (portfolio) => {
+  const handleSelect = async (portfolio) => {
     if (onLoadPortfolio) {
-      onLoadPortfolio(portfolio);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (portfolio.id) {
+        const loadToast = toast.loading("Завантаження даних...");
+        try {
+          const token = await auth.currentUser?.getIdToken();
+          const response = await fetch(`/api/portfolio/${portfolio.id}`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json"
+            }
+          });
+          if (response.ok) {
+            const fullPortfolio = await response.json();
+            onLoadPortfolio(fullPortfolio);
+            toast.dismiss(loadToast);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            throw new Error("Помилка завантаження");
+          }
+        } catch (error) {
+          toast.error("Не вдалося завантажити деталі", { id: loadToast });
+        }
+      } else {
+        onLoadPortfolio(portfolio); // for local items without DB id
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
   };
 

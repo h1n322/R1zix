@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
-// Змінюємо signInWithPopup на signInWithRedirect
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { initializeAuth, getReactNativePersistence, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -14,11 +14,11 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
+});
 export const googleProvider = new GoogleAuthProvider();
 
-// Використовуємо signInWithRedirect
 export const loginWithGoogle = () => signInWithPopup(auth, googleProvider);
 export const logout = () => signOut(auth);
 export const db = getFirestore(app);
-

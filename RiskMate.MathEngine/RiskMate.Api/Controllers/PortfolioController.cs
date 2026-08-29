@@ -105,13 +105,30 @@ namespace RiskMate.Api.Controllers
 
             var portfolios = await _context.Portfolios
                 .Where(p => p.UserId == user.Id)
-                .Include(p => p.ChartPoints)
-                .Include(p => p.AssetDetails)
-                .Include(p => p.HistogramBins)
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
 
             return Ok(portfolios);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetPortfolioById(int id)
+        {
+            var firebaseUid = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(firebaseUid)) return Unauthorized();
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.FirebaseUid == firebaseUid);
+            if (user == null) return NotFound();
+
+            var portfolio = await _context.Portfolios
+                .Include(p => p.ChartPoints)
+                .Include(p => p.AssetDetails)
+                .Include(p => p.HistogramBins)
+                .FirstOrDefaultAsync(p => p.Id == id && p.UserId == user.Id);
+
+            if (portfolio == null) return NotFound();
+
+            return Ok(portfolio);
         }
     }
 }
