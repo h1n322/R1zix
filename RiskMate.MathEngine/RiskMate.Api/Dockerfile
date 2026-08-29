@@ -6,6 +6,7 @@ WORKDIR /app
 COPY RiskMate.MathEngine.sln ./
 COPY RiskMate.Api/RiskMate.Api.csproj RiskMate.Api/
 COPY RiskMate.MathEngine/RiskMate.MathEngine.csproj RiskMate.MathEngine/
+COPY RiskMate.MathEngine.Tests/RiskMate.MathEngine.Tests.csproj RiskMate.MathEngine.Tests/
 
 # Відновлюємо NuGet пакети
 RUN dotnet restore RiskMate.MathEngine.sln
