@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import toast from 'react-hot-toast';
 import { auth } from '../firebase';
-import { IoTrendingUp, IoShieldCheckmark, IoDocumentText } from "react-icons/io5";
+import { IoTrendingUp, IoShieldCheckmark, IoDocumentText, IoMenu, IoClose } from "react-icons/io5";
 import AuthModal from '../components/shared/AuthModal';
 import styles from '../components/../pages/PagesStyles/Landing.module.css';
 
@@ -11,6 +11,7 @@ const Landing = () => {
   const [marketData, setMarketData] = useState([]);
   const [user, setUser] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const navigate = useNavigate();
   const navRef = useRef(null);
@@ -99,6 +100,14 @@ const Landing = () => {
         {/* --- HEADER --- */}
         <header className={styles.header}>
           
+          {/* Кнопка гамбургер меню (тільки для мобілок) */}
+          <button 
+            className={styles.mobileMenuBtn} 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <IoClose size={28} color="#f8fafc" /> : <IoMenu size={28} color="#f8fafc" />}
+          </button>
+
           {/* Логотип видалено за твоїм бажанням */}
 
           <nav ref={navRef} onMouseLeave={handleMouseLeave} className={styles.nav}>
@@ -150,6 +159,27 @@ const Landing = () => {
             )}
           </nav>
         </header>
+
+        {/* --- ВИПАДАЮЧЕ МОБІЛЬНЕ МЕНЮ --- */}
+        {isMobileMenuOpen && (
+          <div className={styles.mobileDropdown}>
+            {navItems.map((item) => (
+              <span 
+                key={item.id}
+                onClick={() => {
+                  item.action();
+                  setIsMobileMenuOpen(false);
+                }}
+                className={styles.mobileDropdownItem}
+              >
+                {item.label}
+              </span>
+            ))}
+            <a href="/Rizix-Demo.exe" download className={styles.mobileDropdownItemDemo}>
+              Завантажити Demo
+            </a>
+          </div>
+        )}
 
         {/* --- ГОЛОВНИЙ КОНТЕНТ --- */}
         <div className={styles.mainContainer}>
