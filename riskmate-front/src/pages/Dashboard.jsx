@@ -398,9 +398,19 @@ const Dashboard = ({ user }) => {
 
       if (data.length > 0) {
         // Беремо найперший (найновіший) портфель з БД
-        const latest = data[0]; 
-        loadSelectedPortfolio(latest);
-        toast.success("Останній портфель завантажено!", { id: loadingToast });
+        const latestInfo = data[0];
+        
+        // Fetch full details
+        const detailsResp = await fetch(`/api/portfolio/${latestInfo.id}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (detailsResp.ok) {
+          const latest = await detailsResp.json();
+          loadSelectedPortfolio(latest);
+          toast.success("Останній портфель завантажено!", { id: loadingToast });
+        } else {
+          throw new Error("Не вдалося завантажити деталі");
+        }
       } else {
         toast.error("У вас ще немає збережених портфелів.", { id: loadingToast });
       }

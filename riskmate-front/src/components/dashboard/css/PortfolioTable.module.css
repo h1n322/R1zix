@@ -115,3 +115,18 @@
   margin-bottom: 10px;
   opacity: 0.5;
 }
+/* =========================================
+   📱 Мобільна адаптація для таблиці
+========================================= */
+@media (max-width: 768px) {
+  .cardContainer {
+    padding: 15px 10px;
+  }
+  .td {
+    padding: 12px 10px;
+    font-size: 13px;
+  }
+  .th {
+    padding: 10px;
+  }
+}
