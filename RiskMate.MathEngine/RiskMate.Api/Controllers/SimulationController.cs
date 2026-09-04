@@ -98,8 +98,20 @@ namespace RiskMate.Api.Controllers
                     Volatility = simulationResult.Volatility,
                     SharpeRatio = simulationResult.SharpeRatio,
                     MaxDrawdown = simulationResult.MaxDrawdown,
-                    ChartPoints = simulationResult.ChartPoints,
-                    HistogramBins = simulationResult.HistogramBins,
+                    ChartPoints = simulationResult.ChartPoints.Select(p => new {
+                        Name = p.Date.ToString("yyyy-MM-dd"),
+                        History = p.History,
+                        Forecast = p.Forecast,
+                        Actual = p.Actual,
+                        LowerBound = p.LowerBound,
+                        UpperBound = p.UpperBound
+                    }),
+                    HistogramBins = simulationResult.HistogramBins.Select(b => new {
+                        BinRange = b.MinValue == b.MaxValue 
+                            ? $"${Math.Round(b.MinValue, 1)}"
+                            : $"${Math.Round(b.MinValue, 1)}-${Math.Round(b.MaxValue, 1)}",
+                        Frequency = b.Frequency
+                    }),
                     Hedging = simulationResult.Hedging,
                     News = news,
                     AiSummary = aiSummary,

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using RiskMate.MathEngine.Options;
 
@@ -20,7 +21,7 @@ namespace RiskMate.MathEngine.Models
 
     public class ChartPointData
     {
-        public string Name { get; set; } = string.Empty;
+        public DateTime Date { get; set; }
         public double? History { get; set; }
         public double? Forecast { get; set; }
         public double? Actual { get; set; }
@@ -30,7 +31,8 @@ namespace RiskMate.MathEngine.Models
 
     public class HistogramBinData
     {
-        public string BinRange { get; set; } = string.Empty;
+        public double MinValue { get; set; }
+        public double MaxValue { get; set; }
         public int Frequency { get; set; }
     }
 }

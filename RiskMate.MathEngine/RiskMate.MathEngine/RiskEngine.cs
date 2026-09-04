@@ -9,11 +9,25 @@ namespace RiskMate.MathEngine
 {
     public class RiskEngine
     {
-        private readonly MonteCarloSimulator _monteCarlo = new();
-        private readonly HistoricalSimulator _historical = new();
-        private readonly StressTestSimulator _stressTest = new();
-        private readonly MertonJumpSimulator _merton = new();
-        private readonly GarchSimulator _garch = new();
+        private readonly MonteCarloSimulator _monteCarlo;
+        private readonly HistoricalSimulator _historical;
+        private readonly StressTestSimulator _stressTest;
+        private readonly MertonJumpSimulator _merton;
+        private readonly GarchSimulator _garch;
+
+        public RiskEngine(
+            MonteCarloSimulator monteCarlo = null,
+            HistoricalSimulator historical = null,
+            StressTestSimulator stressTest = null,
+            MertonJumpSimulator merton = null,
+            GarchSimulator garch = null)
+        {
+            _monteCarlo = monteCarlo ?? new MonteCarloSimulator();
+            _historical = historical ?? new HistoricalSimulator();
+            _stressTest = stressTest ?? new StressTestSimulator();
+            _merton = merton ?? new MertonJumpSimulator();
+            _garch = garch ?? new GarchSimulator();
+        }
 
         public SimulationResult RunSimulation(
             List<double> historicalPrices,
@@ -150,7 +164,7 @@ namespace RiskMate.MathEngine
 
                 result.ChartPoints.Add(new ChartPointData
                 {
-                    Name = h.Date.ToString("yyyy-MM-dd"),
+                    Date = h.Date,
                     History = h.Price,
                     Forecast = forecastVal,
                     LowerBound = null,
@@ -190,7 +204,7 @@ namespace RiskMate.MathEngine
 
                 result.ChartPoints.Add(new ChartPointData
                 {
-                    Name = futureDate.ToString("yyyy-MM-dd"),
+                    Date = futureDate,
                     History = null,
                     Forecast = Math.Round(representativePath[day], 2),
                     Actual = actualVal,
@@ -215,7 +229,7 @@ namespace RiskMate.MathEngine
             {
                 bins.Add(new HistogramBinData
                 {
-                    BinRange = $"${Math.Round(min, 1)}",
+                    MinValue = min, MaxValue = max,
                     Frequency = finalPrices.Count
                 });
                 return bins;
@@ -238,7 +252,7 @@ namespace RiskMate.MathEngine
                 double binMax = binMin + binWidth;
                 bins.Add(new HistogramBinData
                 {
-                    BinRange = $"${Math.Round(binMin, 1)}-${Math.Round(binMax, 1)}",
+                    MinValue = binMin, MaxValue = binMax,
                     Frequency = counts[i]
                 });
             }
