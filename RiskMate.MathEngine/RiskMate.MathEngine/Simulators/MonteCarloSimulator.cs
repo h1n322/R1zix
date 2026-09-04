@@ -7,21 +7,18 @@ namespace RiskMate.MathEngine.Simulators
 {
     public class MonteCarloSimulator
     {
-        /// <summary>
-        /// Генерує матрицю майбутніх цінових шляхів.
-        /// </summary>
-        /// <param name="parameters">Параметри активу (InitialPrice, Drift, Volatility)</param>
-        /// <param name="simulationsCount">Кількість шляхів (наприклад, 10 000)</param>
-        /// <param name="horizon">Горизонт прогнозування в днях (наприклад, 30)</param>
-        /// <returns>Список списків, де кожен внутрішній список — це один згенерований шлях ціни.</returns>
         public List<List<double>> Simulate(AssetParameters parameters, int simulationsCount, int horizon)
         {
             var allPaths = new List<List<double>>(simulationsCount);
+            
+            // dt = 1 день (всі параметри вже в денному масштабі)
+            double dt = 1.0;
+            double sqrtDt = Math.Sqrt(dt);
 
             for (int i = 0; i < simulationsCount; i++)
             {
                 var path = new List<double>(horizon + 1);
-                path.Add(parameters.InitialPrice); // Нульовий день — поточна ціна
+                path.Add(parameters.InitialPrice);
                 
                 double currentPrice = parameters.InitialPrice;
 
@@ -29,8 +26,8 @@ namespace RiskMate.MathEngine.Simulators
                 {
                     double randomShock = NormalDistribution.Sample();
                     
-                    // Обчислюємо ціну наступного дня за моделлю GBM
-                    currentPrice *= Math.Exp(parameters.Drift + parameters.Volatility * randomShock);
+                    // S(t+dt) = S(t) * exp(drift * dt + vol * sqrt(dt) * Z)
+                    currentPrice *= Math.Exp(parameters.Drift * dt + parameters.Volatility * sqrtDt * randomShock);
                     path.Add(currentPrice);
                 }
                 

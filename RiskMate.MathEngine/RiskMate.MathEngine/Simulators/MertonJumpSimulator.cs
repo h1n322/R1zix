@@ -7,12 +7,6 @@ namespace RiskMate.MathEngine.Simulators
 {
     public class MertonJumpSimulator
     {
-        /// <summary>
-        /// Симуляція з урахуванням раптових цінових стрибків (гепів).
-        /// </summary>
-        /// <param name="jumpIntensity">Середня кількість стрибків за рік (наприклад, 2.0)</param>
-        /// <param name="jumpMean">Середній розмір стрибка у відсотках (наприклад, 0.0 для симетричних, або -0.05 для паніки)</param>
-        /// <param name="jumpVolatility">Волатильність самого стрибка (наприклад, 0.1)</param>
         public List<List<double>> Simulate(
             AssetParameters parameters, 
             int simulationsCount, 
@@ -23,8 +17,15 @@ namespace RiskMate.MathEngine.Simulators
         {
             var allPaths = new List<List<double>>(simulationsCount);
             
-            // Денна ймовірність стрибка
+            double dt = 1.0;
+            double sqrtDt = Math.Sqrt(dt);
             double dailyJumpProbability = jumpIntensity / Constants.TradingDaysPerYear;
+            
+            // Компенсатор стрибків: оскільки historical drift вже включає історичні стрибки,
+            // ми повинні відняти математичне очікування стрибка, щоб не подвоювати прибутковість.
+            // Математичне очікування стрибка за день = ймовірність * середній розмір.
+            double jumpCompensator = dailyJumpProbability * jumpMean;
+            double adjustedDrift = parameters.Drift - jumpCompensator;
 
             for (int i = 0; i < simulationsCount; i++)
             {
@@ -34,14 +35,10 @@ namespace RiskMate.MathEngine.Simulators
                 for (int day = 1; day <= horizon; day++)
                 {
                     double normalShock = NormalDistribution.Sample();
-                    
-                    // Базовий плавний рух (як у GBM)
-                    double returnForDay = parameters.Drift + parameters.Volatility * normalShock;
+                    double returnForDay = adjustedDrift * dt + parameters.Volatility * sqrtDt * normalShock;
 
-                    // Перевіряємо, чи відбувся раптовий стрибок сьогодні (Пуассонівський процес)
                     if (NormalDistribution.NextDouble() < dailyJumpProbability)
                     {
-                        // Якщо так, генеруємо розмір цього стрибка
                         double jumpShock = NormalDistribution.Sample();
                         double jumpMagnitude = jumpMean + jumpVolatility * jumpShock;
                         returnForDay += jumpMagnitude;
