@@ -73,7 +73,7 @@ namespace RiskMate.Api.Controllers
                     Price = h.Close
                 }).ToList();
 
-                Console.WriteLine($"LAST PRICE BEFORE SIM (RunSimulation): {priceDataPoints.LastOrDefault()?.Price}");
+                _logger.LogInformation("LAST PRICE BEFORE SIM (RunSimulation): {priceDataPoints.LastOrDefault()?.Price}");
 
                 var simulationResult = _riskEngine.RunSimulation(
                     priceDataPoints,
@@ -143,7 +143,7 @@ namespace RiskMate.Api.Controllers
 
                 var priceDataPoints = historyResponse.data.Select(h => new PriceDataPoint { Date = h.Date, Price = h.Close }).ToList();
 
-                Console.WriteLine($"LAST PRICE BEFORE SIM: {priceDataPoints.LastOrDefault()?.Price}");
+                _logger.LogInformation("LAST PRICE BEFORE SIM: {priceDataPoints.LastOrDefault()?.Price}");
 
                 var simulationResult = _riskEngine.RunSimulation(
                     priceDataPoints, algorithm.Value, dto.SimulationsCount, dto.Horizon, scenario, dto.ConfidenceLevel, dto.CustomShockPercentage ?? 0, isBacktest);
