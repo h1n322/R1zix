@@ -1,3 +1,4 @@
+from utils.logger import logger
 """
 PortfolioService — оптимізація портфеля за теорією Марковіца.
 
@@ -36,7 +37,7 @@ class PortfolioService:
                 if not series.empty:
                     price_data[t] = series
             except Exception as e:
-                print(f"⚠️  Пропускаємо {t}: {e}")
+                logger.error(f"⚠️  Пропускаємо {t}: {e}")
 
         data = pd.DataFrame(price_data).dropna()
 

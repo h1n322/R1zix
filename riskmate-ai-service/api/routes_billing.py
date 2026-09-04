@@ -1,3 +1,4 @@
+from utils.logger import logger
 """
 api/routes_billing.py — Patreon webhook для оновлення tier після оплати.
 
@@ -42,7 +43,7 @@ async def patreon_webhook(
 
     # Використовуємо hmac.compare_digest для безпечного порівняння (захист від timing attacks)
     if not hmac.compare_digest(signature_header, expected_signature):
-        print("⚠️ Помилка перевірки підпису Patreon (Невірний X-Patreon-Signature)!")
+        logger.error("⚠️ Помилка перевірки підпису Patreon (Невірний X-Patreon-Signature)!")
         raise HTTPException(status_code=401, detail="Invalid signature")
 
     # 3. Парсимо JSON після успішної перевірки підпису
@@ -59,13 +60,13 @@ async def patreon_webhook(
     if event_name in ["members:pledge:create", "members:pledge:update"] and email:
         success = user_service.upgrade_to_pro(email)
         if success:
-            print(f"💰 Оплата підтверджена (Patreon), {email} → pro")
+            logger.info(f"💰 Оплата підтверджена (Patreon), {email} → pro")
         else:
-            print(f"⚠️ Оплату прийнято, але не знайдено користувача {email} у Firestore")
+            logger.error(f"⚠️ Оплату прийнято, але не знайдено користувача {email} у Firestore")
             
     # Додатково: Логіка на випадок скасування підписки
     elif event_name in ["members:pledge:delete"] and email:
         # На майбутнє: user_service.downgrade_to_free(email)
-        print(f"🛑 Підписка скасована для {email}")
+        logger.error(f"🛑 Підписка скасована для {email}")
 
     return {"status": "success"}

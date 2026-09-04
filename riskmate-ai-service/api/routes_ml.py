@@ -1,3 +1,4 @@
+from utils.logger import logger
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 import sys
@@ -11,14 +12,14 @@ router = APIRouter(prefix="/api/ml", tags=["machine-learning"])
 
 def train_model_task(ticker: str):
     clean_ticker = ticker.upper().strip()
-    print(f"Починаю фонове тренування LSTM для {clean_ticker}...")
+    logger.info(f"Починаю фонове тренування LSTM для {clean_ticker}...")
     try:
         from infrastructure.data_provider import YFinanceProvider
         provider = YFinanceProvider()
         df = provider.fetch_history(clean_ticker, period="5y")
         
         if df.empty:
-            print(f"Помилка: Немає даних для {clean_ticker}")
+            logger.error(f"Помилка: Немає даних для {clean_ticker}")
             return
             
         # Ця функція очікується в ml_processor або прямо тут.
@@ -27,9 +28,9 @@ def train_model_task(ticker: str):
         X_train, y_train, scaler, raw_data = prepare_data_for_lstm(df)
         
         train_and_save_model(X_train, y_train, ticker=clean_ticker, epochs=10)
-        print(f"✅ Фонове тренування для {clean_ticker} завершено успішно!")
+        logger.info(f"✅ Фонове тренування для {clean_ticker} завершено успішно!")
     except Exception as e:
-        print(f"❌ Помилка фонового тренування {clean_ticker}: {e}")
+        logger.error(f"❌ Помилка фонового тренування {clean_ticker}: {e}")
 
 @router.post("/train/{ticker}")
 def train_model(ticker: str, background_tasks: BackgroundTasks):

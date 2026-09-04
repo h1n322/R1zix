@@ -1,22 +1,23 @@
+from utils.logger import logger
 import yfinance as yf
 import pandas as pd
 
 def test_fetch_data(ticker="AAPL", period="1mo"):
-    print(f"📡 З'єднуюсь з Yahoo Finance для отримання даних {ticker}...")
+    logger.info(f"📡 З'єднуюсь з Yahoo Finance для отримання даних {ticker}...")
     
     # Завантажуємо дані за останній місяць
     stock = yf.Ticker(ticker)
     df = stock.history(period=period)
     
     if df.empty:
-        print("❌ Помилка: Дані не знайдено! Можливо, неправильний тікер.")
+        logger.error("❌ Помилка: Дані не знайдено! Можливо, неправильний тікер.")
         return
         
-    print("✅ Дані успішно завантажено!\n")
-    print(f"📊 Останні 5 торгових днів для {ticker} (Ціна закриття):")
+    logger.info("✅ Дані успішно завантажено!\n")
+    logger.info(f"📊 Останні 5 торгових днів для {ticker} (Ціна закриття):")
     
     # Показуємо тільки колонку Close (Ціна закриття) для останніх 5 днів
-    print(df[['Close']].tail())
+    logger.info(df[['Close']].tail())
 
 if __name__ == "__main__":
     test_fetch_data("AAPL")

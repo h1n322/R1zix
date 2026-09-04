@@ -1,3 +1,4 @@
+from utils.logger import logger
 """
 SimulationService — оркеструє весь процес симуляції.
 
@@ -188,7 +189,7 @@ class SimulationService:
                 low_vals = low_s.tolist()
                 close_vals = close_s.tolist()
             except Exception as e:
-                print(f"⚠️  Помилка індикаторів: {e}")
+                logger.error(f"⚠️  Помилка індикаторів: {e}")
 
         chart_data = []
         for i, (d, p) in enumerate(data.items()):
