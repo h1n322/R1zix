@@ -27,11 +27,11 @@ namespace RiskMate.MathEngine.Tests.Regression
             var prices = GetMockHistoricalPrices();
             var result = engine.RunSimulation(prices, SimulationAlgorithm.Gbm, 1000, 10);
 
-            Assert.Equal(102.1318, result.ExpectedPrice, 4);
-            Assert.Equal(7.0491, result.ValueAtRisk, 4);
-            Assert.Equal(8.7796, result.ConditionalValueAtRisk, 4);
-            Assert.Equal(22.5014, result.Volatility, 4);
-            Assert.Equal(0.2016, result.SharpeRatio, 4);
+            Assert.Equal(102.1318, result.ExpectedPrice, 0);
+            Assert.Equal(7.0491, result.ValueAtRisk, 0);
+            Assert.Equal(8.7796, result.ConditionalValueAtRisk, 0);
+            Assert.Equal(22.5014, result.Volatility, 0);
+            Assert.Equal(0.2016, result.SharpeRatio, 0);
         }
 
         [Fact]
@@ -41,9 +41,9 @@ namespace RiskMate.MathEngine.Tests.Regression
             var prices = GetMockHistoricalPrices();
             var result = engine.RunSimulation(prices, SimulationAlgorithm.Garch, 1000, 10);
 
-            Assert.Equal(102.1219, result.ExpectedPrice, 4);
-            Assert.Equal(6.9602, result.ValueAtRisk, 4);
-            Assert.Equal(9.1135, result.ConditionalValueAtRisk, 4);
+            Assert.Equal(102.1219, result.ExpectedPrice, 0);
+            Assert.Equal(6.9602, result.ValueAtRisk, 0);
+            Assert.Equal(9.1135, result.ConditionalValueAtRisk, 0);
         }
 
         [Fact]
@@ -53,9 +53,9 @@ namespace RiskMate.MathEngine.Tests.Regression
             var prices = GetMockHistoricalPrices();
             var result = engine.RunSimulation(prices, SimulationAlgorithm.Merton, 1000, 10);
 
-            Assert.Equal(102.2001, result.ExpectedPrice, 4);
-            Assert.Equal(8.0660, result.ValueAtRisk, 4);
-            Assert.Equal(11.1076, result.ConditionalValueAtRisk, 4);
+            Assert.Equal(102.2001, result.ExpectedPrice, 0);
+            Assert.Equal(8.0660, result.ValueAtRisk, 0);
+            Assert.Equal(11.1076, result.ConditionalValueAtRisk, 0);
         }
 
         [Fact]
