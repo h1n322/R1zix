@@ -1,3 +1,4 @@
+from utils.logger import logger
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
@@ -7,7 +8,7 @@ def prepare_data_for_lstm(df, look_back=60):
     Готує сирі біржові дані для навчання нейромережі LSTM.
     look_back - скільки попередніх днів беремо для прогнозу наступного.
     """
-    print("⚙️ Починаю підготовку даних для LSTM...")
+    logger.info("⚙️ Починаю підготовку даних для LSTM...")
     
     # 1. Беремо тільки колонку 'Close' (ціна закриття)
     data = df.filter(['Close']).values
@@ -31,7 +32,7 @@ def prepare_data_for_lstm(df, look_back=60):
     # 4. LSTM очікує дані у 3D форматі: [кількість_зразків, часові_кроки, кількість_ознак]
     X = np.reshape(X, (X.shape[0], X.shape[1], 1))
     
-    print(f"✅ Дані підготовлено! Створено {X.shape[0]} вікон по {look_back} днів.")
+    logger.info(f"✅ Дані підготовлено! Створено {X.shape[0]} вікон по {look_back} днів.")
     return X, y, scaler, data
 
 # Для тестування файлу напряму
@@ -39,11 +40,11 @@ if __name__ == "__main__":
     import yfinance as yf
     
     # Завантажуємо дані за 2 роки для тесту
-    print("Завантажую тестові дані AAPL за 2 роки...")
+    logger.info("Завантажую тестові дані AAPL за 2 роки...")
     df = yf.Ticker("AAPL").history(period="2y")
     
     # Проганяємо через нашу функцію
     X_train, y_train, scaler, raw_data = prepare_data_for_lstm(df)
     
-    print(f"Форма X (вхідні дані): {X_train.shape}")
-    print(f"Форма y (відповіді): {y_train.shape}")
+    logger.info(f"Форма X (вхідні дані): {X_train.shape}")
+    logger.info(f"Форма y (відповіді): {y_train.shape}")

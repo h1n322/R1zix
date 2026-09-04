@@ -1,3 +1,4 @@
+from utils.logger import logger
 import time
 import json
 import io
@@ -73,16 +74,16 @@ class YFinanceProvider:
                             df.attrs['is_mock'] = False
                             return df
             except Exception as e:
-                print(f"⚠️ Спроба {attempt+1}/{self._retries} history (Yahoo): {e}")
+                logger.error(f"⚠️ Спроба {attempt+1}/{self._retries} history (Yahoo): {e}")
             time.sleep(self._retry_delay)
             
-        print(f"🔄 Пробуємо резервне джерело AlphaVantage для {ticker}...")
+        logger.info(f"🔄 Пробуємо резервне джерело AlphaVantage для {ticker}...")
         df = self._fetch_history_alphavantage(ticker, period)
         if df is not None and not df.empty:
             df.attrs['is_mock'] = False
             return df
             
-        print(f"🔄 Генеруємо MOCK-дані для {ticker} через Rate Limit...")
+        logger.info(f"🔄 Генеруємо MOCK-дані для {ticker} через Rate Limit...")
         return self._generate_mock_history(ticker)
 
     def fetch_close(self, ticker: str, period: str) -> pd.Series:
@@ -99,12 +100,12 @@ class YFinanceProvider:
         try:
             cached = redis_client.get(cache_key)
             if cached:
-                print(f"📦 Redis Кеш: multi_close {tickers}")
+                logger.info(f"📦 Redis Кеш: multi_close {tickers}")
                 df = pd.read_json(cached, orient="split")
                 df.attrs['is_mock'] = False
                 return df
         except Exception as e:
-            print(f"⚠️ Помилка Redis (читання multi_close): {e}")
+            logger.error(f"⚠️ Помилка Redis (читання multi_close): {e}")
 
         # Збираємо дані по кожному тикеру окремо через наш fetch_close (який вже кешується)
         # Це надійніше, ніж yf.download, який часто падає на групі тикерів
@@ -117,7 +118,7 @@ class YFinanceProvider:
                 if s.attrs.get('is_mock', False):
                     is_mock_any = True
             except Exception as e:
-                print(f"⚠️ Не вдалося завантажити {t} для multi_close: {e}")
+                logger.error(f"⚠️ Не вдалося завантажити {t} для multi_close: {e}")
             
         if result_dict:
             df = pd.DataFrame(result_dict)
@@ -128,7 +129,7 @@ class YFinanceProvider:
             df.attrs['is_mock'] = is_mock_any
             return df
 
-        print(f"🔄 Генеруємо MOCK-дані для портфеля {tickers}...")
+        logger.info(f"🔄 Генеруємо MOCK-дані для портфеля {tickers}...")
         return self._generate_mock_multi(tickers)
 
     def fetch_info(self, ticker: str) -> dict:
@@ -158,7 +159,7 @@ class YFinanceProvider:
                     except: pass
                     return info
         except Exception as e:
-            print(f"⚠️ Не вдалося отримати info для {ticker}: {e}")
+            logger.error(f"⚠️ Не вдалося отримати info для {ticker}: {e}")
         
         return {}
 
@@ -168,7 +169,7 @@ class YFinanceProvider:
         try:
             cached = redis_client.get(cache_key)
             if cached:
-                print(f"📦 Redis Кеш: news {ticker}")
+                logger.info(f"📦 Redis Кеш: news {ticker}")
                 return json.loads(cached)
         except Exception:
             pass
@@ -198,7 +199,7 @@ class YFinanceProvider:
                         pass
                     return result
         except Exception as e:
-            print(f"⚠️ Не вдалося отримати HTTP новини для {ticker}: {e}")
+            logger.error(f"⚠️ Не вдалося отримати HTTP новини для {ticker}: {e}")
         
         return []
 
@@ -210,7 +211,7 @@ class YFinanceProvider:
         try:
             cached = redis_client.get(cache_key)
             if cached:
-                print(f"📦 Redis Кеш: market overview")
+                logger.info(f"📦 Redis Кеш: market overview")
                 return json.loads(cached)
         except Exception:
             pass
@@ -273,7 +274,7 @@ class YFinanceProvider:
                             df = df[df.index >= cutoff]
                         return df
         except Exception as e:
-            print(f"⚠️ AlphaVantage помилка: {e}")
+            logger.error(f"⚠️ AlphaVantage помилка: {e}")
         return None
 
     def _generate_mock_history(self, ticker: str) -> pd.DataFrame:

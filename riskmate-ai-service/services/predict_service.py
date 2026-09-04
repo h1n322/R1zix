@@ -1,3 +1,4 @@
+from utils.logger import logger
 """
 PredictService — LSTM прогноз ціни на завтра.
 
@@ -24,10 +25,10 @@ class PredictService:
         try:
             from tensorflow.keras.models import load_model
         except ImportError:
-            print("❌ TensorFlow не встановлено")
+            logger.error("❌ TensorFlow не встановлено")
             return None
 
-        print(f"🔮 Запускаю LSTM прогноз для {ticker}...")
+        logger.info(f"🔮 Запускаю LSTM прогноз для {ticker}...")
 
         # 1. Дані за рік для правильного масштабування
         df = self._provider.fetch_history(ticker, period="1y")
@@ -46,12 +47,12 @@ class PredictService:
         try:
             model = load_model(model_path)
         except Exception:
-            print(f"❌ Модель {model_path} не знайдена. Спочатку натренуйте її.")
+            logger.error(f"❌ Модель {model_path} не знайдена. Спочатку натренуйте її.")
             return None
 
         # 5. Прогноз і зворотне масштабування
         predicted_scaled = model.predict(X_test)
         predicted_price = float(scaler.inverse_transform(predicted_scaled)[0][0])
 
-        print(f"✅ Прогноз {ticker}: ${predicted_price:.2f}")
+        logger.info(f"✅ Прогноз {ticker}: ${predicted_price:.2f}")
         return predicted_price

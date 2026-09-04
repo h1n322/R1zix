@@ -1,3 +1,4 @@
+from utils.logger import logger
 """
 api/routes_simulations.py — роутер симуляцій і звітів.
 
@@ -56,7 +57,7 @@ def run_simulation(
     service: SimulationService = Depends(get_simulation_service),
 ):
     simulation = _to_simulation(req)
-    print(f"🚀 Симуляція: {simulation.ticker} | {simulation.algorithm} | horizon={simulation.horizon}")
+    logger.info(f"🚀 Симуляція: {simulation.ticker} | {simulation.algorithm} | horizon={simulation.horizon}")
     try:
         return service.run(simulation)
     except ValueError as e:

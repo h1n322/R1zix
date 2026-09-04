@@ -1,3 +1,4 @@
+from utils.logger import logger
 """
 UserService — управління користувачами через Firebase Firestore.
 
@@ -35,7 +36,7 @@ class UserService:
                 )
             return None
         except Exception as e:
-            print(f"⚠️  UserService.get_by_email помилка: {e}")
+            logger.error(f"⚠️  UserService.get_by_email помилка: {e}")
             return None
 
     def get_by_uid(self, uid: str):
@@ -51,7 +52,7 @@ class UserService:
                 )
             return None
         except Exception as e:
-            print(f"⚠️  UserService.get_by_uid помилка: {e}")
+            logger.error(f"⚠️  UserService.get_by_uid помилка: {e}")
             return None
 
     def upgrade_to_pro(self, email: str) -> bool:
@@ -68,12 +69,12 @@ class UserService:
             )
             for doc in query:
                 doc.reference.update({"tier": "pro"})
-                print(f"✅ {email} оновлено до pro")
+                logger.info(f"✅ {email} оновлено до pro")
                 return True
-            print(f"⚠️  Користувача {email} не знайдено у Firestore")
+            logger.error(f"⚠️  Користувача {email} не знайдено у Firestore")
             return False
         except Exception as e:
-            print(f"⚠️  UserService.upgrade_to_pro помилка: {e}")
+            logger.error(f"⚠️  UserService.upgrade_to_pro помилка: {e}")
             return False
 
     def create_user(self, uid: str, email: str, tier: str = "free") -> User:
@@ -84,7 +85,7 @@ class UserService:
             )
             return User(uid=uid, email=email, tier=tier)
         except Exception as e:
-            print(f"⚠️  UserService.create_user помилка: {e}")
+            logger.error(f"⚠️  UserService.create_user помилка: {e}")
             raise
 
     def check_pro_access(self, email: str) -> bool:
