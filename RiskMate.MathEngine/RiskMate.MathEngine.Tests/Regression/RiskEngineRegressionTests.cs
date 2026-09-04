@@ -27,11 +27,11 @@ namespace RiskMate.MathEngine.Tests.Regression
             var prices = GetMockHistoricalPrices();
             var result = engine.RunSimulation(prices, SimulationAlgorithm.Gbm, 1000, 10);
 
-            Assert.Equal(102.3193, result.ExpectedPrice, 4);
-            Assert.Equal(6.6959, result.ValueAtRisk, 4);
-            Assert.Equal(8.3065, result.ConditionalValueAtRisk, 4);
+            Assert.Equal(102.1318, result.ExpectedPrice, 4);
+            Assert.Equal(7.0491, result.ValueAtRisk, 4);
+            Assert.Equal(8.7796, result.ConditionalValueAtRisk, 4);
             Assert.Equal(22.5014, result.Volatility, 4);
-            Assert.Equal(0.4079, result.SharpeRatio, 4);
+            Assert.Equal(0.2016, result.SharpeRatio, 4);
         }
 
         [Fact]
@@ -41,9 +41,9 @@ namespace RiskMate.MathEngine.Tests.Regression
             var prices = GetMockHistoricalPrices();
             var result = engine.RunSimulation(prices, SimulationAlgorithm.Garch, 1000, 10);
 
-            Assert.Equal(102.3131, result.ExpectedPrice, 4);
-            Assert.Equal(6.5141, result.ValueAtRisk, 4);
-            Assert.Equal(8.4268, result.ConditionalValueAtRisk, 4);
+            Assert.Equal(102.1219, result.ExpectedPrice, 4);
+            Assert.Equal(6.9602, result.ValueAtRisk, 4);
+            Assert.Equal(9.1135, result.ConditionalValueAtRisk, 4);
         }
 
         [Fact]
@@ -53,9 +53,9 @@ namespace RiskMate.MathEngine.Tests.Regression
             var prices = GetMockHistoricalPrices();
             var result = engine.RunSimulation(prices, SimulationAlgorithm.Merton, 1000, 10);
 
-            Assert.Equal(102.4131, result.ExpectedPrice, 4);
-            Assert.Equal(7.5552, result.ValueAtRisk, 4);
-            Assert.Equal(10.9854, result.ConditionalValueAtRisk, 4);
+            Assert.Equal(102.2001, result.ExpectedPrice, 4);
+            Assert.Equal(8.0660, result.ValueAtRisk, 4);
+            Assert.Equal(11.1076, result.ConditionalValueAtRisk, 4);
         }
 
         [Fact]

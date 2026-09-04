@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using RiskMate.MathEngine.Models;
 using RiskMate.MathEngine.Generators;
 
@@ -7,7 +7,7 @@ namespace RiskMate.MathEngine.Simulators
 {
     public class GarchSimulator
     {
-        public List<List<double>> Simulate(
+        public double[][] Simulate(
             AssetParameters parameters, 
             int simulationsCount, 
             int horizon,
@@ -16,37 +16,35 @@ namespace RiskMate.MathEngine.Simulators
             double beta = 0.85,
             IRandomProvider rng = null)
         {
-            // Перевірка стаціонарності GARCH
             if (alpha + beta >= 1.0)
-            {
                 throw new ArgumentException($"Нестаціонарні параметри GARCH: alpha ({alpha}) + beta ({beta}) має бути < 1");
-            }
 
-            var allPaths = new List<List<double>>(simulationsCount);
+            var allPaths = new double[simulationsCount][];
             double dt = 1.0;
             double sqrtDt = Math.Sqrt(dt);
 
-            for (int i = 0; i < simulationsCount; i++)
+            Parallel.For(0, simulationsCount, i =>
             {
-                var path = new List<double>(horizon + 1) { parameters.InitialPrice };
+                var pathRng = rng.Spawn(i);
+                var path = new double[horizon + 1];
+                path[0] = parameters.InitialPrice;
                 double currentPrice = parameters.InitialPrice;
                 double currentVariance = Math.Pow(parameters.Volatility, 2);
 
                 for (int day = 1; day <= horizon; day++)
                 {
-                    double shock = rng.SampleNormal();
+                    double shock = pathRng.SampleNormal();
                     double currentDailyVolatility = Math.Sqrt(currentVariance);
                     
                     double returnForDay = parameters.Drift * dt + currentDailyVolatility * sqrtDt * shock;
                     currentPrice *= Math.Exp(returnForDay);
-                    path.Add(currentPrice);
+                    path[day] = currentPrice;
 
-                    // Оновлення дисперсії за моделлю GARCH(1,1)
                     currentVariance = omega + alpha * Math.Pow(shock * currentDailyVolatility, 2) + beta * currentVariance;
                 }
                 
-                allPaths.Add(path);
-            }
+                allPaths[i] = path;
+            });
 
             return allPaths;
         }

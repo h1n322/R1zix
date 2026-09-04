@@ -93,7 +93,7 @@ namespace RiskMate.MathEngine
                 Drift = drift
             };
 
-            List<List<double>> paths;
+            double[][] paths;
 
             switch (algorithm)
             {
@@ -214,12 +214,12 @@ namespace RiskMate.MathEngine
                 });
             }
 
-            result.HistogramBins = GenerateHistogram(paths.Select(p => p.Last()).ToList());
+            result.HistogramBins = GenerateHistogram(paths.Select(p => p[p.Length - 1]).ToArray());
 
             return result;
         }
 
-        private List<HistogramBinData> GenerateHistogram(List<double> finalPrices, int binCount = 15)
+        private List<HistogramBinData> GenerateHistogram(double[] finalPrices, int binCount = 15)
         {
             var bins = new List<HistogramBinData>();
             double min = finalPrices.Min();
@@ -231,7 +231,7 @@ namespace RiskMate.MathEngine
                 bins.Add(new HistogramBinData
                 {
                     MinValue = min, MaxValue = max,
-                    Frequency = finalPrices.Count
+                    Frequency = finalPrices.Length
                 });
                 return bins;
             }

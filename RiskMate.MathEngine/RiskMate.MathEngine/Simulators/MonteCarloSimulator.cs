@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using RiskMate.MathEngine.Models;
 using RiskMate.MathEngine.Generators;
 
@@ -7,32 +7,28 @@ namespace RiskMate.MathEngine.Simulators
 {
     public class MonteCarloSimulator
     {
-        public List<List<double>> Simulate(AssetParameters parameters, int simulationsCount, int horizon, IRandomProvider rng)
+        public double[][] Simulate(AssetParameters parameters, int simulationsCount, int horizon, IRandomProvider rng)
         {
-            var allPaths = new List<List<double>>(simulationsCount);
-            
-            // dt = 1 день (всі параметри вже в денному масштабі)
+            var allPaths = new double[simulationsCount][];
             double dt = 1.0;
             double sqrtDt = Math.Sqrt(dt);
 
-            for (int i = 0; i < simulationsCount; i++)
+            Parallel.For(0, simulationsCount, i =>
             {
-                var path = new List<double>(horizon + 1);
-                path.Add(parameters.InitialPrice);
-                
+                var pathRng = rng.Spawn(i);
+                var path = new double[horizon + 1];
+                path[0] = parameters.InitialPrice;
                 double currentPrice = parameters.InitialPrice;
 
                 for (int day = 1; day <= horizon; day++)
                 {
-                    double randomShock = rng.SampleNormal();
-                    
-                    // S(t+dt) = S(t) * exp(drift * dt + vol * sqrt(dt) * Z)
+                    double randomShock = pathRng.SampleNormal();
                     currentPrice *= Math.Exp(parameters.Drift * dt + parameters.Volatility * sqrtDt * randomShock);
-                    path.Add(currentPrice);
+                    path[day] = currentPrice;
                 }
                 
-                allPaths.Add(path);
-            }
+                allPaths[i] = path;
+            });
 
             return allPaths;
         }
