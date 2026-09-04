@@ -1,3 +1,5 @@
+using RiskMate.Api.Middlewares;
+using Serilog;
 using Microsoft.EntityFrameworkCore;
 using RiskMate.Api.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -8,7 +10,21 @@ using RiskMate.Api.Services;
 using RiskMate.MathEngine;
 using RiskMate.MathEngine.Simulators;
 
-var builder = WebApplication.CreateBuilder(args);
+
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+try
+{
+    Log.Information("Starting up RiskMate API...");
+    var builder = WebApplication.CreateBuilder(args);
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}"));
+
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -58,7 +74,11 @@ using (var scope = app.Services.CreateScope())
     dbContext.Database.Migrate();
 }
 
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
+app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseCors("AllowReactApp");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -99,4 +119,15 @@ app.MapPost("/api/auth/sync", async (AppDbContext db, HttpContext httpContext) =
     return Results.Ok(new { Message = "Користувач вже існує", User = user });
 }).RequireAuthorization();
 
-app.Run();
+
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Unhandled exception during application startup.");
+}
+finally
+{
+    Log.Information("Shut down complete.");
+    Log.CloseAndFlush();
+}

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,19 +16,22 @@ namespace RiskMate.MathEngine
         private readonly StressTestSimulator _stressTest;
         private readonly MertonJumpSimulator _merton;
         private readonly GarchSimulator _garch;
+        private readonly ILogger<RiskEngine> _logger;
 
         public RiskEngine(
             MonteCarloSimulator monteCarlo = null,
             HistoricalSimulator historical = null,
             StressTestSimulator stressTest = null,
             MertonJumpSimulator merton = null,
-            GarchSimulator garch = null)
+            GarchSimulator garch = null,
+            ILogger<RiskEngine> logger = null)
         {
             _monteCarlo = monteCarlo ?? new MonteCarloSimulator();
             _historical = historical ?? new HistoricalSimulator();
             _stressTest = stressTest ?? new StressTestSimulator();
             _merton = merton ?? new MertonJumpSimulator();
             _garch = garch ?? new GarchSimulator();
+            _logger = logger;
         }
 
         public SimulationResult RunSimulation(
