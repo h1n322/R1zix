@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RiskMate.MathEngine")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a8f0e35389b907c216f82642413e7d852b0ead9c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+83e7d95fe0b89f9d8260c32bcfdd54650fcbf5da")]
 [assembly: System.Reflection.AssemblyProductAttribute("RiskMate.MathEngine")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RiskMate.MathEngine")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

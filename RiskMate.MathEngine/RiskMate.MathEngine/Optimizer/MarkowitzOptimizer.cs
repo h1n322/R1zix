@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
 using RiskMate.MathEngine.Models;
 using RiskMate.MathEngine.Calculators;
 
@@ -40,62 +42,72 @@ namespace RiskMate.MathEngine.Optimizers
             }
 
             var bestResult = new MarkowitzResult { SharpeRatio = double.MinValue };
-            var currentWeights = new double[n];
+            var syncLock = new object();
 
-            // 3. Генеруємо тисячі випадкових портфелів
-            for (int sim = 0; sim < simulations; sim++)
-            {
-                double weightSum = 0;
-                
-                // Генеруємо випадкові ваги
-                for (int i = 0; i < n; i++)
+            Parallel.For(0, simulations, () => new MarkowitzResult { SharpeRatio = double.MinValue },
+                (sim, loop, localBest) =>
                 {
-                    currentWeights[i] = Random.Shared.NextDouble();
-                    weightSum += currentWeights[i];
-                }
-
-                // Нормалізуємо ваги, щоб їхня сума завжди дорівнювала 1 (100%)
-                for (int i = 0; i < n; i++)
-                {
-                    currentWeights[i] /= weightSum;
-                }
-
-                // 4. Рахуємо дохідність цього конкретного випадкового портфеля
-                double portReturn = 0;
-                for (int i = 0; i < n; i++)
-                {
-                    portReturn += currentWeights[i] * expectedReturns[i];
-                }
-
-                // 5. Рахуємо ризик (дисперсію) портфеля
-                double portVariance = 0;
-                for (int i = 0; i < n; i++)
-                {
-                    for (int j = 0; j < n; j++)
-                    {
-                        portVariance += currentWeights[i] * currentWeights[j] * covarianceMatrix[i, j];
-                    }
-                }
-                double portVolatility = Math.Sqrt(portVariance);
-
-                // 6. Рахуємо Шарп
-                double sharpe = (portReturn - riskFreeRate) / portVolatility;
-
-                // 7. Зберігаємо найкращий результат
-                if (sharpe > bestResult.SharpeRatio)
-                {
-                    bestResult.SharpeRatio = sharpe;
-                    bestResult.ExpectedReturn = portReturn;
-                    bestResult.Volatility = portVolatility;
+                    var currentWeights = new double[n];
+                    double weightSum = 0;
                     
-                    bestResult.OptimalWeights.Clear();
+                    var rng = Random.Shared;
+
                     for (int i = 0; i < n; i++)
                     {
-                        // Зберігаємо ваги у відсотках (наприклад, 0.45 -> 45%)
-                        bestResult.OptimalWeights[tickers[i]] = Math.Round(currentWeights[i], 4);
+                        currentWeights[i] = rng.NextDouble();
+                        weightSum += currentWeights[i];
                     }
-                }
-            }
+
+                    for (int i = 0; i < n; i++)
+                    {
+                        currentWeights[i] /= weightSum;
+                    }
+
+                    double portReturn = 0;
+                    for (int i = 0; i < n; i++)
+                    {
+                        portReturn += currentWeights[i] * expectedReturns[i];
+                    }
+
+                    double portVariance = 0;
+                    for (int i = 0; i < n; i++)
+                    {
+                        for (int j = 0; j < n; j++)
+                        {
+                            portVariance += currentWeights[i] * currentWeights[j] * covarianceMatrix[i, j];
+                        }
+                    }
+                    double portVolatility = Math.Sqrt(portVariance);
+                    double sharpe = (portReturn - riskFreeRate) / portVolatility;
+
+                    if (sharpe > localBest.SharpeRatio)
+                    {
+                        localBest.SharpeRatio = sharpe;
+                        localBest.ExpectedReturn = portReturn;
+                        localBest.Volatility = portVolatility;
+                        
+                        localBest.OptimalWeights.Clear();
+                        for (int i = 0; i < n; i++)
+                        {
+                            localBest.OptimalWeights[tickers[i]] = Math.Round(currentWeights[i], 4);
+                        }
+                    }
+
+                    return localBest;
+                },
+                localBest =>
+                {
+                    lock (syncLock)
+                    {
+                        if (localBest.SharpeRatio > bestResult.SharpeRatio)
+                        {
+                            bestResult.SharpeRatio = localBest.SharpeRatio;
+                            bestResult.ExpectedReturn = localBest.ExpectedReturn;
+                            bestResult.Volatility = localBest.Volatility;
+                            bestResult.OptimalWeights = new Dictionary<string, double>(localBest.OptimalWeights);
+                        }
+                    }
+                });
 
             return bestResult;
         }

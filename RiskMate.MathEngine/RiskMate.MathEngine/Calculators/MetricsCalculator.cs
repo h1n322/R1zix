@@ -7,55 +7,71 @@ namespace RiskMate.MathEngine.Calculators
     public static class MetricsCalculator
     {
         public static (double ExpectedPrice, double ValueAtRisk, double ConditionalValueAtRisk) CalculateMetrics(
-            List<List<double>> paths, double confidenceLevel = 0.95)
+            double[][] paths, double confidenceLevel = 0.95)
         {
-            var finalPrices = paths.Select(p => p.Last()).ToList();
-            finalPrices.Sort();
+            if (paths.Length == 0) return (0, 0, 0);
+            int horizon = paths[0].Length - 1;
 
+            var finalPrices = new double[paths.Length];
+            for (int i = 0; i < paths.Length; i++)
+            {
+                finalPrices[i] = paths[i][horizon];
+            }
+            
             double expectedPrice = finalPrices.Average();
-            double s0 = paths.Count > 0 && paths[0].Count > 0 ? paths[0][0] : expectedPrice;
+            double s0 = paths[0].Length > 0 ? paths[0][0] : expectedPrice;
 
-            int index = (int)Math.Floor(finalPrices.Count * (1.0 - confidenceLevel));
-            index = Math.Clamp(index, 0, finalPrices.Count - 1);
+            // Зводимо до розподілу збитків (Loss Distribution)
+            var losses = new double[finalPrices.Length];
+            for (int i = 0; i < finalPrices.Length; i++)
+            {
+                losses[i] = s0 - finalPrices[i];
+            }
+            Array.Sort(losses); // Сортуємо: від максимального прибутку до максимального збитку
 
-            double pVar = finalPrices[index];
-            double valueAtRisk = Math.Max(0, s0 - pVar);
+            int originalIndex = (int)Math.Floor(finalPrices.Length * (1.0 - confidenceLevel));
+            originalIndex = Math.Clamp(originalIndex, 0, finalPrices.Length - 1);
+            
+            int varIndex = losses.Length - 1 - originalIndex;
+            
+            double valueAtRisk = Math.Max(0, losses[varIndex]);
 
-            double pCvar = index > 0
-                ? finalPrices.Take(index).Average()
-                : finalPrices[0];
-            double conditionalValueAtRisk = Math.Max(0, s0 - pCvar);
+            int cvarSkipCount = losses.Length - originalIndex;
+            
+            double sumCvar = 0.0;
+            int cvarCount = 0;
+            for (int i = cvarSkipCount; i < losses.Length; i++)
+            {
+                sumCvar += losses[i];
+                cvarCount++;
+            }
+
+            double conditionalValueAtRisk = originalIndex > 0 && cvarCount > 0
+                ? sumCvar / cvarCount
+                : losses[losses.Length - 1];
+                
+            conditionalValueAtRisk = Math.Max(0, conditionalValueAtRisk);
 
             return (expectedPrice, valueAtRisk, conditionalValueAtRisk);
         }
 
-        public static double CalculateExpectedPrice(List<List<double>> paths)
+        public static double CalculateExpectedPrice(double[][] paths)
         {
-            return paths.Select(p => p.Last()).Average();
+            if (paths.Length == 0) return 0;
+            int horizon = paths[0].Length - 1;
+            return paths.Average(p => p[horizon]);
         }
 
-        public static double CalculateVaR(List<List<double>> paths, double confidenceLevel = 0.95)
+        public static double CalculateVaR(double[][] paths, double confidenceLevel = 0.95)
         {
-            var finalPrices = paths.Select(p => p.Last()).ToList();
-            finalPrices.Sort();
-
-            double s0 = paths.Count > 0 && paths[0].Count > 0 ? paths[0][0] : finalPrices.Average();
-            int index = (int)Math.Floor(finalPrices.Count * (1.0 - confidenceLevel));
-            index = Math.Clamp(index, 0, finalPrices.Count - 1);
-            return Math.Max(0, s0 - finalPrices[index]);
+            var (_, var, _) = CalculateMetrics(paths, confidenceLevel);
+            return var;
         }
 
-        public static double CalculateCVaR(List<List<double>> paths, double confidenceLevel = 0.95)
+        public static double CalculateCVaR(double[][] paths, double confidenceLevel = 0.95)
         {
-            var finalPrices = paths.Select(p => p.Last()).ToList();
-            finalPrices.Sort();
-
-            double s0 = paths.Count > 0 && paths[0].Count > 0 ? paths[0][0] : finalPrices.Average();
-            int index = (int)Math.Floor(finalPrices.Count * (1.0 - confidenceLevel));
-            index = Math.Clamp(index, 0, finalPrices.Count - 1);
-
-            double pCvar = index > 0 ? finalPrices.Take(index).Average() : finalPrices[0];
-            return Math.Max(0, s0 - pCvar);
+            var (_, _, cvar) = CalculateMetrics(paths, confidenceLevel);
+            return cvar;
         }
     }
 }

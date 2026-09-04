@@ -1,18 +1,13 @@
 using System;
-using System.Net.Http;
-using System.Threading.Tasks;
-
-class Program
-{
-    static async Task Main()
-    {
-        var client = new HttpClient();
-        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
-        long p1 = new DateTimeOffset(DateTime.UtcNow.AddYears(-3)).ToUnixTimeSeconds();
-        long p2 = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
-        var url = $"https://query1.finance.yahoo.com/v8/finance/chart/KO?interval=1d&period1={p1}&period2={p2}";
-        Console.WriteLine(url);
-        var res = await client.GetAsync(url);
-        Console.WriteLine((int)res.StatusCode);
+using System.Collections.Generic;
+using RiskMate.MathEngine.Optimizers;
+class Program {
+    static void Main() {
+        var opt = new MarkowitzOptimizer();
+        var A = new List<double> { 0.05, 0.06, 0.04, 0.05, 0.06 }; 
+        var B = new List<double> { -0.05, -0.06, -0.04, -0.05, -0.06 };
+        var d = new Dictionary<string, List<double>> { {"A", A}, {"B", B} };
+        var r = opt.Optimize(d, 0.0, 10000);
+        Console.WriteLine($"A={r.OptimalWeights.GetValueOrDefault("A")}, B={r.OptimalWeights.GetValueOrDefault("B")}");
     }
 }

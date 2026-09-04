@@ -4,16 +4,31 @@ using System.Linq;
 using RiskMate.MathEngine.Models;
 using RiskMate.MathEngine.Calculators;
 using RiskMate.MathEngine.Simulators;
+using RiskMate.MathEngine.Generators;
 
 namespace RiskMate.MathEngine
 {
     public class RiskEngine
     {
-        private readonly MonteCarloSimulator _monteCarlo = new();
-        private readonly HistoricalSimulator _historical = new();
-        private readonly StressTestSimulator _stressTest = new();
-        private readonly MertonJumpSimulator _merton = new();
-        private readonly GarchSimulator _garch = new();
+        private readonly MonteCarloSimulator _monteCarlo;
+        private readonly HistoricalSimulator _historical;
+        private readonly StressTestSimulator _stressTest;
+        private readonly MertonJumpSimulator _merton;
+        private readonly GarchSimulator _garch;
+
+        public RiskEngine(
+            MonteCarloSimulator monteCarlo = null,
+            HistoricalSimulator historical = null,
+            StressTestSimulator stressTest = null,
+            MertonJumpSimulator merton = null,
+            GarchSimulator garch = null)
+        {
+            _monteCarlo = monteCarlo ?? new MonteCarloSimulator();
+            _historical = historical ?? new HistoricalSimulator();
+            _stressTest = stressTest ?? new StressTestSimulator();
+            _merton = merton ?? new MertonJumpSimulator();
+            _garch = garch ?? new GarchSimulator();
+        }
 
         public SimulationResult RunSimulation(
             List<double> historicalPrices,
@@ -64,7 +79,7 @@ namespace RiskMate.MathEngine
             
             // Встановлюємо детерміністичний сід, щоб генерація PDF збігалася з відображенням на Dashboard
             int seed = (currentPrice + horizon + simulationsCount + confidenceLevel * 100).GetHashCode();
-            Generators.NormalDistribution.SetSeed(seed);
+            IRandomProvider rng = new RandomProvider(seed);
             
             double meanReturn = returns.Average();
             double volatility = RiskCalculator.CalculateVolatility(returns);
@@ -78,27 +93,27 @@ namespace RiskMate.MathEngine
                 Drift = drift
             };
 
-            List<List<double>> paths;
+            double[][] paths;
 
             switch (algorithm)
             {
                 case SimulationAlgorithm.Historical:
-                    paths = _historical.Simulate(currentPrice, returns, simulationsCount, horizon);
+                    paths = _historical.Simulate(currentPrice, returns, simulationsCount, horizon, rng);
                     break;
                 case SimulationAlgorithm.Merton:
-                    paths = _merton.Simulate(parameters, simulationsCount, horizon);
+                    paths = _merton.Simulate(parameters, simulationsCount, horizon, 2.0, 0.0, 0.1, rng);
                     break;
                 case SimulationAlgorithm.Garch:
-                    paths = _garch.Simulate(parameters, simulationsCount, horizon);
+                    paths = _garch.Simulate(parameters, simulationsCount, horizon, 0.00001, 0.1, 0.85, rng);
                     break;
                 default:
                     if (scenario.HasValue)
                     {
-                        paths = _stressTest.Simulate(parameters, simulationsCount, horizon, scenario.Value, customShockPercentage);
+                        paths = _stressTest.Simulate(parameters, simulationsCount, horizon, scenario.Value, customShockPercentage, rng);
                     }
                     else
                     {
-                        paths = _monteCarlo.Simulate(parameters, simulationsCount, horizon);
+                        paths = _monteCarlo.Simulate(parameters, simulationsCount, horizon, rng);
                     }
                     break;
             }
@@ -150,7 +165,7 @@ namespace RiskMate.MathEngine
 
                 result.ChartPoints.Add(new ChartPointData
                 {
-                    Name = h.Date.ToString("yyyy-MM-dd"),
+                    Date = h.Date,
                     History = h.Price,
                     Forecast = forecastVal,
                     LowerBound = null,
@@ -190,7 +205,7 @@ namespace RiskMate.MathEngine
 
                 result.ChartPoints.Add(new ChartPointData
                 {
-                    Name = futureDate.ToString("yyyy-MM-dd"),
+                    Date = futureDate,
                     History = null,
                     Forecast = Math.Round(representativePath[day], 2),
                     Actual = actualVal,
@@ -199,12 +214,12 @@ namespace RiskMate.MathEngine
                 });
             }
 
-            result.HistogramBins = GenerateHistogram(paths.Select(p => p.Last()).ToList());
+            result.HistogramBins = GenerateHistogram(paths.Select(p => p[p.Length - 1]).ToArray());
 
             return result;
         }
 
-        private List<HistogramBinData> GenerateHistogram(List<double> finalPrices, int binCount = 15)
+        private List<HistogramBinData> GenerateHistogram(double[] finalPrices, int binCount = 15)
         {
             var bins = new List<HistogramBinData>();
             double min = finalPrices.Min();
@@ -215,8 +230,8 @@ namespace RiskMate.MathEngine
             {
                 bins.Add(new HistogramBinData
                 {
-                    BinRange = $"${Math.Round(min, 1)}",
-                    Frequency = finalPrices.Count
+                    MinValue = min, MaxValue = max,
+                    Frequency = finalPrices.Length
                 });
                 return bins;
             }
@@ -238,7 +253,7 @@ namespace RiskMate.MathEngine
                 double binMax = binMin + binWidth;
                 bins.Add(new HistogramBinData
                 {
-                    BinRange = $"${Math.Round(binMin, 1)}-${Math.Round(binMax, 1)}",
+                    MinValue = binMin, MaxValue = binMax,
                     Frequency = counts[i]
                 });
             }

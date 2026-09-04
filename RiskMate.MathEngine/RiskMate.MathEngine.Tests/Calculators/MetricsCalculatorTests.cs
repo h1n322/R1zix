@@ -11,12 +11,12 @@ namespace RiskMate.MathEngine.Tests.Calculators
         public void CalculateMetrics_ValidPaths_ReturnsCorrectMetrics()
         {
             // Arrange
-            var paths = new List<List<double>>
+            var paths = new double[][]
             {
-                new List<double> { 100.0, 90.0 }, // Path 1: Initial 100, Final 90
-                new List<double> { 100.0, 95.0 }, // Path 2: Initial 100, Final 95
-                new List<double> { 100.0, 105.0 }, // Path 3: Initial 100, Final 105
-                new List<double> { 100.0, 110.0 }  // Path 4: Initial 100, Final 110
+                new double[] { 100.0, 90.0 }, // Path 1: Initial 100, Final 90
+                new double[] { 100.0, 95.0 }, // Path 2: Initial 100, Final 95
+                new double[] { 100.0, 105.0 }, // Path 3: Initial 100, Final 105
+                new double[] { 100.0, 110.0 }  // Path 4: Initial 100, Final 110
             };
             
             // Expected Final Prices sorted: 90.0, 95.0, 105.0, 110.0

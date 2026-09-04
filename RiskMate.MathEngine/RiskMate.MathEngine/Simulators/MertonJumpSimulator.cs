@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 using RiskMate.MathEngine.Models;
 using RiskMate.MathEngine.Generators;
 
@@ -7,52 +7,48 @@ namespace RiskMate.MathEngine.Simulators
 {
     public class MertonJumpSimulator
     {
-        /// <summary>
-        /// Симуляція з урахуванням раптових цінових стрибків (гепів).
-        /// </summary>
-        /// <param name="jumpIntensity">Середня кількість стрибків за рік (наприклад, 2.0)</param>
-        /// <param name="jumpMean">Середній розмір стрибка у відсотках (наприклад, 0.0 для симетричних, або -0.05 для паніки)</param>
-        /// <param name="jumpVolatility">Волатильність самого стрибка (наприклад, 0.1)</param>
-        public List<List<double>> Simulate(
+        public double[][] Simulate(
             AssetParameters parameters, 
             int simulationsCount, 
             int horizon, 
             double jumpIntensity = 2.0, 
             double jumpMean = 0.0, 
-            double jumpVolatility = 0.1)
+            double jumpVolatility = 0.1,
+            IRandomProvider rng = null)
         {
-            var allPaths = new List<List<double>>(simulationsCount);
+            var allPaths = new double[simulationsCount][];
             
-            // Денна ймовірність стрибка
+            double dt = 1.0;
+            double sqrtDt = Math.Sqrt(dt);
             double dailyJumpProbability = jumpIntensity / Constants.TradingDaysPerYear;
+            double jumpCompensator = dailyJumpProbability * jumpMean;
+            double adjustedDrift = parameters.Drift - jumpCompensator;
 
-            for (int i = 0; i < simulationsCount; i++)
+            Parallel.For(0, simulationsCount, i =>
             {
-                var path = new List<double>(horizon + 1) { parameters.InitialPrice };
+                var pathRng = rng.Spawn(i);
+                var path = new double[horizon + 1];
+                path[0] = parameters.InitialPrice;
                 double currentPrice = parameters.InitialPrice;
 
                 for (int day = 1; day <= horizon; day++)
                 {
-                    double normalShock = NormalDistribution.Sample();
-                    
-                    // Базовий плавний рух (як у GBM)
-                    double returnForDay = parameters.Drift + parameters.Volatility * normalShock;
+                    double normalShock = pathRng.SampleNormal();
+                    double returnForDay = adjustedDrift * dt + parameters.Volatility * sqrtDt * normalShock;
 
-                    // Перевіряємо, чи відбувся раптовий стрибок сьогодні (Пуассонівський процес)
-                    if (NormalDistribution.NextDouble() < dailyJumpProbability)
+                    if (pathRng.NextDouble() < dailyJumpProbability)
                     {
-                        // Якщо так, генеруємо розмір цього стрибка
-                        double jumpShock = NormalDistribution.Sample();
+                        double jumpShock = pathRng.SampleNormal();
                         double jumpMagnitude = jumpMean + jumpVolatility * jumpShock;
                         returnForDay += jumpMagnitude;
                     }
 
                     currentPrice *= Math.Exp(returnForDay);
-                    path.Add(currentPrice);
+                    path[day] = currentPrice;
                 }
                 
-                allPaths.Add(path);
-            }
+                allPaths[i] = path;
+            });
 
             return allPaths;
         }
