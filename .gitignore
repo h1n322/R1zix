@@ -6,3 +6,5 @@ __pycache__/
 *.exe
 [Bb]in/
 [Oo]bj/
+
+.vscode/
