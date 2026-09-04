@@ -1,3 +1,5 @@
+/* eslint-disable no-empty */
+/* eslint-disable no-unused-vars */
 import { Icon } from "@iconify/react";
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
