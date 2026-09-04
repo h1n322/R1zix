@@ -7,7 +7,7 @@ namespace RiskMate.MathEngine.Simulators
 {
     public class MonteCarloSimulator
     {
-        public List<List<double>> Simulate(AssetParameters parameters, int simulationsCount, int horizon)
+        public List<List<double>> Simulate(AssetParameters parameters, int simulationsCount, int horizon, IRandomProvider rng)
         {
             var allPaths = new List<List<double>>(simulationsCount);
             
@@ -24,7 +24,7 @@ namespace RiskMate.MathEngine.Simulators
 
                 for (int day = 1; day <= horizon; day++)
                 {
-                    double randomShock = NormalDistribution.Sample();
+                    double randomShock = rng.SampleNormal();
                     
                     // S(t+dt) = S(t) * exp(drift * dt + vol * sqrt(dt) * Z)
                     currentPrice *= Math.Exp(parameters.Drift * dt + parameters.Volatility * sqrtDt * randomShock);

@@ -13,7 +13,8 @@ namespace RiskMate.MathEngine.Simulators
             int horizon, 
             double jumpIntensity = 2.0, 
             double jumpMean = 0.0, 
-            double jumpVolatility = 0.1)
+            double jumpVolatility = 0.1,
+            IRandomProvider rng = null)
         {
             var allPaths = new List<List<double>>(simulationsCount);
             
@@ -34,12 +35,12 @@ namespace RiskMate.MathEngine.Simulators
 
                 for (int day = 1; day <= horizon; day++)
                 {
-                    double normalShock = NormalDistribution.Sample();
+                    double normalShock = rng.SampleNormal();
                     double returnForDay = adjustedDrift * dt + parameters.Volatility * sqrtDt * normalShock;
 
-                    if (NormalDistribution.NextDouble() < dailyJumpProbability)
+                    if (rng.NextDouble() < dailyJumpProbability)
                     {
-                        double jumpShock = NormalDistribution.Sample();
+                        double jumpShock = rng.SampleNormal();
                         double jumpMagnitude = jumpMean + jumpVolatility * jumpShock;
                         returnForDay += jumpMagnitude;
                     }

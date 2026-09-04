@@ -13,7 +13,8 @@ namespace RiskMate.MathEngine.Simulators
             int horizon,
             double omega = 0.00001, 
             double alpha = 0.1, 
-            double beta = 0.85)
+            double beta = 0.85,
+            IRandomProvider rng = null)
         {
             // Перевірка стаціонарності GARCH
             if (alpha + beta >= 1.0)
@@ -33,7 +34,7 @@ namespace RiskMate.MathEngine.Simulators
 
                 for (int day = 1; day <= horizon; day++)
                 {
-                    double shock = NormalDistribution.Sample();
+                    double shock = rng.SampleNormal();
                     double currentDailyVolatility = Math.Sqrt(currentVariance);
                     
                     double returnForDay = parameters.Drift * dt + currentDailyVolatility * sqrtDt * shock;

@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
 using RiskMate.MathEngine.Models;
+using RiskMate.MathEngine.Generators;
 
 namespace RiskMate.MathEngine.Simulators
 {
     public class HistoricalSimulator
     {
-        public List<List<double>> Simulate(double initialPrice, List<double> historicalReturns, int simulationsCount, int horizon)
+        public List<List<double>> Simulate(double initialPrice, List<double> historicalReturns, int simulationsCount, int horizon, IRandomProvider rng)
         {
             var allPaths = new List<List<double>>(simulationsCount);
 
@@ -17,7 +18,7 @@ namespace RiskMate.MathEngine.Simulators
 
                 for (int day = 1; day <= horizon; day++)
                 {
-                    int randomIndex = Random.Shared.Next(historicalReturns.Count);
+                    int randomIndex = rng.Next(historicalReturns.Count);
                     double sampledReturn = historicalReturns[randomIndex];
                     
                     currentPrice *= Math.Exp(sampledReturn);

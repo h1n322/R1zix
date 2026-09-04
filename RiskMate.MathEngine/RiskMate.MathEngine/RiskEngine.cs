@@ -4,6 +4,7 @@ using System.Linq;
 using RiskMate.MathEngine.Models;
 using RiskMate.MathEngine.Calculators;
 using RiskMate.MathEngine.Simulators;
+using RiskMate.MathEngine.Generators;
 
 namespace RiskMate.MathEngine
 {
@@ -78,7 +79,7 @@ namespace RiskMate.MathEngine
             
             // Встановлюємо детерміністичний сід, щоб генерація PDF збігалася з відображенням на Dashboard
             int seed = (currentPrice + horizon + simulationsCount + confidenceLevel * 100).GetHashCode();
-            Generators.NormalDistribution.SetSeed(seed);
+            IRandomProvider rng = new RandomProvider(seed);
             
             double meanReturn = returns.Average();
             double volatility = RiskCalculator.CalculateVolatility(returns);
@@ -97,22 +98,22 @@ namespace RiskMate.MathEngine
             switch (algorithm)
             {
                 case SimulationAlgorithm.Historical:
-                    paths = _historical.Simulate(currentPrice, returns, simulationsCount, horizon);
+                    paths = _historical.Simulate(currentPrice, returns, simulationsCount, horizon, rng);
                     break;
                 case SimulationAlgorithm.Merton:
-                    paths = _merton.Simulate(parameters, simulationsCount, horizon);
+                    paths = _merton.Simulate(parameters, simulationsCount, horizon, 2.0, 0.0, 0.1, rng);
                     break;
                 case SimulationAlgorithm.Garch:
-                    paths = _garch.Simulate(parameters, simulationsCount, horizon);
+                    paths = _garch.Simulate(parameters, simulationsCount, horizon, 0.00001, 0.1, 0.85, rng);
                     break;
                 default:
                     if (scenario.HasValue)
                     {
-                        paths = _stressTest.Simulate(parameters, simulationsCount, horizon, scenario.Value, customShockPercentage);
+                        paths = _stressTest.Simulate(parameters, simulationsCount, horizon, scenario.Value, customShockPercentage, rng);
                     }
                     else
                     {
-                        paths = _monteCarlo.Simulate(parameters, simulationsCount, horizon);
+                        paths = _monteCarlo.Simulate(parameters, simulationsCount, horizon, rng);
                     }
                     break;
             }

@@ -15,7 +15,8 @@ namespace RiskMate.MathEngine.Simulators
             int simulationsCount, 
             int horizon, 
             StressScenario scenario, 
-            double customShockPercentage = 0.0)
+            double customShockPercentage = 0.0,
+            IRandomProvider rng = null)
         {
             // 1. Визначаємо мультиплікатор падіння для першого дня
             double shockModifier = GetShockModifier(scenario, customShockPercentage);
@@ -49,7 +50,7 @@ namespace RiskMate.MathEngine.Simulators
                 // День 2 і далі: Тривала криза з підвищеною волатильністю і негативним дрифтом
                 for (int day = 2; day <= horizon; day++)
                 {
-                    double randomShock = NormalDistribution.Sample();
+                    double randomShock = rng.SampleNormal();
                     
                     // Використовуємо модифіковану математику GBM
                     currentPrice *= Math.Exp(crisisDrift + crisisVolatility * randomShock);
