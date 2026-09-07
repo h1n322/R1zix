@@ -7,6 +7,7 @@ COPY RiskMate.MathEngine/RiskMate.MathEngine.csproj RiskMate.MathEngine/
 COPY RiskMate.Shared/RiskMate.Shared.csproj RiskMate.Shared/
 COPY RiskMate.Worker/RiskMate.Worker.csproj RiskMate.Worker/
 COPY RiskMate.MathEngine.Tests/RiskMate.MathEngine.Tests.csproj RiskMate.MathEngine.Tests/
+COPY RiskMate.Api.IntegrationTests/RiskMate.Api.IntegrationTests.csproj RiskMate.Api.IntegrationTests/
 
 RUN dotnet restore RiskMate.MathEngine.sln
 
