@@ -101,7 +101,7 @@ namespace RiskMate.Api.Controllers
             if (string.IsNullOrEmpty(firebaseUid)) return Unauthorized();
 
             var user = await _context.Users.FirstOrDefaultAsync(u => u.FirebaseUid == firebaseUid);
-            if (user == null) return NotFound();
+            if (user == null) return Ok(Array.Empty<Portfolio>());
 
             var portfolios = await _context.Portfolios
                 .Where(p => p.UserId == user.Id)
