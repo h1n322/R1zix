@@ -9,35 +9,88 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build-and-test:
     name: Build & Test (.NET)
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-          
+
       - name: Restore dependencies
         run: dotnet restore RiskMate.MathEngine/RiskMate.MathEngine.sln
-        
+
       - name: Build
         run: dotnet build RiskMate.MathEngine/RiskMate.MathEngine.sln --configuration Release --no-restore
-        
+
       - name: Run Tests
         run: dotnet test RiskMate.MathEngine/RiskMate.MathEngine.sln --configuration Release --no-build --verbosity normal
+
+  build-and-push-images:
+    name: Build & Push Docker Images to GHCR
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || github.event_name == 'workflow_dispatch'
+    strategy:
+      matrix:
+        include:
+          - service: csharp-api
+            context: ./RiskMate.MathEngine
+            file: ./RiskMate.MathEngine/RiskMate.Api/Dockerfile
+            image: ghcr.io/h1n322/r1zix/csharp-api:latest
+          - service: csharp-worker
+            context: ./RiskMate.MathEngine
+            file: ./RiskMate.MathEngine/RiskMate.Worker/Dockerfile
+            image: ghcr.io/h1n322/r1zix/csharp-worker:latest
+          - service: python-ml
+            context: ./riskmate-ai-service
+            file: ./riskmate-ai-service/Dockerfile
+            image: ghcr.io/h1n322/r1zix/python-ml:latest
+          - service: frontend
+            context: ./riskmate-front
+            file: ./riskmate-front/Dockerfile
+            image: ghcr.io/h1n322/r1zix/frontend:latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push ${{ matrix.service }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: true
+          tags: ${{ matrix.image }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
   deploy:
     name: Deploy to Production Server
     runs-on: ubuntu-latest
-    needs: build-and-test
+    needs: build-and-push-images
     if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || github.event_name == 'workflow_dispatch'
-    
+
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -45,10 +98,18 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          command_timeout: 30m
+          command_timeout: 10m
           script: |
             cd /home/opc/riskmate
             git fetch origin main
             git reset --hard origin/main
-            docker compose build --parallel=false
-            docker compose up -d
+
+            # Авторизація на сервері через тимчасовий токен workflow
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Завантаження готових образів та швидкий запуск
+            docker compose pull
+            docker compose up -d --remove-orphans
+
+            # Очищення невикористаних образів для економії місця на диску
+            docker image prune -f

@@ -4,6 +4,7 @@ services:
   db:
     image: postgres:15-alpine
     container_name: riskmate_postgres
+    restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: supersecretpassword
@@ -16,20 +17,23 @@ services:
   redis:
     image: redis:7-alpine
     container_name: riskmate_redis
+    restart: always
     ports:
       - "6379:6379"
 
   csharp-api:
+    image: ghcr.io/h1n322/r1zix/csharp-api:latest
     build:
       context: ./RiskMate.MathEngine
       dockerfile: RiskMate.Api/Dockerfile
     container_name: riskmate_csharp_api
+    restart: always
     ports:
       - "5266:8080"
     environment:
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=riskmate_db;Username=postgres;Password=supersecretpassword
       - ConnectionStrings__Redis=redis:6379
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Production
       - RiskMateSettings__GeminiApiKey=${GEMINI_API_KEY}
       - RiskMateSettings__PythonApiUrl=http://python-ml:8000
     depends_on:
@@ -37,10 +41,12 @@ services:
       - redis
 
   csharp-worker:
+    image: ghcr.io/h1n322/r1zix/csharp-worker:latest
     build:
       context: ./RiskMate.MathEngine
       dockerfile: RiskMate.Worker/Dockerfile
     container_name: riskmate_csharp_worker
+    restart: always
     environment:
       - ConnectionStrings__Redis=redis:6379
       - RiskMateSettings__GeminiApiKey=${GEMINI_API_KEY}
@@ -50,30 +56,24 @@ services:
       - python-ml
 
   python-ml:
+    image: ghcr.io/h1n322/r1zix/python-ml:latest
     build:
       context: ./riskmate-ai-service
       dockerfile: Dockerfile
     container_name: riskmate_python_ml
+    restart: always
     ports:
       - "8000:8000"
-    volumes:
-      - ./riskmate-ai-service:/app
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
+    image: ghcr.io/h1n322/r1zix/frontend:latest
     build:
       context: ./riskmate-front
       dockerfile: Dockerfile
-      target: build
     container_name: riskmate_frontend
+    restart: always
     ports:
-      - "5173:5173"
-    environment:
-      - PROXY_API_URL=http://csharp-api:8080
-    volumes:
-      - ./riskmate-front:/app
-      - /app/node_modules
-    command: npm run dev -- --host
+      - "5173:80"
     depends_on:
       - csharp-api
 
