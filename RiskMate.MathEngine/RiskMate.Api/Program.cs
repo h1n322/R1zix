@@ -74,6 +74,10 @@ builder.Services.AddSingleton<PdfReportService>();
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp => {
     var config = sp.GetRequiredService<IConfiguration>();
     var connStr = config.GetConnectionString("Redis") ?? "localhost:6379";
+    if (!connStr.Contains("abortConnect", StringComparison.OrdinalIgnoreCase))
+    {
+        connStr = $"{connStr},abortConnect=false";
+    }
     return ConnectionMultiplexer.Connect(connStr);
 });
 

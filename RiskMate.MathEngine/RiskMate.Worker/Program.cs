@@ -19,6 +19,10 @@ builder.ConfigureServices((hostContext, services) =>
     
     // Redis Connection
     var redisConnectionString = configuration.GetConnectionString("Redis") ?? "localhost:6379";
+    if (!redisConnectionString.Contains("abortConnect", StringComparison.OrdinalIgnoreCase))
+    {
+        redisConnectionString = $"{redisConnectionString},abortConnect=false";
+    }
     var redis = ConnectionMultiplexer.Connect(redisConnectionString);
 
     services.AddStackExchangeRedisCache(options =>
