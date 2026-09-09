@@ -64,6 +64,8 @@ services:
     restart: always
     ports:
       - "8000:8000"
+    volumes:
+      - ./riskmate-ai-service/serviceAccountKey.json:/app/serviceAccountKey.json:ro
 
   frontend:
     image: ghcr.io/h1n322/r1zix/frontend:latest

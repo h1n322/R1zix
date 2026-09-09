@@ -1,10 +1,9 @@
 from utils.logger import logger
 import os
 import numpy as np
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout, Input 
-
 def build_lstm_model(input_shape):
+    from tensorflow.keras.models import Sequential
+    from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
     logger.info("Будую архітектуру LSTM моделі...")
     model = Sequential()
     

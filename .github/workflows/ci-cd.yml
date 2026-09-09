@@ -110,6 +110,7 @@ jobs:
             # Завантаження готових образів та швидкий запуск
             docker compose pull
             docker compose up -d --remove-orphans
+            docker compose restart frontend
 
             # Очищення невикористаних образів для економії місця на диску
             docker image prune -f

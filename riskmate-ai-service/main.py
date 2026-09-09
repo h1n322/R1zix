@@ -14,11 +14,17 @@ import json
 load_dotenv()
 
 firebase_creds_env = os.environ.get("FIREBASE_CREDENTIALS")
-if firebase_creds_env:
-    cred = credentials.Certificate(json.loads(firebase_creds_env))
-else:
-    cred = credentials.Certificate("serviceAccountKey.json")
-firebase_admin.initialize_app(cred)
+try:
+    if firebase_creds_env:
+        cred = credentials.Certificate(json.loads(firebase_creds_env))
+        firebase_admin.initialize_app(cred)
+    elif os.path.exists("serviceAccountKey.json"):
+        cred = credentials.Certificate("serviceAccountKey.json")
+        firebase_admin.initialize_app(cred)
+    else:
+        print("⚠️ Warning: serviceAccountKey.json not found. Running without Firebase Admin.")
+except Exception as e:
+    print(f"⚠️ Warning: Could not initialize Firebase Admin: {e}")
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 

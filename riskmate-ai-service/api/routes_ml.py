@@ -4,13 +4,13 @@ from pydantic import BaseModel
 import sys
 import os
 
-from services.lstm_service import train_and_save_model
 from data.ml_processor import prepare_data_for_lstm
 import yfinance as yf
 
 router = APIRouter(prefix="/api/ml", tags=["machine-learning"])
 
 def train_model_task(ticker: str):
+    from services.lstm_service import train_and_save_model
     clean_ticker = ticker.upper().strip()
     logger.info(f"Починаю фонове тренування LSTM для {clean_ticker}...")
     try:
