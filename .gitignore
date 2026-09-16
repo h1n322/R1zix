@@ -8,3 +8,7 @@ __pycache__/
 [Oo]bj/
 
 .vscode/
+*.key
+*.pub
+*.log
+*.pid

@@ -27,37 +27,147 @@
 | **LSTM-нейромережа** | *AI* | Детерміноване прогнозування нелінійних патернів поведінки цінових рядів із застосуванням рекурентних нейромереж (Long Short-Term Memory). |
 | **Кросплатформність** | *UI/UX* | Уніфікований доступ до інструментів через веб-інтерфейс (React) та мобільний застосунок (React Native / Expo). |
 
-## Технічний стек
+## Архітектура системи
 
-Архітектура проєкту побудована за мікросервісним принципом та оптимізована для хмарного розгортання (Cloud-native):
-
-### 1. Frontend-клієнти (Веб та Мобільний застосунок)
-* **React 18 + Vite:** Високопродуктивний SPA-додаток (розгорнуто на Vercel).
-* **React Native (Expo):** Нативний мобільний застосунок для iOS та Android (`riskmate-mobile`).
-* **Firebase Auth:** Захищена автентифікація користувачів (Google OAuth, Email/Password).
-
-### 2. Math Engine (Обчислювальне ядро)
-* **.NET 10 (C#) / ASP.NET Core:** Основний REST API для складних математичних розрахунків (розгорнуто на Render). Завдяки оптимізації багатопотоковості (Parallel Computing) забезпечує мілісекундну генерацію понад 10 000 траєкторій Монте-Карло.
-* **Entity Framework Core + Neon PostgreSQL:** Хмарна реляційна база даних для персистенції історії симуляцій.
-* **GitHub Actions:** Налаштований CI/CD конвеєр для безперервного тестування (xUnit) та інтеграції.
-
-### 3. ML Service (Машинне навчання)
-* **Python 3.12 + FastAPI:** Мікросервіс для ресурсомістких AI/ML задач (розгорнуто на Render).
-* **TensorFlow / Keras:** Архітектура LSTM-моделей для аналізу часових рядів.
-* **Arch / SciPy / NumPy:** Пакет для GARCH-моделювання та портфельної оптимізації Марковіца.
-* **yfinance:** Інтеграція для швидкого завантаження актуальних ринкових даних та фінансових новин.
-
-## Структура репозиторію
+Проєкт спроєктовано за модульним принципом із суворим дотриманням принципів SOLID, чистої архітектури та високої якості коду:
 
 ```text
-R1zix/
-├── riskmate-front/       # Веб-клієнт (React, Vite, CSS Modules)
-├── riskmate-mobile/      # Мобільний клієнт (React Native, Expo)
-├── RiskMate.MathEngine/  # Обчислювальне ядро (C#, ASP.NET 10)
-├── riskmate-ai-service/  # Мікросервіс машинного навчання (Python, FastAPI)
-├── .github/workflows/    # CI/CD пайплайни
-└── README.md
+RiskMate/
+├── RiskMate.MathEngine/      # Обчислювальне ядро та бекенд (.NET 10, C#)
+│   ├── RiskMate.MathEngine/  # Чиста математична бібліотека (симулятори, калькулятори)
+│   ├── RiskMate.Shared/      # Спільні DTO, контракти та сервіси
+│   ├── RiskMate.Api/         # REST API (ASP.NET Core Web API)
+│   ├── RiskMate.Worker/      # Фоновий воркер для асинхронних симуляцій
+│   ├── RiskMate.MathEngine.Tests/       # Модульні тести (xUnit)
+│   └── RiskMate.Api.IntegrationTests/   # Інтеграційні тести (Testcontainers)
+├── riskmate-ai-service/      # AI/ML мікросервіс (Python 3.12, FastAPI)
+│   ├── api/                  # Ендпоінти FastAPI
+│   ├── services/             # LSTM, GARCH, портфельна оптимізація
+│   └── models/               # Навчені Keras-моделі
+├── riskmate-front/           # Веб-клієнт (React 18, Vite, Recharts, Framer Motion)
+├── riskmate-mobile/          # Мобільний клієнт (React Native, Expo)
+└── docker-compose.yml        # Контейнеризація для локального середовища
 ```
+
+---
+
+## Інструкція з локального запуску (Local Development)
+
+### Передумови (Prerequisites)
+
+Перед початком переконайтеся, що у вас встановлено:
+- **.NET SDK 10.0+**
+- **Node.js 20+** та **npm**
+- **Python 3.12+**
+- **Docker & Docker Compose** (для швидкого підняття PostgreSQL та Redis)
+
+---
+
+### 1. Локальні бази даних та кеш (PostgreSQL & Redis)
+
+Швидкий запуск локальних PostgreSQL та Redis через Docker Compose:
+
+```bash
+docker compose up -d db redis
+```
+
+Сервіси будуть доступні за адресами:
+- **PostgreSQL:** `localhost:5433` (user: `postgres`, password: `supersecretpassword`, db: `riskmate_db`)
+- **Redis:** `localhost:6379`
+
+*(Також за потреби ви можете запустити повний стек сервісів локально у контейнерах за допомогою `docker compose up --build`)*.
+
+---
+
+### 2. Запуск Math Engine (.NET 10 API & Worker)
+
+Перейдіть у каталог обчислювального ядра:
+
+```bash
+cd RiskMate.MathEngine
+```
+
+Запустіть REST API:
+```bash
+dotnet run --project RiskMate.Api
+```
+API буде доступний за адресою: `http://localhost:5266` (Swagger UI: `http://localhost:5266/swagger`).
+
+В окремому терміналі запустіть фоновий воркер для черг симуляцій:
+```bash
+dotnet run --project RiskMate.Worker
+```
+
+---
+
+### 3. Запуск AI/ML Service (Python & FastAPI)
+
+В окремому терміналі перейдіть у каталог AI сервісу:
+
+```bash
+cd riskmate-ai-service
+```
+
+Створіть та активуйте віртуальне середовище:
+```bash
+python3 -m venv venv
+source venv/bin/activate   # На Windows: venv\Scripts\activate
+```
+
+Встановіть залежності:
+```bash
+pip install -r requirements.txt
+```
+
+Запустіть FastAPI сервер:
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+Мікросервіс буде доступний за адресою: `http://localhost:8000` (Docs: `http://localhost:8000/docs`).
+
+---
+
+### 4. Запуск Веб-інтерфейсу (React 18 + Vite)
+
+В окремому терміналі перейдіть у каталог фронтенду:
+
+```bash
+cd riskmate-front
+npm install
+npm run dev
+```
+
+Веб-застосунок буде доступний за адресою: `http://localhost:5173`.  
+Запити до `/api` та `/ai` автоматично проксуються середовищем розробки Vite на ваші локальні бекенди (`http://localhost:5266` та `http://localhost:8000`).
+
+---
+
+### 5. Запуск Мобільного застосунку (Expo)
+
+Для тестування мобільного клієнту:
+
+```bash
+cd riskmate-mobile
+npm install
+npx expo start
+```
+
+---
+
+## Тестування та контроль якості
+
+Проєкт містить повний набір модульних та інтеграційних тестів для забезпечення надійності:
+
+```bash
+# Запуск модульних та інтеграційних тестів Math Engine
+dotnet test RiskMate.MathEngine/RiskMate.MathEngine.sln
+
+# Перевірка збірки веб-клієнту
+cd riskmate-front
+npm run build
+```
+
+---
 
 ## Автори
 Розроблено для Малої академії наук (МАН) України.  

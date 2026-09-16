@@ -32,7 +32,9 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const API_URL = 'https://rizix-ai.onrender.com/api/simulate';
+const API_URL = process.env.EXPO_PUBLIC_AI_URL
+  ? `${process.env.EXPO_PUBLIC_AI_URL}/simulate`
+  : 'http://localhost:8000/api/simulate';
 
 // --- ОТРИМУЄМО РОЗМІРИ ЕКРАНА ---
 const { width: screenWidth } = Dimensions.get('window');

@@ -18,15 +18,24 @@ const { width: screenWidth } = Dimensions.get('window');
 // Мокові дані для карток
 
 
+interface MarketItem {
+  id: string;
+  symbol: string;
+  price: number;
+  change: string;
+  isUp: boolean;
+}
+
 export default function ExploreScreen() {
-  const [marketData, setMarketData] = useState([]);
+  const [marketData, setMarketData] = useState<MarketItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetch('https://rizix-api.onrender.com/api/market-overview')
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5266/api';
+    fetch(`${baseUrl}/market-overview`)
       .then(res => res.json())
       .then(data => {
-        const formatted = data.map((item, index) => ({
+        const formatted: MarketItem[] = data.map((item: any, index: number) => ({
           id: String(index),
           symbol: item.ticker,
           price: item.price,
