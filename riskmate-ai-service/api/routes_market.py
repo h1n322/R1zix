@@ -53,6 +53,33 @@ def get_prediction(
     }
 
 
+def _format_val(val, prefix: str = "", is_large_number: bool = False) -> str:
+    if val in ("N/A", None):
+        return "N/A"
+    try:
+        num = float(val)
+        if is_large_number:
+            if num >= 1e12:
+                return f"{prefix}{num / 1e12:.2f} трлн"
+            if num >= 1e9:
+                return f"{prefix}{num / 1e9:.2f} млрд"
+            if num >= 1e6:
+                return f"{prefix}{num / 1e6:.2f} млн"
+        return f"{prefix}{num:.2f}"
+    except Exception:
+        return str(val)
+
+def _build_stock_info(info: dict) -> list[dict]:
+    fv = _format_val
+    return [
+        {"label": "Відкриття", "value": fv(info.get("regularMarketOpen") or info.get("open"), prefix="$")},
+        {"label": "Обсяг", "value": fv(info.get("volume"), is_large_number=True)},
+        {"label": "52-тиж. макс.", "value": fv(info.get("fiftyTwoWeekHigh"), prefix="$")},
+        {"label": "Бета-фактор", "value": fv(info.get("beta"))},
+        {"label": "52-тиж. мін.", "value": fv(info.get("fiftyTwoWeekLow"), prefix="$")},
+        {"label": "Р/Е (Ц/П)", "value": fv(info.get("trailingPE"))},
+    ]
+
 # -----------------------------------------------------------------------
 # GET /api/info/{ticker}
 # -----------------------------------------------------------------------
@@ -63,12 +90,8 @@ def get_asset_info(
     provider: YFinanceProvider = Depends(get_data_provider),
 ):
     """Повертає метаінформацію про актив для панелі деталей."""
-    from services.simulation_service import SimulationService
     info = provider.fetch_info(ticker)
-    
-    # Використовуємо той самий форматер, що і в SimulationService
-    sim_service = SimulationService(provider)
-    return sim_service._build_stock_info(info)
+    return _build_stock_info(info)
 
 # -----------------------------------------------------------------------
 # GET /api/history/{ticker}

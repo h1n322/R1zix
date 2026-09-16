@@ -33,6 +33,15 @@ class YFinanceProvider:
     # Публічні методи
     # ------------------------------------------------------------------
 
+    def _request_get(self, url: str):
+        """Єдиний метод для виконання HTTP-запитів до Yahoo з маскуванням TLS/хедерами."""
+        try:
+            from curl_cffi import requests as cffi_requests
+            return cffi_requests.get(url, impersonate="chrome", timeout=10.0)
+        except Exception:
+            with httpx.Client() as client:
+                return client.get(url, headers={"User-Agent": USER_AGENT}, timeout=10.0)
+
     def fetch_history(self, ticker: str, period: str = "5y") -> pd.DataFrame:
         """Повертає історію цін, використовуючи прямий запит до Yahoo (з кешем)."""
         cache_key = f"hist_{ticker}_{period}"
@@ -50,29 +59,28 @@ class YFinanceProvider:
             try:
                 # Мапимо period для Yahoo (1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max)
                 url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?range={period}&interval=1d"
-                with httpx.Client() as client:
-                    resp = client.get(url, headers={"User-Agent": USER_AGENT}, timeout=10.0)
-                    if resp.status_code == 200:
-                        data = resp.json()["chart"]["result"][0]
-                        timestamps = data.get("timestamp", [])
-                        quote = data["indicators"]["quote"][0]
-                        df = pd.DataFrame({
-                            "Open": quote.get("open", []),
-                            "High": quote.get("high", []),
-                            "Low": quote.get("low", []),
-                            "Close": quote.get("close", []),
-                            "Volume": quote.get("volume", [])
-                        }, index=pd.to_datetime(timestamps, unit='s'))
-                        
-                        df.index = df.index.tz_localize(None)
-                        df = df.dropna()
-                        
-                        if not df.empty:
-                            try:
-                                redis_client.setex(cache_key, self._cache_ttl, df.to_json(orient="split", date_format="iso"))
-                            except: pass
-                            df.attrs['is_mock'] = False
-                            return df
+                resp = self._request_get(url)
+                if resp.status_code == 200:
+                    data = resp.json()["chart"]["result"][0]
+                    timestamps = data.get("timestamp", [])
+                    quote = data["indicators"]["quote"][0]
+                    df = pd.DataFrame({
+                        "Open": quote.get("open", []),
+                        "High": quote.get("high", []),
+                        "Low": quote.get("low", []),
+                        "Close": quote.get("close", []),
+                        "Volume": quote.get("volume", [])
+                    }, index=pd.to_datetime(timestamps, unit='s'))
+                    
+                    df.index = df.index.tz_localize(None)
+                    df = df.dropna()
+                    
+                    if not df.empty:
+                        try:
+                            redis_client.setex(cache_key, self._cache_ttl, df.to_json(orient="split", date_format="iso"))
+                        except: pass
+                        df.attrs['is_mock'] = False
+                        return df
             except Exception as e:
                 logger.error(f"⚠️ Спроба {attempt+1}/{self._retries} history (Yahoo): {e}")
             time.sleep(self._retry_delay)
@@ -145,22 +153,44 @@ class YFinanceProvider:
 
         try:
             url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?range=1d&interval=1d"
-            with httpx.Client() as client:
-                resp = client.get(url, headers={"User-Agent": USER_AGENT}, timeout=10.0)
-                if resp.status_code == 200:
-                    meta = resp.json()["chart"]["result"][0]["meta"]
-                    info = {
-                        "regularMarketPrice": meta.get("regularMarketPrice"),
-                        "previousClose": meta.get("chartPreviousClose", meta.get("previousClose")),
-                        "shortName": meta.get("shortName", ticker)
-                    }
-                    try:
-                        redis_client.setex(cache_key, self._cache_ttl, json.dumps(info))
-                    except: pass
-                    return info
+            resp = self._request_get(url)
+            if resp.status_code == 200:
+                meta = resp.json()["chart"]["result"][0]["meta"]
+                info = {
+                    "regularMarketPrice": meta.get("regularMarketPrice"),
+                    "previousClose": meta.get("chartPreviousClose", meta.get("previousClose")),
+                    "shortName": meta.get("shortName", ticker),
+                    "regularMarketOpen": meta.get("regularMarketOpen"),
+                    "fiftyTwoWeekHigh": meta.get("fiftyTwoWeekHigh"),
+                    "fiftyTwoWeekLow": meta.get("fiftyTwoWeekLow"),
+                    "volume": meta.get("regularMarketVolume"),
+                }
+                try:
+                    redis_client.setex(cache_key, self._cache_ttl, json.dumps(info))
+                except: pass
+                return info
         except Exception as e:
             logger.error(f"⚠️ Не вдалося отримати info для {ticker}: {e}")
         
+        # Резервний розрахунок без дублювання логіки: перевикористовуємо fetch_history
+        try:
+            hist_df = self.fetch_history(ticker, period="1y")
+            if not hist_df.empty:
+                last_close = float(hist_df["Close"].iloc[-1])
+                prev_close = float(hist_df["Close"].iloc[-2]) if len(hist_df) > 1 else last_close
+                return {
+                    "regularMarketPrice": round(last_close, 2),
+                    "previousClose": round(prev_close, 2),
+                    "regularMarketOpen": round(float(hist_df["Open"].iloc[-1]), 2),
+                    "shortName": ticker,
+                    "volume": int(hist_df["Volume"].iloc[-1]) if "Volume" in hist_df else 0,
+                    "fiftyTwoWeekHigh": round(float(hist_df["High"].max()), 2),
+                    "fiftyTwoWeekLow": round(float(hist_df["Low"].min()), 2),
+                    "is_mock": hist_df.attrs.get("is_mock", False),
+                }
+        except Exception as fallback_err:
+            logger.error(f"⚠️ Помилка резервного розрахунку info для {ticker}: {fallback_err}")
+            
         return {}
 
     def fetch_news(self, ticker: str, limit: int = 5) -> list[dict]:
@@ -176,28 +206,22 @@ class YFinanceProvider:
 
         try:
             url = f"https://query1.finance.yahoo.com/v1/finance/search?q={ticker}&newsCount={limit}"
-            try:
-                from curl_cffi import requests as cffi_requests
-                resp = cffi_requests.get(url, impersonate="chrome", timeout=10.0)
-            except ImportError:
-                with httpx.Client() as client:
-                    resp = client.get(url, headers={"User-Agent": USER_AGENT}, timeout=10.0)
-                    
+            resp = self._request_get(url)
             if resp.status_code == 200:
-                    news_data = resp.json().get("news", [])
-                    result = []
-                    for n in news_data:
-                        result.append({
-                            "title": n.get("title", ""),
-                            "publisher": n.get("publisher", "Yahoo Finance"),
-                            "link": n.get("link", "#"),
-                            "timestamp": int(n.get("providerPublishTime", 0))
-                        })
-                    try:
-                        redis_client.setex(cache_key, self._cache_ttl, json.dumps(result))
-                    except Exception:
-                        pass
-                    return result
+                news_data = resp.json().get("news", [])
+                result = []
+                for n in news_data:
+                    result.append({
+                        "title": n.get("title", ""),
+                        "publisher": n.get("publisher", "Yahoo Finance"),
+                        "link": n.get("link", "#"),
+                        "timestamp": int(n.get("providerPublishTime", 0))
+                    })
+                try:
+                    redis_client.setex(cache_key, self._cache_ttl, json.dumps(result))
+                except Exception:
+                    pass
+                return result
         except Exception as e:
             logger.error(f"⚠️ Не вдалося отримати HTTP новини для {ticker}: {e}")
         
