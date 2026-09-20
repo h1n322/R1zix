@@ -64,7 +64,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddMemoryCache();
 builder.Services.AddControllers();
 builder.Services.AddRiskMateSettings(builder.Configuration);
-builder.Services.AddRiskMateServices();
+builder.Services.AddRiskMateServices(builder.Configuration);
 builder.Services.AddSingleton<RiskEngine>();
 builder.Services.AddSingleton<BacktestSimulator>();
 builder.Services.AddSingleton<PdfReportService>();

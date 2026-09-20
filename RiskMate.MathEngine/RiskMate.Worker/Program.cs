@@ -47,8 +47,9 @@ builder.ConfigureServices((hostContext, services) =>
     });
 
     // Register Services
+    services.AddRiskMateSettings(configuration);
     services.AddMemoryCache();
-    services.AddRiskMateServices();
+    services.AddRiskMateServices(configuration);
     services.AddSingleton<RiskEngine>();
     services.AddSingleton<BacktestSimulator>();
     

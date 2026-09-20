@@ -35,6 +35,7 @@ namespace RiskMate.Worker.Jobs
             _logger = logger;
         }
 
+        [Hangfire.AutomaticRetry(Attempts = 2, LogEvents = true)]
         public async Task ExecuteAsync(SimulationRequestDto dto, string userId, PerformContext context = null)
         {
             var jobId = context?.BackgroundJob.Id;
@@ -117,7 +118,25 @@ namespace RiskMate.Worker.Jobs
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Помилка виконання симуляції. JobId: {JobId}", jobId);
-                await SetJobStatusAsync(jobId, userId, new { Status = "Error", Message = ex.Message });
+                
+                string userMessage;
+                var baseEx = ex.GetBaseException();
+                if (ex is Polly.CircuitBreaker.BrokenCircuitException || 
+                    baseEx is Polly.CircuitBreaker.BrokenCircuitException ||
+                    ex.ToString().Contains("BrokenCircuitException"))
+                {
+                    userMessage = "Сервіс фінансових даних тимчасово недоступний (активовано Circuit Breaker через повторювані помилки зв'язку). Зачекайте декілька секунд перед наступною спробою.";
+                }
+                else if (ex is System.Net.Http.HttpRequestException || baseEx is System.Net.Http.HttpRequestException || baseEx is System.Net.Sockets.SocketException)
+                {
+                    userMessage = $"Помилка з'єднання із сервісом котирувань: {baseEx.Message}";
+                }
+                else
+                {
+                    userMessage = ex.Message;
+                }
+
+                await SetJobStatusAsync(jobId, userId, new { Status = "Error", Message = userMessage });
                 throw; // Щоб Hangfire міг зробити retry
             }
         }

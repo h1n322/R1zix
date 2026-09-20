@@ -32,8 +32,10 @@ services:
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=riskmate_db;Username=postgres;Password=supersecretpassword
       - ConnectionStrings__Redis=redis:6379
       - ASPNETCORE_ENVIRONMENT=Development
+      - DOTNET_ENVIRONMENT=Development
       - RiskMateSettings__GeminiApiKey=${GEMINI_API_KEY}
       - RiskMateSettings__PythonApiUrl=http://python-ml:8000
+      - PYTHON_API_URL=http://python-ml:8000
     depends_on:
       - db
       - redis
@@ -45,8 +47,11 @@ services:
     container_name: riskmate_csharp_worker
     environment:
       - ConnectionStrings__Redis=redis:6379
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DOTNET_ENVIRONMENT=Development
       - RiskMateSettings__GeminiApiKey=${GEMINI_API_KEY}
       - RiskMateSettings__PythonApiUrl=http://python-ml:8000
+      - PYTHON_API_URL=http://python-ml:8000
     depends_on:
       - redis
       - python-ml

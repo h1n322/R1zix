@@ -33,7 +33,7 @@ namespace RiskMate.Api.Services
         {
             _httpClient = httpClient;
             _cache = cache;
-            _settings = settings.Value;
+            _settings = settings?.Value ?? new RiskMateSettings();
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "RiskMate C# Backend");
         }
 
@@ -48,7 +48,7 @@ namespace RiskMate.Api.Services
                 if (cachedData != null) return cachedData;
             }
 
-            var baseUrl = _settings.PythonApiUrl.TrimEnd('/');
+            var baseUrl = ResolveBaseUrl(_settings.PythonApiUrl);
             var url = $"{baseUrl}/api/history/{ticker}?lookback={lookbackYears}";
             
             var response = await _httpClient.GetAsync(url);
@@ -84,7 +84,7 @@ namespace RiskMate.Api.Services
 
             try
             {
-                var baseUrl = _settings.PythonApiUrl.TrimEnd('/');
+                var baseUrl = ResolveBaseUrl(_settings.PythonApiUrl);
                 var url = $"{baseUrl}/api/news/{ticker}?limit={count}";
                 var response = await _httpClient.GetAsync(url);
                 response.EnsureSuccessStatusCode();
@@ -104,5 +104,24 @@ namespace RiskMate.Api.Services
                 return new List<NewsItemDto>();
             }
         }
+
+        public static string ResolveBaseUrl(string? configuredUrl)
+        {
+            if (string.IsNullOrWhiteSpace(configuredUrl))
+            {
+                return IsRunningInDocker() ? "http://python-ml:8000" : "http://localhost:8000";
+            }
+
+            var trimmed = configuredUrl.TrimEnd('/');
+            if (IsRunningInDocker() && (trimmed.Contains("localhost", StringComparison.OrdinalIgnoreCase) || trimmed.Contains("127.0.0.1")))
+            {
+                return "http://python-ml:8000";
+            }
+
+            return trimmed;
+        }
+
+        private static bool IsRunningInDocker() =>
+            string.Equals(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"), "true", StringComparison.OrdinalIgnoreCase);
     }
 }
