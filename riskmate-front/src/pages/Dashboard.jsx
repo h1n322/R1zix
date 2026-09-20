@@ -19,7 +19,26 @@ import {
   MarkowitzPieChart 
 } from '../components/dashboard';
 import Header from '../components/shared/Header';
+import { getTickerProfile } from '../utils/indicators';
 import { styles } from '../styles';
+
+const generateFallbackStockInfo = (t, points = []) => {
+  const profile = getTickerProfile(t);
+  const histPoints = (points || []).filter(p => typeof p.history === 'number' && !isNaN(p.history));
+  const lastPrice = histPoints.length > 0 ? histPoints[histPoints.length - 1].history : profile.basePrice;
+  const maxPrice = histPoints.length > 0 ? Math.max(...histPoints.map(p => p.history)) : lastPrice * 1.25;
+  const minPrice = histPoints.length > 0 ? Math.min(...histPoints.map(p => p.history)) : lastPrice * 0.75;
+  return [
+    { label: "Компанія", value: profile.name },
+    { label: "Сектор", value: profile.sector },
+    { label: "Поточна ціна (S₀)", value: `$${Number(lastPrice).toFixed(2)}` },
+    { label: "Обсяг", value: profile.volume },
+    { label: "52-тиж. макс.", value: `$${Number(maxPrice).toFixed(2)}` },
+    { label: "Бета-фактор", value: profile.beta },
+    { label: "52-тиж. мін.", value: `$${Number(minPrice).toFixed(2)}` },
+    { label: "Р/Е (Ц/П)", value: profile.pe }
+  ];
+};
 
 const Dashboard = ({ user }) => {
   const navigate = useNavigate();
@@ -34,7 +53,20 @@ const Dashboard = ({ user }) => {
   const [aiSummary, setAiSummary] = useState(null);
   const [lstmForecast, setLstmForecast] = useState(null);
   const [hedging, setHedging] = useState(null);
-  const [metrics, setMetrics] = useState({ expected_price: 0, var_5: 0, cvar_5: 0, volatility: 0 });
+  const [metrics, setMetrics] = useState({ 
+    expected_price: 0, 
+    expectedPrice: 0, 
+    var_5: 0, 
+    valueAtRisk: 0, 
+    cvar_5: 0, 
+    conditionalValueAtRisk: 0, 
+    volatility: 0, 
+    annualVolatility: 0, 
+    sharpeRatio: 0, 
+    sharpe_ratio: 0, 
+    maxDrawdown: 0, 
+    max_drawdown: 0 
+  });
   const [isChartExpanded, setIsChartExpanded] = useState(false);
   const [isWatchlistOpen, setIsWatchlistOpen] = useState(false);
   const [watchlist, setWatchlist] = useState(['AAPL', 'MSFT', 'NVDA', 'BTC-USD']); 
@@ -58,7 +90,7 @@ const Dashboard = ({ user }) => {
     }
   };
 
-  const runSimulation = async () => {
+  const handleRunSimulation = async () => {
     
     // --- ЗАХИСТ PRO-ФУНКЦІЙ ---
     const premiumAlgorithms = ['lstm', 'markowitz']; 
@@ -83,8 +115,22 @@ const Dashboard = ({ user }) => {
       setTimeout(() => navigate('/pricing'), 1500);
       return; 
     }
+
+    const cleanTicker = (ticker || '').trim().toUpperCase();
+    if (!cleanTicker) {
+      toast.error('Введіть тикер активу!', {
+        icon: '⚠️',
+        style: {
+          borderRadius: '10px',
+          background: '#1e293b',
+          color: '#fff',
+          border: '1px solid #ef4444'
+        }
+      });
+      return;
+    }
     
-    if (ticker.includes(',') && algorithm !== 'markowitz') {
+    if (cleanTicker.includes(',') && algorithm !== 'markowitz') {
       toast.error('Для аналізу кількох активів оберіть тип алгоритму -- "Markowitz Portfolio Optimization"', {
         duration: 5000,
         icon: '⚠️',
@@ -95,50 +141,8 @@ const Dashboard = ({ user }) => {
     setIsLoading(true);
     const loadingToast = toast.loading('Опрацювання даних...');
     try {
-      if (algorithm === 'lstm') {
-        const aiResp = await fetch(`/ai/predict/${ticker}`);
-        const aiData = await aiResp.json();
-
-        if (aiData.error) {
-          toast.error(aiData.error, { id: loadingToast });
-          setIsLoading(false);
-          return;
-        }
-
-        const simResp = await fetch('/ai/simulate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            ticker, 
-            algorithm: 'gbm', 
-            simulations: parseInt(simulations), 
-            horizon: parseInt(horizon), 
-            scenario,
-            lookback_years: parseInt(lookback),      
-            var_confidence: parseFloat(varConf),     
-            risk_free_rate: parseFloat(rfRate).replace(',', '.') / 100 
-          })
-        });
-        const simData = await simResp.json();
-
-        setChartData(simData.chart_data);
-        setAssetDetails(simData.stock_info);
-        setNews(simData.news);                                 
-        setCorrelationMatrix(simData.correlation_matrix);      
-        setHistogramData(simData.histogram); 
-        setIsMock(simData.is_mock || false);
-
-        setMetrics({
-          expected_price: aiData.predicted_price_tomorrow, 
-          var_5: simData.var_5,                            
-          cvar_5: simData.cvar_5,
-          volatility: simData.volatility 
-        });
-
-        toast.success(`ШІ дав прогноз ціни, а Монте-Карло розрахував ризики!`, { id: loadingToast });
-      } 
-      else if (algorithm === 'markowitz') {
-        if (!ticker.includes(',')) {
+      if (algorithm === 'markowitz') {
+        if (!cleanTicker.includes(',')) {
           toast.error("Для оптимізації введіть мінімум 2 тикери через кому", { id: loadingToast });
           setIsLoading(false);
           return;
@@ -147,7 +151,7 @@ const Dashboard = ({ user }) => {
         const resp = await fetch('/ai/optimize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tickers: ticker })
+          body: JSON.stringify({ tickers: cleanTicker })
         });
         const data = await resp.json();
 
@@ -156,9 +160,15 @@ const Dashboard = ({ user }) => {
         } else {
           setMetrics({
             expected_price: data.expected_annual_return, 
+            expectedPrice: data.expected_annual_return,
             volatility: data.annual_volatility,
+            annualVolatility: data.annual_volatility,
             var_5: 0, 
-            cvar_5: 0 
+            valueAtRisk: 0,
+            cvar_5: 0,
+            conditionalValueAtRisk: 0,
+            sharpeRatio: 0,
+            maxDrawdown: 0
           });
           setMarkowitzData(data.allocations);
           setCorrelationMatrix(data.correlation_matrix); 
@@ -171,84 +181,314 @@ const Dashboard = ({ user }) => {
         }
       }
       else {
-        const token = localStorage.getItem('token');
-        const resp = await fetch('/api/simulation/run', {
+        // Отримуємо auth токен (якщо користувач авторизований)
+        let token = null;
+        try {
+          if (auth?.currentUser) {
+            token = await auth.currentUser.getIdToken();
+          } else {
+            token = localStorage.getItem('token');
+          }
+        } catch (tokenErr) {
+          console.warn("Не вдалося отримати токен:", tokenErr);
+          token = localStorage.getItem('token');
+        }
+
+        const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+        // Паралельно робимо запит до LSTM (ML-прогноз ціни на завтра)
+        const mlPromise = fetch(`/ai/predict/${cleanTicker}`)
+          .then(async r => {
+            if (r.ok) {
+              const d = await r.json();
+              return (d && typeof d.predicted_price_tomorrow === 'number') ? d.predicted_price_tomorrow : null;
+            }
+            return null;
+          })
+          .catch(err => {
+            console.warn("ML бекенд недоступний:", err);
+            return null;
+          });
+
+        // Формуємо параметри симуляції для C# MathEngine
+        const simAlgorithm = (algorithm === 'stress' || algorithm === 'lstm') ? 'gbm' : algorithm;
+        const simScenario = algorithm === 'stress' ? scenario : 'base';
+        const parsedConf = parseFloat(varConf) || 0.95;
+        const parsedRfRate = (parseFloat(rfRate.toString().replace(',', '.')) || 4.5) / 100;
+        const isBacktest = algorithm === 'backtest';
+
+        const runResp = await fetch('/api/simulation/run', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` 
+            ...authHeaders
           },
           body: JSON.stringify({ 
-            ticker: ticker,
-            algorithm: algorithm === 'stress' ? 'gbm' : algorithm,
-            simulationsCount: parseInt(simulations),
-            horizon: parseInt(horizon),
-            scenario: algorithm === 'stress' ? scenario : 'base',
-            confidenceLevel: parseFloat(varConf),
-            lookbackYears: parseInt(lookback),
-            riskFreeRate: parseFloat(rfRate.toString().replace(',', '.')) / 100
+            ticker: cleanTicker,
+            algorithm: simAlgorithm,
+            simulationsCount: parseInt(simulations) || 1000,
+            horizon: parseInt(horizon) || 30,
+            scenario: simScenario,
+            confidenceLevel: parsedConf,
+            varConfidence: parsedConf,
+            lookbackYears: parseInt(lookback) || 5,
+            riskFreeRate: parsedRfRate,
+            isBacktest
           })
         });
-        const data = await resp.json();
-        
-        if (!resp.ok) {
-          throw new Error(data.message || 'Помилка під час симуляції');
-        }
-        setChartData(data.chartPoints || []);
-        
-        setMetrics({
-          expected_price: data.expectedPrice || 0,
-          var_5: data.valueAtRisk || 0,
-          cvar_5: data.conditionalValueAtRisk || 0,
-          volatility: data.volatility || 0,
-          sharpeRatio: data.sharpeRatio || 0,
-          maxDrawdown: data.maxDrawdown || 0,
-        });
-        
-        // Отримуємо деталі про актив безпосередньо від Python Data Gateway
-        try {
-          const infoResp = await fetch(`/ai/info/${ticker}`);
-          if (infoResp.ok) {
-            const infoData = await infoResp.json();
-            setAssetDetails(infoData);
-          } else {
-            setAssetDetails(null);
-          }
-        } catch (e) {
-          console.error("Не вдалося завантажити деталі активу", e);
-          setAssetDetails(null);
-        }
-        
-        setNews(data.news || []);
-        setAiSummary(data.aiSummary || null);
-        setHedging(data.hedging || null);
-        setCorrelationMatrix(null);
-        setHistogramData(data.histogramBins || []); 
-        setIsMock(data.is_mock || data.isMock || false);
-        
-        toast.success('Симуляцію завершено!', { id: loadingToast });
 
-        // Спробуємо отримати LSTM прогноз з Python бекенду
-        try {
-          const mlResp = await fetch(`/ai/predict/${ticker}`);
-          if (mlResp.ok) {
-            const mlData = await mlResp.json();
-            setLstmForecast(mlData.predicted_price_tomorrow);
-          } else {
-            setLstmForecast(null);
+        const runData = await runResp.json();
+        if (!runResp.ok) {
+          throw new Error(runData.message || runData.Message || 'Помилка під час симуляції');
+        }
+
+        const jobId = runData.jobId || runData.JobId;
+        if (!jobId) {
+          throw new Error('Не отримано ідентифікатор завдання (jobId)');
+        }
+
+        // Опитування статусу кожні 800мс (~32 секунди таймаут)
+        const maxAttempts = 40;
+        const pollInterval = 800;
+        let completedData = null;
+        let consecutiveErrors = 0;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          await new Promise(res => setTimeout(res, pollInterval));
+
+          let statusResp;
+          try {
+            statusResp = await fetch(`/api/simulation/status/${jobId}`, {
+              headers: { ...authHeaders }
+            });
+            consecutiveErrors = 0;
+          } catch (netErr) {
+            consecutiveErrors++;
+            console.warn(`Спроба опитування ${attempt + 1} мережева помилка:`, netErr);
+            if (consecutiveErrors >= 5) {
+              throw new Error('Втрачено зʼєднання із сервером під час очікування результату симуляції.');
+            }
+            continue;
           }
-        } catch (mlErr) {
-          console.warn("ML бекенд недоступний", mlErr);
-          setLstmForecast(null);
+
+          // 404 означає, що бекграунд воркер ще не встиг записати перший статус у Redis/кеш
+          if (statusResp.status === 404) {
+            continue;
+          }
+
+          if (!statusResp.ok) {
+            if (statusResp.status >= 500) {
+              consecutiveErrors++;
+              console.warn(`Спроба опитування ${attempt + 1} помилка сервера:`, statusResp.status);
+              if (consecutiveErrors >= 4) {
+                const errJson = await statusResp.json().catch(() => ({}));
+                throw new Error(errJson.Message || errJson.message || `Помилка сервера (${statusResp.status})`);
+              }
+              continue;
+            }
+            const errJson = await statusResp.json().catch(() => ({}));
+            throw new Error(errJson.Message || errJson.message || `Помилка опитування статусу (${statusResp.status})`);
+          }
+
+          const pollData = await statusResp.json();
+          const currentStatus = (pollData.Status || pollData.status || '').toLowerCase();
+
+          const progress = pollData.Progress ?? pollData.progress;
+          const msg = pollData.Message ?? pollData.message;
+          const translateProgressMsg = (m) => {
+            if (!m) return 'Опрацювання даних';
+            if (m.includes('historical data')) return 'Отримання історичних даних';
+            if (m.includes('mathematical simulation')) return 'Математичне моделювання Монте-Карло';
+            if (m.includes('AI analytics')) return 'Аналіз ризиків та пошук новин';
+            return m;
+          };
+
+          if (progress && msg) {
+            toast.loading(`${translateProgressMsg(msg)} (${progress}%)...`, { id: loadingToast });
+          } else if (progress) {
+            toast.loading(`Опрацювання даних (${progress}%)...`, { id: loadingToast });
+          } else if (msg) {
+            toast.loading(`${translateProgressMsg(msg)}...`, { id: loadingToast });
+          }
+
+          if (currentStatus === 'completed') {
+            completedData = pollData;
+            break;
+          }
+
+          if (currentStatus === 'failed' || currentStatus === 'error') {
+            throw new Error(pollData.Error || pollData.error || pollData.Message || pollData.message || 'Симуляція завершилася помилкою');
+          }
+        }
+
+        if (!completedData) {
+          throw new Error('Час очікування симуляції вичерпано (~30с). Спробуйте пізніше.');
+        }
+
+        const res = completedData.Result || completedData.result || {};
+
+        // 1. Точки графіка
+        const rawPoints = res.ChartPoints || res.chartPoints || res.chart_data || [];
+        const mappedChartData = rawPoints.map((p, idx) => {
+          const name = p.Name ?? p.name ?? p.dateLabel ?? p.Date ?? p.date ?? `T+${idx}`;
+          const history = p.History !== undefined ? p.History : (p.history ?? null);
+          const forecast = p.Forecast !== undefined ? p.Forecast : (p.forecast ?? null);
+          const actual = p.Actual !== undefined ? p.Actual : (p.actual ?? null);
+          const lowerBound = p.LowerBound ?? p.lowerBound ?? p.bb_lower ?? p.BbLower ?? null;
+          const upperBound = p.UpperBound ?? p.upperBound ?? p.bb_upper ?? p.BbUpper ?? null;
+          return {
+            ...p,
+            name,
+            history,
+            forecast,
+            actual,
+            lowerBound,
+            upperBound,
+            bb_lower: p.bb_lower ?? p.BbLower ?? lowerBound,
+            bb_upper: p.bb_upper ?? p.BbUpper ?? upperBound,
+            sma50: p.Sma50 ?? p.sma50 ?? p.sma_50 ?? null,
+            rsi: p.Rsi ?? p.rsi ?? null,
+            atr: p.Atr ?? p.atr ?? null,
+          };
+        });
+        setChartData(mappedChartData);
+
+        // 2. LSTM прогноз та розрахункові метрики
+        const predictedTomorrow = await mlPromise;
+        setLstmForecast(predictedTomorrow);
+
+        const expPrice = (algorithm === 'lstm' && predictedTomorrow !== null)
+          ? predictedTomorrow
+          : Number(res.ExpectedPrice ?? res.expectedPrice ?? res.expected_price ?? 0);
+        const varVal = Number(res.ValueAtRisk ?? res.valueAtRisk ?? res.var_5 ?? 0);
+        const cvarVal = Number(res.ConditionalValueAtRisk ?? res.conditionalValueAtRisk ?? res.cvar_5 ?? 0);
+        const volVal = Number(res.Volatility ?? res.volatility ?? res.annual_volatility ?? 0);
+        const sharpeVal = Number(res.SharpeRatio ?? res.sharpeRatio ?? res.sharpe_ratio ?? 0);
+        const maxDdVal = Number(res.MaxDrawdown ?? res.maxDrawdown ?? res.max_drawdown ?? 0);
+
+        setMetrics({
+          expected_price: expPrice,
+          expectedPrice: expPrice,
+          var_5: varVal,
+          valueAtRisk: varVal,
+          cvar_5: cvarVal,
+          conditionalValueAtRisk: cvarVal,
+          volatility: volVal,
+          annualVolatility: volVal,
+          sharpeRatio: sharpeVal,
+          sharpe_ratio: sharpeVal,
+          maxDrawdown: maxDdVal,
+          max_drawdown: maxDdVal,
+        });
+
+        // 3. Деталі активу (StockInfo або запит до Python Gateway або fallback профіль)
+        const rawStockInfo = res.StockInfo || res.stockInfo || res.stock_info;
+        if (Array.isArray(rawStockInfo) && rawStockInfo.length > 0) {
+          setAssetDetails(rawStockInfo.map(item => ({
+            label: item.Label ?? item.label ?? '',
+            value: item.Value ?? item.value ?? ''
+          })));
+        } else {
+          try {
+            const infoResp = await fetch(`/ai/info/${cleanTicker}`);
+            if (infoResp.ok) {
+              const infoData = await infoResp.json();
+              if (Array.isArray(infoData) && infoData.length > 0) {
+                setAssetDetails(infoData.map(item => ({
+                  label: item.label ?? item.Label ?? '',
+                  value: item.value ?? item.Value ?? ''
+                })));
+              } else {
+                setAssetDetails(generateFallbackStockInfo(cleanTicker, mappedChartData));
+              }
+            } else {
+              setAssetDetails(generateFallbackStockInfo(cleanTicker, mappedChartData));
+            }
+          } catch (e) {
+            console.warn("Не вдалося завантажити деталі активу з gateway, застосовано базовий профіль:", e);
+            setAssetDetails(generateFallbackStockInfo(cleanTicker, mappedChartData));
+          }
+        }
+
+        // 4. Новини
+        const rawNews = res.News || res.news || [];
+        setNews((Array.isArray(rawNews) ? rawNews : []).map(item => ({
+          title: item.Title ?? item.title ?? '',
+          publisher: item.Publisher ?? item.publisher ?? '',
+          link: item.Link ?? item.link ?? '#',
+          timestamp: Number(item.Timestamp ?? item.timestamp ?? 0)
+        })));
+
+        // 5. ШІ Підсумок
+        setAiSummary(res.AiSummary || res.aiSummary || res.ai_summary || null);
+
+        // 6. Хеджування (Black-Scholes)
+        const rawHedging = res.Hedging || res.hedging;
+        if (rawHedging) {
+          setHedging({
+            strikePrice: Number(rawHedging.StrikePrice ?? rawHedging.strikePrice ?? 0),
+            putOptionPremium: Number(rawHedging.PutOptionPremium ?? rawHedging.putOptionPremium ?? 0),
+            totalCostFor100Shares: Number(rawHedging.TotalCostFor100Shares ?? rawHedging.totalCostFor100Shares ?? 0),
+            expiration: String(rawHedging.Expiration ?? rawHedging.expiration ?? '')
+          });
+        } else {
+          setHedging(null);
+        }
+
+        // 7. Гістограма
+        const rawBins = res.HistogramBins || res.histogramBins || res.Histogram || res.histogram || [];
+        setHistogramData((Array.isArray(rawBins) ? rawBins : []).map(b => {
+          const binRange = b.BinRange ?? b.binRange ?? b.range ?? b.name ?? '';
+          let price = b.Price !== undefined ? Number(b.Price) : (b.price !== undefined ? Number(b.price) : undefined);
+          if (price === undefined && (b.MinValue !== undefined || b.minValue !== undefined)) {
+            const minV = Number(b.MinValue ?? b.minValue);
+            const maxV = Number(b.MaxValue ?? b.maxValue);
+            price = Number(((minV + maxV) / 2).toFixed(2));
+          }
+          if (price === undefined && binRange) {
+            const matches = String(binRange).match(/[\d.]+/g);
+            if (matches && matches.length >= 2) {
+              price = Number(((parseFloat(matches[0]) + parseFloat(matches[1])) / 2).toFixed(2));
+            } else if (matches && matches.length === 1) {
+              price = parseFloat(matches[0]);
+            }
+          }
+          const count = Number(b.Frequency ?? b.frequency ?? b.Count ?? b.count ?? 0);
+          return {
+            name: binRange,
+            binRange,
+            range: binRange,
+            frequency: count,
+            count,
+            price
+          };
+        }));
+
+        // 8. Кореляційна матриця та флаг імітації
+        const rawMatrix = res.CorrelationMatrix || res.correlationMatrix || res.correlation_matrix || null;
+        setCorrelationMatrix(rawMatrix);
+        setIsMock(Boolean(res.is_mock ?? res.isMock ?? res.IsMock ?? false));
+
+        // 9. Сповіщення про успіх
+        if (algorithm === 'lstm') {
+          if (predictedTomorrow !== null) {
+            toast.success('ШІ дав прогноз ціни, а Монте-Карло розрахував ризики!', { id: loadingToast });
+          } else {
+            toast('LSTM модель не натренована для цього активу. Розраховано за класичним методом.', { icon: 'ℹ️', id: loadingToast });
+          }
+        } else {
+          toast.success('Симуляцію завершено!', { id: loadingToast });
         }
       }
     } catch (err) {
-      toast.error('Помилка під час виконання запиту', { id: loadingToast });
+      toast.error(err.message || 'Помилка під час виконання запиту', { id: loadingToast });
       console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const runSimulation = handleRunSimulation;
 
   const downloadReport = async () => {
     if (user?.tier !== 'pro') {
@@ -258,46 +498,51 @@ const Dashboard = ({ user }) => {
     }
     const loadingToast = toast.loading('Генерація PDF...');
     try {
-      const isLstm = algorithm === 'lstm';
-      const endpoint = isLstm ? '/ai/report' : '/api/simulation/report';
+      const cleanTicker = (ticker || 'AAPL').trim().toUpperCase();
+      const endpoint = '/api/simulation/report';
+      const isBacktest = algorithm === 'backtest';
       
-      const payload = isLstm ? {
-        ticker, 
-        algorithm, 
-        simulations: parseInt(simulations), 
-        horizon: parseInt(horizon), 
-        scenario,
-        lookback_years: parseInt(lookback),      
-        var_confidence: parseFloat(varConf),     
-        risk_free_rate: parseFloat(rfRate.toString().replace(',', '.')) / 100 
-      } : {
-        ticker, 
-        algorithm: algorithm === 'stress' ? 'gbm' : algorithm, 
-        simulationsCount: parseInt(simulations), 
-        horizon: parseInt(horizon), 
+      const payload = {
+        ticker: cleanTicker, 
+        algorithm: (algorithm === 'stress' || algorithm === 'lstm') ? 'gbm' : algorithm, 
+        simulationsCount: parseInt(simulations) || 1000, 
+        horizon: parseInt(horizon) || 30, 
         scenario: algorithm === 'stress' ? scenario : 'base',
-        confidenceLevel: parseFloat(varConf),
-        lookbackYears: parseInt(lookback),
-        riskFreeRate: parseFloat(rfRate.toString().replace(',', '.')) / 100 
+        confidenceLevel: parseFloat(varConf) || 0.95,
+        lookbackYears: parseInt(lookback) || 5,
+        riskFreeRate: (parseFloat(rfRate.toString().replace(',', '.')) || 4.5) / 100,
+        isBacktest
       };
+
+      let token = null;
+      try {
+        if (auth?.currentUser) token = await auth.currentUser.getIdToken();
+        else token = localStorage.getItem('token');
+      } catch (tokenErr) {
+        token = localStorage.getItem('token');
+      }
 
       const resp = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify(payload)
       });
       if (!resp.ok) {
-        throw new Error('Помилка сервера при генерації PDF');
+        const errJson = await resp.json().catch(() => ({}));
+        throw new Error(errJson.Message || errJson.message || 'Помилка сервера при генерації PDF');
       }
       const blob = await resp.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Rizix_Report_${ticker}.pdf`;
+      a.download = `RiskMate_Report_${cleanTicker}.pdf`;
       a.click();
       toast.success('Звіт завантажено!', { id: loadingToast });
     } catch (err) { 
-      toast.error('Помилка завантаження PDF', { id: loadingToast });
+      toast.error(err.message || 'Помилка завантаження PDF', { id: loadingToast });
     }
   };
 
@@ -309,37 +554,55 @@ const Dashboard = ({ user }) => {
     try {
       // 1. Отримуємо токен
       const token = await auth.currentUser.getIdToken();
+      const cleanTicker = (ticker || 'AAPL').trim().toUpperCase();
+
+      let mappedAssetDetails = [];
+      if (Array.isArray(assetDetails) && assetDetails.length > 0) {
+        const comp = assetDetails.find(i => i.label && /компан|назва|name/i.test(i.label))?.value || cleanTicker;
+        const sec = assetDetails.find(i => i.label && /сектор|sector/i.test(i.label))?.value || '';
+        const rawPriceStr = assetDetails.find(i => i.label && /ціна|відкриття|price|open/i.test(i.label))?.value || '';
+        const parsedPrice = parseFloat(String(rawPriceStr).replace(/[^0-9.]/g, '')) || 
+          (chartData.length > 0 ? Number(chartData[chartData.length - 1].history ?? chartData[chartData.length - 1].forecast ?? 0) : 0);
+        mappedAssetDetails = [{
+          ticker: cleanTicker,
+          companyName: comp,
+          sector: sec,
+          currentPrice: parsedPrice
+        }];
+      } else if (assetDetails && typeof assetDetails === 'object') {
+        mappedAssetDetails = [{
+          ticker: assetDetails.symbol || assetDetails.ticker || cleanTicker,
+          companyName: assetDetails.companyName || assetDetails.shortName || cleanTicker,
+          sector: assetDetails.sector || '',
+          currentPrice: Number(assetDetails.currentPrice) || 0
+        }];
+      }
 
       // 2. Формуємо DTO для C#
       const portfolioDto = {
-        tickers: ticker,
+        tickers: cleanTicker,
         algorithm: algorithm || 'gbm',
         simulationsCount: parseInt(simulations) || 1000,
         horizon: parseInt(horizon) || 30,
         scenario: scenario || 'covid',
         
-        expectedPrice: metrics.expected_price || 0,
-        valueAtRisk: metrics.var_5 || 0,
-        conditionalValueAtRisk: metrics.cvar_5 || 0,
-        volatility: metrics.volatility || 0,
-        sharpeRatio: metrics.sharpeRatio || 0, 
-        maxDrawdown: metrics.maxDrawdown || 0,
+        expectedPrice: metrics.expected_price || metrics.expectedPrice || 0,
+        valueAtRisk: metrics.var_5 || metrics.valueAtRisk || 0,
+        conditionalValueAtRisk: metrics.cvar_5 || metrics.conditionalValueAtRisk || 0,
+        volatility: metrics.volatility || metrics.annualVolatility || 0,
+        sharpeRatio: metrics.sharpeRatio || metrics.sharpe_ratio || 0, 
+        maxDrawdown: metrics.maxDrawdown || metrics.max_drawdown || 0,
 
         // Мапимо масив графіка
         chartPoints: chartData.map(p => ({
           dateLabel: p.name?.toString() || '',
           expectedPrice: p.forecast || p.history || p.actual || 0,
-          lowerBound: p.bb_lower || 0,
-          upperBound: p.bb_upper || 0
+          lowerBound: p.lowerBound ?? p.bb_lower ?? 0,
+          upperBound: p.upperBound ?? p.bb_upper ?? 0
         })),
 
         // Мапимо деталі компанії (C# очікує масив)
-        assetDetails: assetDetails ? [{
-          ticker: assetDetails.symbol || ticker,
-          companyName: assetDetails.shortName || '',
-          sector: assetDetails.sector || '',
-          currentPrice: assetDetails.currentPrice || 0
-        }] : [],
+        assetDetails: mappedAssetDetails,
 
         // Мапимо гістограму
         histogramBins: histogramData ? histogramData.map(b => ({
@@ -358,8 +621,12 @@ const Dashboard = ({ user }) => {
         body: JSON.stringify(portfolioDto)
       });
 
-      if (!response.ok) throw new Error("Помилка сервера C#");
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.Message || errJson.message || "Помилка сервера C#");
+      }
 
+      window.dispatchEvent(new Event('riskmate_portfolio_saved'));
       toast.success("Портфель успішно збережено!", { id: loadingToast });
     } catch (e) {
       toast.error("Помилка збереження: " + e.message, { id: loadingToast });
@@ -478,12 +745,12 @@ const Dashboard = ({ user }) => {
 
     // Відновлюємо деталі активу
     if (data.assetDetails && data.assetDetails.length > 0) {
-      setAssetDetails({
-        symbol: data.assetDetails[0].ticker,
-        shortName: data.assetDetails[0].companyName,
-        sector: data.assetDetails[0].sector,
-        currentPrice: data.assetDetails[0].currentPrice
-      });
+      const ad = data.assetDetails[0];
+      setAssetDetails([
+        { label: "Компанія", value: ad.companyName || ad.ticker || data.tickers || '' },
+        { label: "Сектор", value: ad.sector || 'N/A' },
+        { label: "Ціна на момент збереження", value: `$${Number(ad.currentPrice || 0).toFixed(2)}` }
+      ]);
     } else {
       setAssetDetails(null);
     }
@@ -533,7 +800,7 @@ const Dashboard = ({ user }) => {
   const removeFromWatchlist = (tickerToRemove) => {
     updateWatchlist(watchlist.filter(t => t !== tickerToRemove));
   };
-  console.log("ПОТОЧНИЙ СТАН ASSET DETAILS:", assetDetails); // <--- ДОДАЙ ЦЕЙ РЯДОК
+
   return (
     <div style={styles.app} className="dashboard-layout">
       <Toaster position="top-right" /> 
