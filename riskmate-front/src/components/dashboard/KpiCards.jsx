@@ -29,7 +29,7 @@ const InfoIcon = ({ text }) => {
 };
 
 // Компонент однієї картки
-const KpiCard = ({ title, value, prefix = "$", suffix = "", color = "#f8fafc", tooltip }) => {
+const KpiCard = React.memo(({ title, value, prefix = "$", suffix = "", color = "#f8fafc", tooltip }) => {
   const numericValue = Number(value) || 0;
 
   return (
@@ -55,7 +55,7 @@ const KpiCard = ({ title, value, prefix = "$", suffix = "", color = "#f8fafc", t
       </div>
     </div>
   );
-};
+});
 
 const KpiCards = ({ metrics, varConf, algorithm, isLoading }) => {
   const confLevel = varConf ? (varConf * 100).toFixed(0) : 95;
@@ -140,4 +140,4 @@ const KpiCards = ({ metrics, varConf, algorithm, isLoading }) => {
   );
 };
 
-export default KpiCards;
+export default React.memo(KpiCards);

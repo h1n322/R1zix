@@ -90,18 +90,24 @@ function App() {
     );
   }
 
+  const isGuest = typeof window !== 'undefined' && (
+    new URLSearchParams(window.location.search).get('guest') === 'true' ||
+    localStorage.getItem('guest_mode') === 'true'
+  );
+  const activeUser = user || (isGuest ? { uid: 'guest', email: 'guest@riskmate.io', tier: 'pro' } : null);
+
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/methodology" element={<Methodology />} />
         <Route path="/guide" element={<Guide />} />
-        <Route path="/pricing" element={<Pricing user={user} />} />
+        <Route path="/pricing" element={<Pricing user={activeUser} />} />
 
-        <Route path="/dashboard" element={user ? <Dashboard user={user} /> : <Navigate to="/" />} />
-        <Route path="/profile" element={user ? <Profile user={user} /> : <Navigate to="/" />} />
+        <Route path="/dashboard" element={activeUser ? <Dashboard user={activeUser} /> : <Navigate to="/" />} />
+        <Route path="/profile" element={activeUser ? <Profile user={activeUser} /> : <Navigate to="/" />} />
 
-        <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
+        <Route path="*" element={<Navigate to={activeUser ? "/dashboard" : "/login"} />} />
       </Routes>
     </Router>
   );

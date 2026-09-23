@@ -16,7 +16,17 @@ const PortfolioTable = ({ user, onLoadPortfolio }) => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        localItems = JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          localItems = parsed.map(item => ({
+            id: item.id,
+            tickers: item.tickers || item.ticker,
+            algorithm: item.algorithm,
+            expectedPrice: item.expectedPrice ?? item.expected_price,
+            valueAtRisk: item.valueAtRisk ?? item.var_5,
+            createdAt: item.createdAt
+          }));
+        }
       }
     } catch (e) {
       console.warn("Помилка читання localStorage:", e);
@@ -66,7 +76,7 @@ const PortfolioTable = ({ user, onLoadPortfolio }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, STORAGE_KEY]);
 
   useEffect(() => {
     fetchPortfolios();
@@ -86,16 +96,32 @@ const PortfolioTable = ({ user, onLoadPortfolio }) => {
   }, [fetchPortfolios]);
 
   // Видалення портфеля з локального сховища
-  const handleDeletePortfolio = (id, e) => {
+  const handleDeletePortfolio = (portfolio, e) => {
     e.stopPropagation();
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        const filtered = parsed.filter(p => String(p.id) !== String(id));
+        const filtered = parsed.filter(p => {
+          if (portfolio.id && p.id) {
+            return String(p.id) !== String(portfolio.id);
+          }
+          if (portfolio.createdAt && p.createdAt) {
+            return String(p.createdAt) !== String(portfolio.createdAt);
+          }
+          return false;
+        });
         localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
       }
-      setPortfolios(prev => prev.filter(p => String(p.id) !== String(id)));
+      setPortfolios(prev => prev.filter(p => {
+        if (portfolio.id && p.id) {
+          return String(p.id) !== String(portfolio.id);
+        }
+        if (portfolio.createdAt && p.createdAt) {
+          return String(p.createdAt) !== String(portfolio.createdAt);
+        }
+        return false;
+      }));
       toast.success("Портфель видалено з історії!");
     } catch (err) {
       console.error(err);
@@ -130,9 +156,38 @@ const PortfolioTable = ({ user, onLoadPortfolio }) => {
             throw new Error("Помилка завантаження");
           }
         } catch (error) {
+          try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              const fullItem = parsed.find(p => String(p.id) === String(portfolio.id));
+              if (fullItem) {
+                onLoadPortfolio(fullItem);
+                toast.dismiss(loadToast);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+              }
+            }
+          } catch (e) {
+            console.debug("Помилка читання резервного запису з localStorage:", e);
+          }
           toast.error("Не вдалося завантажити деталі", { id: loadToast });
         }
       } else {
+        try {
+          const stored = localStorage.getItem(STORAGE_KEY);
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            const fullItem = parsed.find(p => String(p.createdAt) === String(portfolio.createdAt));
+            if (fullItem) {
+              onLoadPortfolio(fullItem);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              return;
+            }
+          }
+        } catch (e) {
+          console.debug("Помилка читання резервного запису з localStorage:", e);
+        }
         onLoadPortfolio(portfolio); // for local items without DB id
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -168,8 +223,8 @@ const PortfolioTable = ({ user, onLoadPortfolio }) => {
             </tr>
           </thead>
           <tbody>
-            {portfolios.map((p) => (
-              <tr key={p.id || p.createdAt} className={styles.tr}>
+            {portfolios.map((p, idx) => (
+              <tr key={p.id || p.createdAt || idx} className={styles.tr}>
                 <td className={`${styles.td} ${styles.tickerCell}`}>
                   {p.tickers?.replace(/,/g, ', ') || 'N/A'}
                 </td>
@@ -196,7 +251,7 @@ const PortfolioTable = ({ user, onLoadPortfolio }) => {
                     Відкрити
                   </button>
                   <button 
-                    onClick={(e) => handleDeletePortfolio(p.id, e)} 
+                    onClick={(e) => handleDeletePortfolio(p, e)} 
                     className={styles.openBtn}
                     style={{ borderColor: '#ef4444', color: '#ef4444', padding: '6px 10px' }}
                     title="Видалити запис"
@@ -213,4 +268,4 @@ const PortfolioTable = ({ user, onLoadPortfolio }) => {
   );
 };
 
-export default PortfolioTable;
+export default React.memo(PortfolioTable);
