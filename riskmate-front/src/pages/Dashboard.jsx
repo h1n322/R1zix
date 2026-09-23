@@ -1,7 +1,7 @@
 /* eslint-disable no-empty */
 /* eslint-disable no-unused-vars */
 import { Icon } from "@iconify/react";
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { collection, addDoc, getDocs, query, orderBy, limit, doc, setDoc, getDoc } from 'firebase/firestore'; 
 import { logout, db, auth } from '../firebase';
@@ -688,22 +688,11 @@ const Dashboard = ({ user }) => {
     }
   };
 
-  React.useEffect(() => {
-    if (location.state?.portfolioToLoad) {
-      loadSelectedPortfolio(location.state.portfolioToLoad);
-      window.history.replaceState({}, document.title)
-    }
+  const handleToggleChartExpand = useCallback(() => {
+    setIsChartExpanded(prev => !prev);
+  }, []);
 
-    // Перевірка на повернення після успішної оплати Stripe
-    const params = new URLSearchParams(location.search);
-    if (params.get('success') === 'true') {
-      toast.success('Оплата успішна! Вітаємо в тарифі PRO 🎉', { duration: 5000 });
-      // Очищаємо URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [location.state, location.search]);
-
-  const loadSelectedPortfolio = (data) => {
+  const loadSelectedPortfolio = useCallback((data) => {
     setTicker(data.tickers || 'AAPL');
     setAlgorithm(data.algorithm || 'gbm');
     setSimulations(data.simulationsCount || 1000);
@@ -766,7 +755,22 @@ const Dashboard = ({ user }) => {
     setCorrelationMatrix(null);
     setNews([]);
     setIsChartExpanded(false);
-  };
+  }, []);
+
+  React.useEffect(() => {
+    if (location.state?.portfolioToLoad) {
+      loadSelectedPortfolio(location.state.portfolioToLoad);
+      window.history.replaceState({}, document.title);
+    }
+
+    // Перевірка на повернення після успішної оплати Stripe
+    const params = new URLSearchParams(location.search);
+    if (params.get('success') === 'true') {
+      toast.success('Оплата успішна! Вітаємо в тарифі PRO 🎉', { duration: 5000 });
+      // Очищаємо URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [location.state, location.search, loadSelectedPortfolio]);
 
   React.useEffect(() => {
     const fetchWatchlist = async () => {
@@ -950,7 +954,7 @@ const Dashboard = ({ user }) => {
           <ChartArea 
             chartData={chartData} 
             isExpanded={isChartExpanded} 
-            onToggleExpand={() => setIsChartExpanded(!isChartExpanded)} 
+            onToggleExpand={handleToggleChartExpand} 
             isLoading={isLoading}
           />
         )}
@@ -1019,7 +1023,7 @@ const Dashboard = ({ user }) => {
           </div>
         )}
         
-        {!isChartExpanded && <PortfolioTable user={user} onLoadPortfolio={loadSelectedPortfolio} />}
+        <div style={{ display: isChartExpanded ? 'none' : 'block' }}><PortfolioTable user={user} onLoadPortfolio={loadSelectedPortfolio} /></div>
       </main>
     </div>
   );

@@ -78,6 +78,7 @@ services:
       - "5173:80"
     depends_on:
       - csharp-api
+      - python-ml
 
 volumes:
   pgdata:

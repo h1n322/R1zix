@@ -190,15 +190,15 @@ const ChartArea = ({ chartData, isExpanded, onToggleExpand, isLoading }) => {
 
                 {/* Графіки */}
                 <Area yAxisId="left" isAnimationActive={false} connectNulls={true} type="monotone" dataKey="history" stroke="#10B981" fillOpacity={1} fill="url(#colorHistory)" name="Історія" strokeWidth={2} dot={false} />
-                <Area yAxisId="left" isAnimationActive={true} connectNulls={true} type="monotone" dataKey="forecast" stroke="#0A84FF" fillOpacity={1} fill="url(#colorForecast)" name="Прогноз" strokeDasharray="5 5" strokeWidth={2} dot={false} />
+                <Area yAxisId="left" isAnimationActive={false} connectNulls={true} type="monotone" dataKey="forecast" stroke="#0A84FF" fillOpacity={1} fill="url(#colorForecast)" name="Прогноз" strokeDasharray="5 5" strokeWidth={2} dot={false} />
                 <Area yAxisId="left" isAnimationActive={false} connectNulls={true} type="monotone" dataKey="actual" stroke="#FF3B30" fillOpacity={1} fill="url(#colorActual)" name="Реальність" strokeWidth={2} dot={false} />
 
-                {showSMA && <Line yAxisId="left" isAnimationActive={true} connectNulls={true} type="monotone" dataKey="sma50" stroke="#f59e0b" dot={false} strokeWidth={2} name="SMA 50" />}
-                {showBB && <Line yAxisId="left" isAnimationActive={true} connectNulls={true} type="monotone" dataKey="bb_upper" stroke="#a855f7" strokeDasharray="4 4" dot={false} strokeWidth={1.5} name="BB Верхня" />}
-                {showBB && <Line yAxisId="left" isAnimationActive={true} connectNulls={true} type="monotone" dataKey="bb_lower" stroke="#a855f7" strokeDasharray="4 4" dot={false} strokeWidth={1.5} name="BB Нижня" />}
+                {showSMA && <Line yAxisId="left" isAnimationActive={false} connectNulls={true} type="monotone" dataKey="sma50" stroke="#f59e0b" dot={false} strokeWidth={2} name="SMA 50" />}
+                {showBB && <Line yAxisId="left" isAnimationActive={false} connectNulls={true} type="monotone" dataKey="bb_upper" stroke="#a855f7" strokeDasharray="4 4" dot={false} strokeWidth={1.5} name="BB Верхня" />}
+                {showBB && <Line yAxisId="left" isAnimationActive={false} connectNulls={true} type="monotone" dataKey="bb_lower" stroke="#a855f7" strokeDasharray="4 4" dot={false} strokeWidth={1.5} name="BB Нижня" />}
                 
-                {showRSI && <Line yAxisId="right" connectNulls={true} isAnimationActive={true} type="monotone" dataKey="rsi" stroke="#ec4899" dot={false} strokeWidth={2} name="RSI (14)" />}
-                {showATR && <Line yAxisId="right" connectNulls={true} isAnimationActive={true} type="monotone" dataKey="atr" stroke="#06b6d4" dot={false} strokeWidth={2} name="ATR (14)" />}
+                {showRSI && <Line yAxisId="right" connectNulls={true} isAnimationActive={false} type="monotone" dataKey="rsi" stroke="#ec4899" dot={false} strokeWidth={2} name="RSI (14)" />}
+                {showATR && <Line yAxisId="right" connectNulls={true} isAnimationActive={false} type="monotone" dataKey="atr" stroke="#06b6d4" dot={false} strokeWidth={2} name="ATR (14)" />}
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
@@ -220,4 +220,4 @@ const ChartArea = ({ chartData, isExpanded, onToggleExpand, isLoading }) => {
   );
 };
 
-export default ChartArea;
+export default React.memo(ChartArea);
