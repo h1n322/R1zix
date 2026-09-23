@@ -83,12 +83,52 @@ namespace RiskMate.Api.Controllers
         }
 
         [HttpPost("report")]
-        public async Task<IActionResult> GenerateReport([FromBody] SimulationRequestDto dto)
+        public async Task<IActionResult> GenerateReport([FromBody] SimulationRequestDto dto, CancellationToken cancellationToken)
         {
-            // Залишаємо поки синхронно, оскільки це PDF-генерація, 
-            // хоча в майбутньому варто теж перевести на Hangfire.
             try
             {
+                var firebaseUid = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
+
+                // Fast-Path: якщо передано JobId щойно завершеної симуляції, беремо готовий результат із кешу
+                if (!string.IsNullOrEmpty(dto.JobId))
+                {
+                    var cachedJson = await _cache.GetStringAsync($"sim_job_{firebaseUid}_{dto.JobId}", cancellationToken);
+                    if (string.IsNullOrEmpty(cachedJson) && firebaseUid != "anonymous")
+                    {
+                        cachedJson = await _cache.GetStringAsync($"sim_job_anonymous_{dto.JobId}", cancellationToken);
+                    }
+
+                    if (!string.IsNullOrEmpty(cachedJson))
+                    {
+                        try
+                        {
+                            var jsonOpts = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                            using var doc = System.Text.Json.JsonDocument.Parse(cachedJson);
+                            if (doc.RootElement.TryGetProperty("Result", out var resultProp) || doc.RootElement.TryGetProperty("result", out resultProp))
+                            {
+                                var cachedSimResult = System.Text.Json.JsonSerializer.Deserialize<SimulationResult>(resultProp.GetRawText(), jsonOpts);
+                                if (cachedSimResult != null)
+                                {
+                                    string? cachedAiSummary = null;
+                                    if (resultProp.TryGetProperty("AiSummary", out var aiProp) || resultProp.TryGetProperty("aiSummary", out aiProp))
+                                    {
+                                        cachedAiSummary = aiProp.GetString();
+                                    }
+
+                                    _logger.LogInformation("Generating PDF report from cached simulation result. JobId: {JobId}", dto.JobId);
+                                    var cachedPdfBytes = _pdfReportService.GenerateReport(dto, cachedSimResult, cachedAiSummary);
+                                    return File(cachedPdfBytes, "application/pdf", $"RiskMate_Report_{dto.Ticker}.pdf");
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Failed to parse cached simulation result for PDF, falling back to fresh calculation. JobId: {JobId}", dto.JobId);
+                        }
+                    }
+                }
+
+                // Fallback: якщо JobId немає або кеш застарів, рахуємо з оптимізованим таймаутом
                 bool isBacktest = dto.Algorithm?.ToLowerInvariant() == "backtest" || dto.IsBacktest;
                 var algorithm = ParseAlgorithm(dto.Algorithm);
                 
@@ -105,10 +145,15 @@ namespace RiskMate.Api.Controllers
                     priceDataPoints, algorithm.Value, dto.SimulationsCount, dto.Horizon, scenario, dto.ConfidenceLevel, dto.CustomShockPercentage ?? 0, isBacktest, dto.RiskFreeRate);
 
                 var news = await _yahooFinanceService.GetAssetNewsAsync(dto.Ticker);
-                var aiSummary = await _aiAnalyticsService.GenerateRiskSummaryAsync(dto.Ticker, simulationResult, news);
+                var aiSummary = await _aiAnalyticsService.GenerateRiskSummaryAsync(dto.Ticker, simulationResult, news, cancellationToken);
 
                 var pdfBytes = _pdfReportService.GenerateReport(dto, simulationResult, aiSummary);
                 return File(pdfBytes, "application/pdf", $"RiskMate_Report_{dto.Ticker}.pdf");
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInformation("PDF generation request was canceled by client.");
+                return StatusCode(499, new { Message = "Запит скасовано клієнтом." });
             }
             catch (System.Exception ex)
             {

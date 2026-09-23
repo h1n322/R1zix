@@ -31,5 +31,7 @@ namespace RiskMate.Api.DTOs
 
         [Range(0.0, 0.5)]
         public double RiskFreeRate { get; set; } = 0.045;
+
+        public string? JobId { get; set; }
     }
 }
