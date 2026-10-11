@@ -80,7 +80,7 @@ const Sidebar = ({
   lookback, setLookback, 
   varConf, setVarConf,   
   rfRate, setRfRate,     
-  onRun, onDownload, onSave, onLoad, onExportCSV, isLoading 
+  onRun, onDownload, onSave, onLoad, onExportCSV, isLoading, isGeneratingPdf 
 }) => {
   // Стейт для керування виїзною панеллю (за замовчуванням відкрита)
   const [isDrawerOpen, setIsDrawerOpen] = useState(true);
@@ -282,16 +282,23 @@ const Sidebar = ({
           <button 
             className={`${styles.dockBtn} ${styles.dockBtnPdf}`} 
             onClick={!isPro ? (e) => { e.preventDefault(); onDownload(); } : onDownload}
-            style={!isPro ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-            title={isPro ? "Завантажити PDF звіт" : "🔒 PDF звіт (Pro)"}
+            disabled={isLoading || isGeneratingPdf}
+            style={!isPro ? { opacity: 0.5, cursor: 'not-allowed' } : isGeneratingPdf ? { opacity: 0.7, cursor: 'wait' } : {}}
+            title={isPro ? (isGeneratingPdf ? "Генерація PDF звіту..." : "Завантажити PDF звіт") : "🔒 PDF звіт (Pro)"}
           >
-            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-            </svg>
-            <span>PDF</span>
+            {isGeneratingPdf ? (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
+                <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="10" />
+              </svg>
+            ) : (
+              <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+            )}
+            <span>{isGeneratingPdf ? 'PDF...' : 'PDF'}</span>
           </button>
 
           {/* Кнопка CSV */}

@@ -76,6 +76,8 @@ const Dashboard = ({ user }) => {
   const [histogramData, setHistogramData] = useState([]); 
   const [markowitzData, setMarkowitzData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [lastJobId, setLastJobId] = useState(null);
   const [isMock, setIsMock] = useState(false);
   const [lookback, setLookback] = useState(5);
   const [varConf, setVarConf] = useState(0.95);
@@ -246,6 +248,7 @@ const Dashboard = ({ user }) => {
         if (!jobId) {
           throw new Error('Не отримано ідентифікатор завдання (jobId)');
         }
+        setLastJobId(jobId);
 
         // Опитування статусу кожні 800мс (~32 секунди таймаут)
         const maxAttempts = 40;
@@ -491,11 +494,15 @@ const Dashboard = ({ user }) => {
   const runSimulation = handleRunSimulation;
 
   const downloadReport = async () => {
+    if (isGeneratingPdf) return;
+
     if (user?.tier !== 'pro') {
       toast.error('Експорт PDF доступний лише у тарифі Pro Analyst! ', { icon: '🔒' });
       setTimeout(() => navigate('/pricing'), 1500);
       return;
     }
+
+    setIsGeneratingPdf(true);
     const loadingToast = toast.loading('Генерація PDF...');
     try {
       const cleanTicker = (ticker || 'AAPL').trim().toUpperCase();
@@ -511,7 +518,8 @@ const Dashboard = ({ user }) => {
         confidenceLevel: parseFloat(varConf) || 0.95,
         lookbackYears: parseInt(lookback) || 5,
         riskFreeRate: (parseFloat(rfRate.toString().replace(',', '.')) || 4.5) / 100,
-        isBacktest
+        isBacktest,
+        jobId: lastJobId || null
       };
 
       let token = null;
@@ -522,14 +530,20 @@ const Dashboard = ({ user }) => {
         token = localStorage.getItem('token');
       }
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+
       const resp = await fetch(endpoint, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+
       if (!resp.ok) {
         const errJson = await resp.json().catch(() => ({}));
         throw new Error(errJson.Message || errJson.message || 'Помилка сервера при генерації PDF');
@@ -540,9 +554,16 @@ const Dashboard = ({ user }) => {
       a.href = url;
       a.download = `RiskMate_Report_${cleanTicker}.pdf`;
       a.click();
+      window.URL.revokeObjectURL(url);
       toast.success('Звіт завантажено!', { id: loadingToast });
     } catch (err) { 
-      toast.error(err.message || 'Помилка завантаження PDF', { id: loadingToast });
+      if (err.name === 'AbortError') {
+        toast.error('Час очікування генерації PDF вичерпано', { id: loadingToast });
+      } else {
+        toast.error(err.message || 'Помилка завантаження PDF', { id: loadingToast });
+      }
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -824,6 +845,7 @@ const Dashboard = ({ user }) => {
         onSave={savePortfolio} onLoad={loadPortfolio}
         onExportCSV={downloadCSV} 
         isLoading={isLoading} 
+        isGeneratingPdf={isGeneratingPdf}
       />
       <main style={styles.main} className="main-content-mobile">
         

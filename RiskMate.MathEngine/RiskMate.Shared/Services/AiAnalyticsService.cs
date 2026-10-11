@@ -23,11 +23,11 @@ namespace RiskMate.Api.Services
             _apiKey = settings.Value.GeminiApiKey ?? "";
         }
 
-        public async Task<string> GenerateRiskSummaryAsync(string ticker, SimulationResult result, List<NewsItemDto> news)
+        public async Task<string> GenerateRiskSummaryAsync(string ticker, SimulationResult result, List<NewsItemDto> news, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(_apiKey) || _apiKey == "YOUR_GEMINI_API_KEY")
             {
-                return "Gemini API ключ не налаштовано. AI-аналітика тимчасово недоступна.";
+                return GenerateFallbackSummary(ticker, result);
             }
             var modelsToTry = new[] { "gemini-flash-latest", "gemini-1.5-flash", "gemini-1.5-pro" };
             var cleanKey = _apiKey.Trim();
@@ -58,6 +58,10 @@ namespace RiskMate.Api.Services
             
             var errors = new List<string>();
 
+            // Встановлюємо таймаут не більше 5 секунд на виклики AI
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
             foreach (var modelName in modelsToTry)
             {
                 try
@@ -68,11 +72,11 @@ namespace RiskMate.Api.Services
                     request.Headers.Add("X-goog-api-key", cleanKey);
                     request.Content = new StringContent(contentString, Encoding.UTF8, "application/json");
                     
-                    var response = await _httpClient.SendAsync(request);
+                    var response = await _httpClient.SendAsync(request, linkedCts.Token);
                     
                     if (response.IsSuccessStatusCode)
                     {
-                        var responseString = await response.Content.ReadAsStringAsync();
+                        var responseString = await response.Content.ReadAsStringAsync(linkedCts.Token);
                         using var doc = JsonDocument.Parse(responseString);
                         var aiText = doc.RootElement
                             .GetProperty("candidates")[0]
@@ -81,10 +85,10 @@ namespace RiskMate.Api.Services
                             .GetProperty("text")
                             .GetString();
                         
-                        return aiText?.Trim() ?? "Не вдалося згенерувати висновок.";
+                        return aiText?.Trim() ?? GenerateFallbackSummary(ticker, result);
                     }
 
-                    var errorBody = await response.Content.ReadAsStringAsync();
+                    var errorBody = await response.Content.ReadAsStringAsync(linkedCts.Token);
                     errors.Add($"[{modelName}: {response.StatusCode} {errorBody}]");
                     
                     if (response.StatusCode != System.Net.HttpStatusCode.NotFound && response.StatusCode != System.Net.HttpStatusCode.ServiceUnavailable)
@@ -92,18 +96,24 @@ namespace RiskMate.Api.Services
                         break;
                     }
                 }
+                catch (OperationCanceledException)
+                {
+                    // Таймаут або запит клієнта скасовано
+                    break;
+                }
                 catch (Exception ex)
                 {
                     errors.Add($"[{modelName}: Network Error {ex.Message}]");
                 }
             }
             
-            if (errors.Any(e => e.Contains("503") || e.Contains("ServiceUnavailable")))
-            {
-                return "Генерація AI-аналітики тимчасово недоступна через високе навантаження на сервери Gemini. Будь ласка, спробуйте пізніше.";
-            }
+            return GenerateFallbackSummary(ticker, result);
+        }
 
-            return "Не вдалося згенерувати AI-аналітику. Перевірте правильність Gemini API ключа.";
+        private static string GenerateFallbackSummary(string ticker, SimulationResult result)
+        {
+            var riskLevel = result.ValueAtRisk > (result.ExpectedPrice * 0.15) ? "підвищений" : "помірний";
+            return $"За результатами моделювання акції {ticker}, розрахункова очікувана ціна становить ${result.ExpectedPrice:F2} з прогнозованим рівнем ризику VaR ${result.ValueAtRisk:F2} (волатильність {result.Volatility * 100:F1}%). Зафіксовано {riskLevel} ступінь невизначеності на обраному часовому горизонті; рекомендується диверсифікація портфеля.";
         }
     }
 }
