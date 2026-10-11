@@ -1,15 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore'; 
 import { auth, db } from './firebase'; 
 
-import Dashboard from './pages/Dashboard';
-import Landing from './pages/Landing';
-import Methodology from './pages/Methodology';
-import Guide from './pages/Guide';
-import Profile from './pages/Profile';
-import Pricing from './pages/Pricing';
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Landing = lazy(() => import('./pages/Landing'));
+const Methodology = lazy(() => import('./pages/Methodology'));
+const Guide = lazy(() => import('./pages/Guide'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Pricing = lazy(() => import('./pages/Pricing'));
+
+function PageLoader() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        backgroundColor: '#0f172a',
+        color: '#94a3b8',
+        gap: '16px',
+        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      }}
+    >
+      <div
+        style={{
+          width: '36px',
+          height: '36px',
+          borderRadius: '50%',
+          border: '3px solid rgba(59, 130, 246, 0.2)',
+          borderTopColor: '#3b82f6',
+          animation: 'spin 0.8s linear infinite',
+        }}
+      />
+      <span style={{ fontSize: '0.95rem', fontWeight: 500, letterSpacing: '0.025em' }}>
+        Завантаження Rizix...
+      </span>
+    </div>
+  );
+}
 
 function App() {
   const [user, setUser] = useState(null);
@@ -83,11 +115,7 @@ function App() {
   }, []);
 
   if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white', backgroundColor: '#0f172a' }}>
-        Завантаження Rizix...
-      </div>
-    );
+    return <PageLoader />;
   }
 
   const isGuest = typeof window !== 'undefined' && (
@@ -98,17 +126,19 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/methodology" element={<Methodology />} />
-        <Route path="/guide" element={<Guide />} />
-        <Route path="/pricing" element={<Pricing user={activeUser} />} />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/methodology" element={<Methodology />} />
+          <Route path="/guide" element={<Guide />} />
+          <Route path="/pricing" element={<Pricing user={activeUser} />} />
 
-        <Route path="/dashboard" element={activeUser ? <Dashboard user={activeUser} /> : <Navigate to="/" />} />
-        <Route path="/profile" element={activeUser ? <Profile user={activeUser} /> : <Navigate to="/" />} />
+          <Route path="/dashboard" element={activeUser ? <Dashboard user={activeUser} /> : <Navigate to="/" />} />
+          <Route path="/profile" element={activeUser ? <Profile user={activeUser} /> : <Navigate to="/" />} />
 
-        <Route path="*" element={<Navigate to={activeUser ? "/dashboard" : "/login"} />} />
-      </Routes>
+          <Route path="*" element={<Navigate to={activeUser ? "/dashboard" : "/login"} />} />
+        </Routes>
+      </Suspense>
     </Router>
   );
 }
